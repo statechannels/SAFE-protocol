@@ -1,0 +1,7 @@
+{
+  "name": "fast-exit",
+  "packageManager": "yarn@3.1.0",
+  "devDependencies": {
+    "typescript": "^4.4.4"
+  }
+}
