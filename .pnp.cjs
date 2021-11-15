@@ -45,6 +45,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["ethers", "npm:5.5.1"],
             ["hardhat", "npm:2.6.7"],
             ["hardhat-gas-reporter", "virtual:59cb376364525af00fad18d49fd78e90daf9aad8650b4dd1a66a2b3ed9cdc5b25bab69539c4ec8bff556f18e406d68ec5b42658204712d3b50f58561dc30e9cf#npm:1.0.4"],
+            ["rlp", "npm:2.2.7"],
             ["ts-node", "virtual:59cb376364525af00fad18d49fd78e90daf9aad8650b4dd1a66a2b3ed9cdc5b25bab69539c4ec8bff556f18e406d68ec5b42658204712d3b50f58561dc30e9cf#npm:10.4.0"],
             ["typescript", "patch:typescript@npm%3A4.4.4#~builtin<compat/typescript>::version=4.4.4&hash=ddd1e8"]
           ],
@@ -5145,6 +5146,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["ethers", "npm:5.5.1"],
             ["hardhat", "npm:2.6.7"],
             ["hardhat-gas-reporter", "virtual:59cb376364525af00fad18d49fd78e90daf9aad8650b4dd1a66a2b3ed9cdc5b25bab69539c4ec8bff556f18e406d68ec5b42658204712d3b50f58561dc30e9cf#npm:1.0.4"],
+            ["rlp", "npm:2.2.7"],
             ["ts-node", "virtual:59cb376364525af00fad18d49fd78e90daf9aad8650b4dd1a66a2b3ed9cdc5b25bab69539c4ec8bff556f18e406d68ec5b42658204712d3b50f58561dc30e9cf#npm:10.4.0"],
             ["typescript", "patch:typescript@npm%3A4.4.4#~builtin<compat/typescript>::version=4.4.4&hash=ddd1e8"]
           ],
