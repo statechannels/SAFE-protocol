@@ -1,4 +1,3 @@
-
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.10;
 
@@ -16,14 +15,27 @@ contract L1Contract {
 
     function claimTicket(
         WithdrawalTicket calldata ticket,
+        bytes32 escrowPreimage,
         bytes32 r,
         bytes32 s,
         uint8 v
     ) public {
-        require(ticket.nonce > currentNonce, "Ticket nonce is too low");
         bytes32 ticketHash = keccak256(abi.encode(ticket));
+        bytes32 prefixedHash = keccak256(
+            abi.encodePacked("\x19Ethereum Signed Message:\n32", ticketHash)
+        );
+        address ticketSigner = ecrecover(prefixedHash, v, r, s);
+
+        bytes32 escrowHash = keccak256(abi.encode(escrowPreimage));
         require(
-            ecrecover(ticketHash, v, r, s) == ticket.sender,
+            escrowHash == ticket.escrowHash,
+            "The preimage must match the escrow hash on the ticket"
+        );
+
+        require(ticket.nonce > currentNonce, "Ticket nonce is too low");
+
+        require(
+            ticketSigner == ticket.sender,
             "Ticket is not signed by sender"
         );
         require(
