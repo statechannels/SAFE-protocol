@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.3;
+pragma solidity ^0.8.10;
 
 struct WithdrawalTicket {
     uint256 value;
@@ -142,11 +142,7 @@ contract L2Contract {
         entry.receiver.transfer(entry.value);
     }
 
-    function recoverSigner(bytes32 ticketHash, bytes32 ticketSignature)
-        public
-        view
-        returns (address)
-    {
+    function recoverSigner(bytes32, bytes32) public pure returns (address) {
         // TODO: Implement signature recovery
         return address(0);
     }
