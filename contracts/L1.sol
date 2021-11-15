@@ -32,7 +32,10 @@ contract L1Contract {
             "The preimage must match the escrow hash on the ticket"
         );
 
-        require(ticket.nonce > currentNonce, "Ticket nonce is too low");
+        require(
+            ticket.nonce == currentNonce + 1,
+            "Ticket nonce must be the next available nonce"
+        );
 
         require(
             ticketSigner == ticket.sender,
