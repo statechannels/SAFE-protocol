@@ -905,7 +905,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/chai@npm:*":
+"@types/chai@npm:*, @types/chai@npm:^4.2.22":
   version: 4.2.22
   resolution: "@types/chai@npm:4.2.22"
   checksum: dca66a263b25c26112c0a8c6df20316412fa54b557443a108836c07cee961aa56cc5b1763273f69eb450c83ca9f28069ff78b617bffc01806cdd83afc1c20c2a
@@ -970,6 +970,13 @@ __metadata:
   dependencies:
     "@types/node": "*"
   checksum: 21e6681ee18cee6314dbe0f57ada48981912b76de8266f438ba2573770d60aaa8dd376baad3f20e2346696a7cca84b0aadd1737222341553a0091831a46e6ad1
+  languageName: node
+  linkType: hard
+
+"@types/mocha@npm:^9.0.0":
+  version: 9.0.0
+  resolution: "@types/mocha@npm:9.0.0"
+  checksum: 73e6edaba045bc250b69085a770d5029edfed006ed8e75344435474a2cb8d38064acd7b34b6cc62756caa845a5cf335bde66db11e8c8c6565c62a790e933704a
   languageName: node
   linkType: hard
 
@@ -3798,7 +3805,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"eth-gas-reporter@npm:^0.2.20":
+"eth-gas-reporter@npm:^0.2.20, eth-gas-reporter@npm:^0.2.22":
   version: 0.2.22
   resolution: "eth-gas-reporter@npm:0.2.22"
   dependencies:
@@ -4532,7 +4539,10 @@ __metadata:
   dependencies:
     "@nomiclabs/hardhat-ethers": ^2.0.2
     "@nomiclabs/hardhat-waffle": ^2.0.1
+    "@types/chai": ^4.2.22
+    "@types/mocha": ^9.0.0
     chai: ^4.3.4
+    eth-gas-reporter: ^0.2.22
     ethereum-waffle: ^3.4.0
     ethers: ^5.5.1
     hardhat: ^2.6.7

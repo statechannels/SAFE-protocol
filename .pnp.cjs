@@ -37,7 +37,10 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           "packageDependencies": [
             ["@nomiclabs/hardhat-ethers", "virtual:59cb376364525af00fad18d49fd78e90daf9aad8650b4dd1a66a2b3ed9cdc5b25bab69539c4ec8bff556f18e406d68ec5b42658204712d3b50f58561dc30e9cf#npm:2.0.2"],
             ["@nomiclabs/hardhat-waffle", "virtual:59cb376364525af00fad18d49fd78e90daf9aad8650b4dd1a66a2b3ed9cdc5b25bab69539c4ec8bff556f18e406d68ec5b42658204712d3b50f58561dc30e9cf#npm:2.0.1"],
+            ["@types/chai", "npm:4.2.22"],
+            ["@types/mocha", "npm:9.0.0"],
             ["chai", "npm:4.3.4"],
+            ["eth-gas-reporter", "virtual:59cb376364525af00fad18d49fd78e90daf9aad8650b4dd1a66a2b3ed9cdc5b25bab69539c4ec8bff556f18e406d68ec5b42658204712d3b50f58561dc30e9cf#npm:0.2.22"],
             ["ethereum-waffle", "npm:3.4.0"],
             ["ethers", "npm:5.5.1"],
             ["hardhat", "npm:2.6.7"],
@@ -1155,6 +1158,15 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           "packageDependencies": [
             ["@types/mkdirp", "npm:0.5.2"],
             ["@types/node", "npm:16.11.6"]
+          ],
+          "linkType": "HARD",
+        }]
+      ]],
+      ["@types/mocha", [
+        ["npm:9.0.0", {
+          "packageLocation": "./.yarn/cache/@types-mocha-npm-9.0.0-cd77a42cf3-73e6edaba0.zip/node_modules/@types/mocha/",
+          "packageDependencies": [
+            ["@types/mocha", "npm:9.0.0"]
           ],
           "linkType": "HARD",
         }]
@@ -4357,10 +4369,10 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           ],
           "linkType": "SOFT",
         }],
-        ["virtual:94c7b94aef50f99f5ae61e45781cd633d2f237359bd3e8af313869e5b57dde7a03a7e8688a4c4539008e51e8d8f504918f40d89da465b656f73768374bb6aa93#npm:0.2.22", {
-          "packageLocation": "./.yarn/__virtual__/eth-gas-reporter-virtual-ab38a2d080/0/cache/eth-gas-reporter-npm-0.2.22-238584cf26-5b612a8f39.zip/node_modules/eth-gas-reporter/",
+        ["virtual:59cb376364525af00fad18d49fd78e90daf9aad8650b4dd1a66a2b3ed9cdc5b25bab69539c4ec8bff556f18e406d68ec5b42658204712d3b50f58561dc30e9cf#npm:0.2.22", {
+          "packageLocation": "./.yarn/__virtual__/eth-gas-reporter-virtual-008e0b8ff4/0/cache/eth-gas-reporter-npm-0.2.22-238584cf26-5b612a8f39.zip/node_modules/eth-gas-reporter/",
           "packageDependencies": [
-            ["eth-gas-reporter", "virtual:94c7b94aef50f99f5ae61e45781cd633d2f237359bd3e8af313869e5b57dde7a03a7e8688a4c4539008e51e8d8f504918f40d89da465b656f73768374bb6aa93#npm:0.2.22"],
+            ["eth-gas-reporter", "virtual:59cb376364525af00fad18d49fd78e90daf9aad8650b4dd1a66a2b3ed9cdc5b25bab69539c4ec8bff556f18e406d68ec5b42658204712d3b50f58561dc30e9cf#npm:0.2.22"],
             ["@codechecks/client", null],
             ["@ethersproject/abi", "npm:5.5.0"],
             ["@solidity-parser/parser", "npm:0.12.2"],
@@ -4375,7 +4387,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["mocha", "npm:7.2.0"],
             ["req-cwd", "npm:2.0.0"],
             ["request", "npm:2.88.2"],
-            ["request-promise-native", "virtual:ab38a2d0809d825e56f60bbb9066e4d0249a7c04c10ce4415caef54f901c34203a4cc132751f2f2ce4b8d79df4ae3a437aa319acc8a8e5d09ec81e262bef3135#npm:1.0.9"],
+            ["request-promise-native", "virtual:008e0b8ff463bbcbaa3828eb43d8f0ad7642e832598c84d0abb150b922259cb562f80a5dcd8b55ca1deb609eee3af7d97990d18fc723cdd539918b30bf8dfd65#npm:1.0.9"],
             ["sha1", "npm:1.1.1"],
             ["sync-request", "npm:6.1.0"]
           ],
@@ -5125,7 +5137,10 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["fast-exit", "workspace:."],
             ["@nomiclabs/hardhat-ethers", "virtual:59cb376364525af00fad18d49fd78e90daf9aad8650b4dd1a66a2b3ed9cdc5b25bab69539c4ec8bff556f18e406d68ec5b42658204712d3b50f58561dc30e9cf#npm:2.0.2"],
             ["@nomiclabs/hardhat-waffle", "virtual:59cb376364525af00fad18d49fd78e90daf9aad8650b4dd1a66a2b3ed9cdc5b25bab69539c4ec8bff556f18e406d68ec5b42658204712d3b50f58561dc30e9cf#npm:2.0.1"],
+            ["@types/chai", "npm:4.2.22"],
+            ["@types/mocha", "npm:9.0.0"],
             ["chai", "npm:4.3.4"],
+            ["eth-gas-reporter", "virtual:59cb376364525af00fad18d49fd78e90daf9aad8650b4dd1a66a2b3ed9cdc5b25bab69539c4ec8bff556f18e406d68ec5b42658204712d3b50f58561dc30e9cf#npm:0.2.22"],
             ["ethereum-waffle", "npm:3.4.0"],
             ["ethers", "npm:5.5.1"],
             ["hardhat", "npm:2.6.7"],
@@ -5889,7 +5904,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           "packageDependencies": [
             ["hardhat-gas-reporter", "virtual:59cb376364525af00fad18d49fd78e90daf9aad8650b4dd1a66a2b3ed9cdc5b25bab69539c4ec8bff556f18e406d68ec5b42658204712d3b50f58561dc30e9cf#npm:1.0.4"],
             ["@types/hardhat", null],
-            ["eth-gas-reporter", "virtual:94c7b94aef50f99f5ae61e45781cd633d2f237359bd3e8af313869e5b57dde7a03a7e8688a4c4539008e51e8d8f504918f40d89da465b656f73768374bb6aa93#npm:0.2.22"],
+            ["eth-gas-reporter", "virtual:59cb376364525af00fad18d49fd78e90daf9aad8650b4dd1a66a2b3ed9cdc5b25bab69539c4ec8bff556f18e406d68ec5b42658204712d3b50f58561dc30e9cf#npm:0.2.22"],
             ["hardhat", "npm:2.6.7"],
             ["sha1", "npm:1.1.1"]
           ],
@@ -9637,10 +9652,10 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           ],
           "linkType": "SOFT",
         }],
-        ["virtual:c1cf047329cd7a812808b18c396559e5a4ba3b18025effa245d852f1d8ad0c5d5d1568d72775328a5278bf01ae85d62f747bc992965a007762cc06e2e9fb4118#npm:1.1.4", {
-          "packageLocation": "./.yarn/__virtual__/request-promise-core-virtual-c3ee76464f/0/cache/request-promise-core-npm-1.1.4-cb9fff6c90-c798bafd55.zip/node_modules/request-promise-core/",
+        ["virtual:8c7bb9bf3ec5b7a8642c57c0ec69aa520fd325985d641767d5ed3966ee273c7abea870063852605fb7cc973e590a334b568d79451243e972ef20933525ead062#npm:1.1.4", {
+          "packageLocation": "./.yarn/__virtual__/request-promise-core-virtual-a906959b87/0/cache/request-promise-core-npm-1.1.4-cb9fff6c90-c798bafd55.zip/node_modules/request-promise-core/",
           "packageDependencies": [
-            ["request-promise-core", "virtual:c1cf047329cd7a812808b18c396559e5a4ba3b18025effa245d852f1d8ad0c5d5d1568d72775328a5278bf01ae85d62f747bc992965a007762cc06e2e9fb4118#npm:1.1.4"],
+            ["request-promise-core", "virtual:8c7bb9bf3ec5b7a8642c57c0ec69aa520fd325985d641767d5ed3966ee273c7abea870063852605fb7cc973e590a334b568d79451243e972ef20933525ead062#npm:1.1.4"],
             ["@types/request", null],
             ["lodash", "npm:4.17.21"],
             ["request", "npm:2.88.2"]
@@ -9660,13 +9675,13 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           ],
           "linkType": "SOFT",
         }],
-        ["virtual:ab38a2d0809d825e56f60bbb9066e4d0249a7c04c10ce4415caef54f901c34203a4cc132751f2f2ce4b8d79df4ae3a437aa319acc8a8e5d09ec81e262bef3135#npm:1.0.9", {
-          "packageLocation": "./.yarn/__virtual__/request-promise-native-virtual-c1cf047329/0/cache/request-promise-native-npm-1.0.9-6ae8e592e8-3e2c694eef.zip/node_modules/request-promise-native/",
+        ["virtual:008e0b8ff463bbcbaa3828eb43d8f0ad7642e832598c84d0abb150b922259cb562f80a5dcd8b55ca1deb609eee3af7d97990d18fc723cdd539918b30bf8dfd65#npm:1.0.9", {
+          "packageLocation": "./.yarn/__virtual__/request-promise-native-virtual-8c7bb9bf3e/0/cache/request-promise-native-npm-1.0.9-6ae8e592e8-3e2c694eef.zip/node_modules/request-promise-native/",
           "packageDependencies": [
-            ["request-promise-native", "virtual:ab38a2d0809d825e56f60bbb9066e4d0249a7c04c10ce4415caef54f901c34203a4cc132751f2f2ce4b8d79df4ae3a437aa319acc8a8e5d09ec81e262bef3135#npm:1.0.9"],
+            ["request-promise-native", "virtual:008e0b8ff463bbcbaa3828eb43d8f0ad7642e832598c84d0abb150b922259cb562f80a5dcd8b55ca1deb609eee3af7d97990d18fc723cdd539918b30bf8dfd65#npm:1.0.9"],
             ["@types/request", null],
             ["request", "npm:2.88.2"],
-            ["request-promise-core", "virtual:c1cf047329cd7a812808b18c396559e5a4ba3b18025effa245d852f1d8ad0c5d5d1568d72775328a5278bf01ae85d62f747bc992965a007762cc06e2e9fb4118#npm:1.1.4"],
+            ["request-promise-core", "virtual:8c7bb9bf3ec5b7a8642c57c0ec69aa520fd325985d641767d5ed3966ee273c7abea870063852605fb7cc973e590a334b568d79451243e972ef20933525ead062#npm:1.1.4"],
             ["stealthy-require", "npm:1.1.1"],
             ["tough-cookie", "npm:2.5.0"]
           ],
