@@ -15,7 +15,7 @@ struct WithdrawalTicket {
 }
 
 contract L1Contract {
-    uint256 currentNonce = 0;
+    mapping(address => uint256) nonces;
     mapping(address => uint256) balances;
 
     function claimTickets(
@@ -51,7 +51,7 @@ contract L1Contract {
         );
 
         require(
-            ticket.nonce == currentNonce + 1,
+            ticket.nonce == nonces[ticket.sender] + 1,
             "Ticket nonce must be the next available nonce"
         );
 
@@ -64,7 +64,7 @@ contract L1Contract {
             "Sender does not have enough funds"
         );
 
-        currentNonce++;
+        nonces[ticket.sender]++;
         ticket.receiver.transfer(ticket.value);
     }
 

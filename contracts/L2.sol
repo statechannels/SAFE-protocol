@@ -88,7 +88,7 @@ contract L2Contract {
         );
     }
 
-    uint256 currentNonce = 0;
+    mapping(address => uint256) nonces;
     mapping(address => bytes32) ticketCommitments;
 
     function commitToWithdrawal(
@@ -97,7 +97,7 @@ contract L2Contract {
         Signature calldata ticketSignature
     ) public {
         require(
-            ticket.nonce == currentNonce + 1,
+            ticket.nonce == nonces[ticket.sender] + 1,
             "The ticket must use the next nonce."
         );
 
@@ -109,7 +109,7 @@ contract L2Contract {
             "The ticket must be signed by the sender."
         );
 
-        currentNonce++;
+        nonces[ticket.sender]++;
         ticketCommitments[ticket.sender] = ticketHash;
     }
 
