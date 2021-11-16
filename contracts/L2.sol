@@ -2,10 +2,10 @@
 pragma solidity ^0.8.10;
 
 struct Signature {
-        bytes32 r;
-        bytes32 s;
-        uint8  v;
-    }
+    bytes32 r;
+    bytes32 s;
+    uint8 v;
+}
 
 struct WithdrawalTicket {
     uint256 value;
@@ -39,6 +39,7 @@ contract L2Contract {
         bytes32[] calldata escrowSecret
     ) public {
         EscrowEntry memory entry = funds[receiver];
+
         require(
             entry.reclaimDate >= block.timestamp,
             "Funds are not reclaimable yet."
@@ -66,8 +67,8 @@ contract L2Contract {
         entry.receiver.transfer(entry.value);
     }
 
-    function lockFundsInEscrow( 
-        // Called by Alice, with receiver = Bob. 
+    function lockFundsInEscrow(
+        // Called by Alice, with receiver = Bob.
         // It's a hash-time-lock, with a window of opportunity for Bob.
         // Alice will pull her funds out unless she gets funds from Bob on L1 before reclaimDate
         address payable receiver,
@@ -90,7 +91,8 @@ contract L2Contract {
     uint256 currentNonce = 0;
     mapping(address => bytes32) ticketCommitments;
 
-    function commitToWithdrawal( // Called by Bob, with the ticket.receiver = Alice. He is commiting to an L1 withdrawal
+    function commitToWithdrawal(
+        // Called by Bob, with the ticket.receiver = Alice. He is commiting to an L1 withdrawal
         WithdrawalTicket calldata ticket,
         Signature calldata ticketSignature
     ) public {
@@ -124,6 +126,8 @@ contract L2Contract {
         bytes32 secondHash = keccak256(abi.encode(secondTicket));
         address secondSigner = recoverSigner(secondHash, secondSignature);
 
+        require(commitedHash != secondHash, "Tickets must be distinct");
+
         require(
             commitedSigner == secondSigner,
             "The two tickets must be signed by the same signer."
@@ -148,10 +152,14 @@ contract L2Contract {
         entry.receiver.transfer(entry.value);
     }
 
-    function recoverSigner(bytes32 hash, Signature memory signature) public pure returns (address) {
-                bytes32 prefixedHash = keccak256(
+    function recoverSigner(bytes32 hash, Signature memory signature)
+        public
+        pure
+        returns (address)
+    {
+        bytes32 prefixedHash = keccak256(
             abi.encodePacked("\x19Ethereum Signed Message:\n32", hash)
         );
-        return ecrecover(prefixedHash,signature.v,signature.r,signature.s);
+        return ecrecover(prefixedHash, signature.v, signature.r, signature.s);
     }
 }

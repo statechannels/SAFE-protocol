@@ -88,7 +88,7 @@ describe("L2 Contract", function () {
         secondSignature,
         escrowSecret
       )
-    ).to.be.revertedWith("tickets must be distinct");
+    ).to.be.revertedWith("Tickets must be distinct");
   });
 });
 
