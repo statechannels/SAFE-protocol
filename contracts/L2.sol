@@ -32,13 +32,13 @@ struct EscrowEntry {
 
 // GK: I believe payoutDate > reclaimDate for safety.
 contract L2Contract {
-    mapping(address => EscrowEntry) private funds;
+    mapping(address => EscrowEntry) private escrowEntries;
 
     function reclaimFunds(
         address payable receiver,
         bytes32[] calldata escrowSecret
     ) public {
-        EscrowEntry memory entry = funds[receiver];
+        EscrowEntry memory entry = escrowEntries[receiver];
 
         require(
             entry.reclaimDate >= block.timestamp,
@@ -53,7 +53,7 @@ contract L2Contract {
     }
 
     function transferFunds(bytes32[] calldata escrowSecret) public {
-        EscrowEntry memory entry = funds[msg.sender];
+        EscrowEntry memory entry = escrowEntries[msg.sender];
 
         require(
             entry.payoutDate >= block.timestamp,
@@ -76,9 +76,9 @@ contract L2Contract {
         uint256 payoutDate,
         uint256 reclaimDate
     ) public payable {
-        EscrowEntry memory entry = funds[receiver];
+        EscrowEntry memory entry = escrowEntries[receiver];
         require(entry.value == 0, "Funds already locked in escrow");
-        funds[receiver] = EscrowEntry(
+        escrowEntries[receiver] = EscrowEntry(
             receiver,
             payable(msg.sender),
             msg.value,
@@ -142,7 +142,7 @@ contract L2Contract {
             "The two tickets must have the same nonce."
         );
 
-        EscrowEntry memory entry = funds[msg.sender];
+        EscrowEntry memory entry = escrowEntries[msg.sender];
 
         require(
             entry.escrowHash == keccak256(abi.encode(escrowSecret)),
