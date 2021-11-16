@@ -23,14 +23,13 @@ struct EscrowEntry {
     // The amount of funds to send.
     uint256 value;
     // This is a timestamp of when the escrow can be claimed by the receiver
-    uint256 payoutDate;
+    uint256 escrowExpiry;
     // This is a timestamp of when the funds can reclaimed back to the original sender
     uint256 reclaimDate;
     // This is the hash of some secret preimage.
     bytes32 escrowHash;
 }
 
-// GK: I believe payoutDate > reclaimDate for safety.
 contract L2Contract {
     mapping(address => EscrowEntry) private escrowEntries;
 
@@ -56,8 +55,8 @@ contract L2Contract {
         EscrowEntry memory entry = escrowEntries[msg.sender];
 
         require(
-            entry.payoutDate >= block.timestamp,
-            "Funds are not payable yet."
+            entry.escrowExpiry <= block.timestamp,
+            "The escrow payout time limit has expired."
         );
         require(
             entry.escrowHash == keccak256(abi.encode(escrowSecret)),
@@ -73,16 +72,20 @@ contract L2Contract {
         // Alice will pull her funds out unless she gets funds from Bob on L1 before reclaimDate
         address payable receiver,
         bytes32 escrowHash,
-        uint256 payoutDate,
+        uint256 escrowExpiry,
         uint256 reclaimDate
     ) public payable {
         EscrowEntry memory entry = escrowEntries[receiver];
         require(entry.value == 0, "Funds already locked in escrow");
+        require(
+            escrowExpiry <= reclaimDate,
+            "Payout expiry must be before reclaim date"
+        );
         escrowEntries[receiver] = EscrowEntry(
             receiver,
             payable(msg.sender),
             msg.value,
-            payoutDate,
+            escrowExpiry,
             reclaimDate,
             escrowHash
         );
