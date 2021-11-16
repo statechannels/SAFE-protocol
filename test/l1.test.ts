@@ -25,7 +25,8 @@ const preimage = ethers.utils.hashMessage("Some secret preimage");
 const escrowHash = ethers.utils.keccak256(preimage);
 
 let l1Contract: Contract;
-
+const ticketBatchSize = 10;
+const amountOfTickets = 100;
 describe("L1 Contract", function () {
   beforeEach(async () => {
     const l1Deployer = await ethers.getContractFactory(
@@ -62,9 +63,9 @@ describe("L1 Contract", function () {
     await l1Contract.claimTicket(ticket, preimage, { r, s, v });
   });
 
-  it("can handle multiple tickets being claimed", async () => {
+  it(`can handle ${amountOfTickets} tickets being claimed sequentially`, async () => {
     await l1Contract.deposit({ value: 10000 });
-    const amountOfTickets = 100;
+
     const tickets: Ticket[] = [];
     const ticketSignatures = [];
     for (let i = 1; i <= amountOfTickets; i++) {
@@ -99,10 +100,8 @@ describe("L1 Contract", function () {
     }
   });
 
-  it("can handle a batch of tickets being claimed", async () => {
+  it(`can handle a claim of ${amountOfTickets} tickets in batch sizes of ${ticketBatchSize}`, async () => {
     await l1Contract.deposit({ value: 10000 });
-    const ticketBatchSize = 10;
-    const amountOfTickets = 100;
 
     const tickets: Ticket[] = [];
     const ticketSignatures = [];
