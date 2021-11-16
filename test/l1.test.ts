@@ -1,6 +1,5 @@
 import { ethers } from "hardhat";
 import { Contract } from "ethers";
-import { expect, use } from "chai";
 
 type Ticket = {
   value: number;
@@ -63,7 +62,7 @@ describe("L1 Contract", function () {
     await l1Contract.claimTicket(ticket, preimage, r, s, v);
   });
 
-  it("can handle multiple ticket being claimed", async () => {
+  it("can handle multiple tickets being claimed", async () => {
     await l1Contract.deposit({ value: 10000 });
     const amountOfTickets = 100;
     const tickets: Ticket[] = [];
