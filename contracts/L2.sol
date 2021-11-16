@@ -1,6 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.10;
 
+struct Signature {
+        bytes32 r;
+        bytes32 s;
+        uint8  v;
+    }
+
 struct WithdrawalTicket {
     uint256 value;
     uint256 nonce;
@@ -90,7 +96,7 @@ contract L2Contract {
 
     function commitToWithdrawal( // Called by Bob, with the ticket.receiver = Alice. He is commiting to an L1 withdrawal
         WithdrawalTicket calldata ticket,
-        bytes32 ticketSignature
+        Signature calldata ticketSignature
     ) public {
         require(
             ticket.nonce == currentNonce + 1,
@@ -111,9 +117,9 @@ contract L2Contract {
 
     function proveFraud(
         WithdrawalTicket calldata commitedTicket,
-        bytes32 firstSignature,
+        Signature calldata firstSignature,
         WithdrawalTicket calldata secondTicket,
-        bytes32 secondSignature,
+        Signature calldata secondSignature,
         bytes32 escrowSecret
     ) public {
         bytes32 commitedHash = keccak256(abi.encode(commitedTicket));
@@ -146,8 +152,10 @@ contract L2Contract {
         entry.receiver.transfer(entry.value);
     }
 
-    function recoverSigner(bytes32, bytes32) public pure returns (address) {
-        // TODO: Implement signature recovery
-        return address(0);
+    function recoverSigner(bytes32 hash, Signature memory signature) public pure returns (address) {
+                bytes32 prefixedHash = keccak256(
+            abi.encodePacked("\x19Ethereum Signed Message:\n32", hash)
+        );
+        return ecrecover(prefixedHash,signature.v,signature.r,signature.s);
     }
 }
