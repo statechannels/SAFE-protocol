@@ -65,4 +65,12 @@ contract L1Contract {
     function deposit() public payable {
         balances[msg.sender] += msg.value;
     }
+
+    // Q: How does someone recover their funds to themselves?
+    // A: they can just sign a ticket with themselves as sender and reciever
+    // Q: But this means they can pull their funds out at any time! They aren't truly locked
+    //    They can send to any other account they control, too. 
+    
+
+
 }

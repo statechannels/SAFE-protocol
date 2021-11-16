@@ -24,6 +24,7 @@ struct EscrowEntry {
     bytes32 escrowHash;
 }
 
+// GK: I believe payoutDate > reclaimDate for safety.
 contract L2Contract {
     mapping(address => EscrowEntry) private funds;
 
@@ -59,7 +60,10 @@ contract L2Contract {
         entry.receiver.transfer(entry.value);
     }
 
-    function lockFundsInEscrow(
+    function lockFundsInEscrow( 
+        // Called by Alice, with receiver = Bob. 
+        // It's a hash-time-lock, with a window of opportunity for Bob.
+        // Alice will pull her funds out unless she gets funds from Bob on L1 before reclaimDate
         address payable receiver,
         bytes32 escrowHash,
         uint256 payoutDate,
@@ -84,7 +88,7 @@ contract L2Contract {
     uint256 currentNonce = 0;
     mapping(address => bytes32) ticketCommitments;
 
-    function commitToWithdrawal(
+    function commitToWithdrawal( // Called by Bob, with the ticket.receiver = Alice. He is commiting to an L1 withdrawal
         WithdrawalTicket calldata ticket,
         bytes32 ticketSignature
     ) public {
