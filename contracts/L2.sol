@@ -77,10 +77,6 @@ contract L2Contract {
     ) public payable {
         EscrowEntry memory entry = funds[receiver];
         require(entry.value == 0, "Funds already locked in escrow");
-        require(
-            entry.sender == msg.sender,
-            "Cannot add an entry for a different address"
-        );
         funds[receiver] = EscrowEntry(
             receiver,
             payable(msg.sender),
