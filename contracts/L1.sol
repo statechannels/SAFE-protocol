@@ -68,8 +68,15 @@ contract L1Contract {
 
     // Q: How does someone recover their funds to themselves?
     // A: they can just sign a ticket with themselves as sender and reciever
-    // Q: But this means they can pull their funds out at any time! They aren't truly locked
-    //    They can send to any other account they control, too. 
+    // Q: But this means they can pull their funds out at any time! They aren't truly locked?
+    //    They can send to any other account they control, too?
+    //    HOWEVER: the nonce protects people. The only way to yank the funds is to reuse a nonce.
+    //    Alice will not unlock her payment to Bob on L2 unless she sees Bob commit to them on L2.
+    //    The commitment by Bob on L2 gives Alice protection. If her L1.claimTicket tx reverts with "Ticket nonce must be the next available nonce"
+    //    She must immediately go back to L2 with her ticket, and the fraudulent ticket (previously submitted to L1). She calls L2.proveFraud(ticket1,ticket2) which releases 
+    //    her l2 funds back to her.
+    //    The timeouts must protect her, too. It cannot be possible for Bob to get the L2 funds until she has had time to claim
+    //    her L1 funds, spot the failure, and come back to L2 to cancel the payment.
     
 
 
