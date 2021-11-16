@@ -13,6 +13,18 @@ contract L1Contract {
     uint256 currentNonce = 0;
     mapping(address => uint256) balances;
 
+    function claimTickets(
+        WithdrawalTicket[] calldata tickets,
+        bytes32[] calldata escrowPreimages,
+        bytes32[] calldata r,
+        bytes32[] calldata s,
+        uint8[] calldata v
+    ) public {
+        for (uint256 i = 0; i < tickets.length; i++) {
+            claimTicket(tickets[i], escrowPreimages[i], r[i], s[i], v[i]);
+        }
+    }
+
     function claimTicket(
         WithdrawalTicket calldata ticket,
         bytes32 escrowPreimage,

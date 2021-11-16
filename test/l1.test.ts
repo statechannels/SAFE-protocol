@@ -99,6 +99,58 @@ describe("L1 Contract", function () {
       await l1Contract.claimTicket(tickets[i], preimage, r, s, v);
     }
   });
+
+  it("can handle a batch of tickets being claimed", async () => {
+    await l1Contract.deposit({ value: 10000 });
+    const ticketBatchSize = 10;
+    const amountOfTickets = 100;
+
+    const tickets: Ticket[] = [];
+    const ticketSignatures = [];
+    for (let i = 1; i <= amountOfTickets; i++) {
+      const newTicket = {
+        nonce: i,
+        value: 5,
+        receiver: receiverWallet.address,
+        sender: senderWallet.address,
+        escrowHash: escrowHash,
+      };
+
+      const ticketHash = ethers.utils.keccak256(
+        ethers.utils.defaultAbiCoder.encode(abiType, [
+          [
+            newTicket.value,
+            newTicket.nonce,
+            newTicket.receiver,
+            newTicket.sender,
+            newTicket.escrowHash,
+          ],
+        ])
+      );
+      const signature = await signData(ticketHash, senderWallet.privateKey);
+
+      tickets.push(newTicket);
+      ticketSignatures.push(signature);
+    }
+    const preimages = new Array(amountOfTickets).fill(preimage);
+    const r = ticketSignatures.map((sig) => sig.r);
+    const v = ticketSignatures.map((sig) => sig.v);
+    const s = ticketSignatures.map((sig) => sig.s);
+
+    for (
+      let i = ticketBatchSize;
+      i <= tickets.length;
+      i = i + ticketBatchSize
+    ) {
+      await l1Contract.claimTickets(
+        tickets.slice(i - ticketBatchSize, i),
+        preimages.slice(i - ticketBatchSize, i),
+        r.slice(i - ticketBatchSize, i),
+        s.slice(i - ticketBatchSize, i),
+        v.slice(i - ticketBatchSize, i)
+      );
+    }
+  });
 });
 
 // TODO: This was stolen from our old nitro protocol repo
