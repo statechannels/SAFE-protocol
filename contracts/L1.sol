@@ -11,7 +11,7 @@ struct WithdrawalTicket {
 
 contract L1Contract {
     uint256 currentNonce = 0;
-    mapping(address => uint256) private balances;
+    mapping(address => uint256) balances;
 
     function claimTicket(
         WithdrawalTicket calldata ticket,
