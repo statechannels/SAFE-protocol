@@ -59,7 +59,7 @@ describe("L1 Contract", function () {
 
     const { r, s, v } = await signData(ticketHash, senderWallet.privateKey);
 
-    await l1Contract.claimTicket(ticket, preimage, r, s, v);
+    await l1Contract.claimTicket(ticket, preimage, { r, s, v });
   });
 
   it("can handle multiple tickets being claimed", async () => {
@@ -95,7 +95,7 @@ describe("L1 Contract", function () {
     for (let i = 0; i < tickets.length - 1; i++) {
       const { r, s, v } = ticketSignatures[i];
 
-      await l1Contract.claimTicket(tickets[i], preimage, r, s, v);
+      await l1Contract.claimTicket(tickets[i], preimage, { r, s, v });
     }
   });
 
@@ -132,9 +132,6 @@ describe("L1 Contract", function () {
       ticketSignatures.push(signature);
     }
     const preimages = new Array(amountOfTickets).fill(preimage);
-    const r = ticketSignatures.map((sig) => sig.r);
-    const v = ticketSignatures.map((sig) => sig.v);
-    const s = ticketSignatures.map((sig) => sig.s);
 
     for (
       let i = ticketBatchSize;
@@ -144,9 +141,7 @@ describe("L1 Contract", function () {
       await l1Contract.claimTickets(
         tickets.slice(i - ticketBatchSize, i),
         preimages.slice(i - ticketBatchSize, i),
-        r.slice(i - ticketBatchSize, i),
-        s.slice(i - ticketBatchSize, i),
-        v.slice(i - ticketBatchSize, i)
+        ticketSignatures.slice(i - ticketBatchSize, i)
       );
     }
   });
