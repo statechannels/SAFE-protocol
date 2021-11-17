@@ -3,24 +3,27 @@ pragma solidity ^0.8.10;
 
 import "./common.sol";
 
+/// This represents an amount of funds locked in escrow on behalf of the sender.
 struct EscrowEntry {
-    // Who will receive the funds if unlocked with the preimage.
+    /// Who will receive the funds if unlocked with the preimage
     address payable receiver;
-    // Who will send the funds if unlocked with the preimage..
+    /// Who will send the funds if unlocked with the preimage.
     address payable sender;
-    // The amount of funds to send.
+    /// The amount of funds to send.
     uint256 value;
-    // This is a timestamp of when the escrow can be claimed by the receiver
+    /// After this timestamp the escrow expires and the receiver cannot claim the funds.
     uint256 escrowExpiry;
-    // This is a timestamp of when the funds can reclaimed back to the original sender
+    /// After this timestamp funds can be reclaimed by the original sender..
     uint256 reclaimDate;
-    // This is the hash of some secret preimage.
+    /// This is the hash of some secret preimage chosen by the sender.
     bytes32 escrowHash;
 }
 
 contract L2Contract {
-    mapping(address => EscrowEntry) private escrowEntries;
+    /// A record of escrow funds indexed by sender.
+    mapping(address => EscrowEntry) escrowEntries;
 
+    /// If a ticket has passed the reclaimDate (block.timestamp>=reclaimDate) then the funds can be reclaimed by the sender using this function.
     function reclaimFunds(
         address payable receiver,
         bytes32[] calldata escrowSecret
@@ -39,6 +42,7 @@ contract L2Contract {
         entry.sender.transfer(entry.value);
     }
 
+    /// If a ticket has not expired yet (block.timestamp<=escrowExpiry) then the funds can be unlocked by the receiver using this function.
     function transferFunds(bytes32[] calldata escrowSecret) public {
         EscrowEntry memory entry = escrowEntries[msg.sender];
 
@@ -54,21 +58,26 @@ contract L2Contract {
         entry.receiver.transfer(entry.value);
     }
 
+    /// This function is called by the sender to lock funds in escrow.
+    /// The receiver can claim the escrow funds until the escrowExpiry. After that the funds can only be reclaimed by the sender.
+    /// The sender can only reclaim the funds after the reclaimDate. The reclaimDate must be after the escrowExpiry.
     function lockFundsInEscrow(
-        // Called by Alice, with receiver = Bob.
-        // It's a hash-time-lock, with a window of opportunity for Bob.
-        // Alice will pull her funds out unless she gets funds from Bob on L1 before reclaimDate
         address payable receiver,
         bytes32 escrowHash,
         uint256 escrowExpiry,
         uint256 reclaimDate
     ) public payable {
         EscrowEntry memory entry = escrowEntries[receiver];
+
+        // TODO: https://github.com/statechannels/fast-exit/issues/8
         require(entry.value == 0, "Funds already locked in escrow");
+
         require(
             escrowExpiry <= reclaimDate,
-            "Payout expiry must be before reclaim date"
+            "Escrow expiry must be before reclaim date"
         );
+
+        // TODO: https://github.com/statechannels/fast-exit/issues/4
         escrowEntries[receiver] = EscrowEntry(
             receiver,
             payable(msg.sender),
@@ -79,12 +88,17 @@ contract L2Contract {
         );
     }
 
+    /// A record of current nonce for each sender.
     mapping(address => uint256) nonces;
-    // ticket commitment hashes are indexed by sender then nonce.
+
+    /// A record of ticket commitment hashes  indexed by sender then nonce.
     mapping(address => mapping(uint256 => bytes32)) ticketCommitments;
 
+    /// This is used to commit to a ticket on L2.
+    /// It serves two purposes:
+    /// 1. It broadcasts the signed ticket out to the network.
+    /// 2. It keeps track of commitments made so fraud can be penalized.
     function commitToWithdrawal(
-        // Called by Bob, with the ticket.receiver = Alice. He is commiting to an L1 withdrawal
         WithdrawalTicket calldata ticket,
         Signature calldata ticketSignature
     ) public {
@@ -105,6 +119,8 @@ contract L2Contract {
         ticketCommitments[ticket.sender][ticket.nonce] = ticketHash;
     }
 
+    /// This is used by Alice to reclaim her funds if Bob is acting maliciously and signing multiple tickets with the same nonce.
+    /// Alice must provide the ticket Bob commited to on L2 and anothe ticket with the same nonce.
     function proveFraud(
         WithdrawalTicket calldata commitedTicket,
         Signature calldata firstSignature,
