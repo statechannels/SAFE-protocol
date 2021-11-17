@@ -80,7 +80,8 @@ contract L2Contract {
     }
 
     mapping(address => uint256) nonces;
-    mapping(address => bytes32) ticketCommitments;
+    // ticket commitment hashes are indexed by sender then nonce.
+    mapping(address => mapping(uint256 => bytes32)) ticketCommitments;
 
     function commitToWithdrawal(
         // Called by Bob, with the ticket.receiver = Alice. He is commiting to an L1 withdrawal
@@ -101,7 +102,7 @@ contract L2Contract {
         );
 
         nonces[ticket.sender]++;
-        ticketCommitments[ticket.sender] = ticketHash;
+        ticketCommitments[ticket.sender][ticket.nonce] = ticketHash;
     }
 
     function proveFraud(
@@ -124,7 +125,8 @@ contract L2Contract {
             "The two tickets must be signed by the same signer."
         );
         require(
-            ticketCommitments[commitedTicket.sender] == commitedHash,
+            ticketCommitments[commitedTicket.sender][commitedTicket.nonce] ==
+                commitedHash,
             "The ticket must be commited to"
         );
 
