@@ -66,6 +66,8 @@ contract L1Contract {
 
         nonces[ticket.sender]++;
         ticket.receiver.transfer(ticket.value);
+        // TODO: Underflow check?
+        balances[msg.sender] -= ticket.value;
     }
 
     function deposit() public payable {
