@@ -1,5 +1,5 @@
 import { ethers } from "hardhat";
-import { BigNumber, Contract, Wallet } from "ethers";
+import { BigNumber, Contract } from "ethers";
 
 import {
   ALICE_PK,
@@ -12,7 +12,7 @@ import { Ticket } from "../src/types";
 import { expect, use } from "chai";
 import { solidity } from "ethereum-waffle";
 import { getBalances } from "./utils";
-
+import { IERC20 } from "../src/contract-types/IERC20";
 const alice = new ethers.Wallet(ALICE_PK, ethers.provider);
 const bob = new ethers.Wallet(BOB_PK, ethers.provider);
 
@@ -26,7 +26,7 @@ const ticketValue = 10000;
 const depositValue = ticketValue * amountOfTickets * 100;
 
 let l1Contract: Contract;
-let tokenContract: Contract;
+let tokenContract: IERC20;
 use(solidity);
 
 describe(`L1 Contract using ${USE_ERC20 ? "ERC20 tokens" : "ETH"}`, () => {
@@ -36,8 +36,8 @@ describe(`L1 Contract using ${USE_ERC20 ? "ERC20 tokens" : "ETH"}`, () => {
     const tokenDeployer = await ethers.getContractFactory("TestToken", bob);
 
     l1Contract = await l1Deployer.deploy();
-    tokenContract = await tokenDeployer.deploy(100000000);
-    await tokenContract.approve(l1Contract.address, 100000000);
+    tokenContract = await tokenDeployer.deploy(1_000_000_000);
+    await tokenContract.approve(l1Contract.address, 1_000_000_000);
   });
 
   it("rejects an expired ticket", async () => {
@@ -62,7 +62,7 @@ describe(`L1 Contract using ${USE_ERC20 ? "ERC20 tokens" : "ETH"}`, () => {
   });
 
   it(`can handle ${amountOfTickets} tickets being claimed sequentially`, async () => {
-    const initialBalances = await getBalances(alice, bob);
+    const initialBalances = await getBalances(alice, bob, tokenContract);
 
     USE_ERC20
       ? await l1Contract.depositToken(tokenContract.address, depositValue)
@@ -93,7 +93,7 @@ describe(`L1 Contract using ${USE_ERC20 ? "ERC20 tokens" : "ETH"}`, () => {
 
       await l1Contract.claimTicket(tickets[i], preimage, { r, s, v });
     }
-    const finalBalances = await getBalances(alice, bob);
+    const finalBalances = await getBalances(alice, bob, tokenContract);
 
     const expectedTotalTransferred = BigNumber.from(
       amountOfTickets * ticketValue
@@ -102,14 +102,11 @@ describe(`L1 Contract using ${USE_ERC20 ? "ERC20 tokens" : "ETH"}`, () => {
       initialBalances.alice
     );
 
-    // TODO: Add check for token balances.
-    if (!USE_ERC20) {
-      expect(expectedTotalTransferred.eq(actualTotalTransferred)).to.be.true;
-    }
+    expect(expectedTotalTransferred.eq(actualTotalTransferred)).to.be.true;
   });
 
   it(`can handle a claim of ${amountOfTickets} tickets in batch sizes of ${ticketBatchSize}`, async () => {
-    const initialBalances = await getBalances(alice, bob);
+    const initialBalances = await getBalances(alice, bob, tokenContract);
 
     USE_ERC20
       ? await l1Contract.depositToken(tokenContract.address, depositValue)
@@ -148,7 +145,7 @@ describe(`L1 Contract using ${USE_ERC20 ? "ERC20 tokens" : "ETH"}`, () => {
       );
     }
 
-    const finalBalances = await getBalances(alice, bob);
+    const finalBalances = await getBalances(alice, bob, tokenContract);
 
     const expectedTotalTransferred = BigNumber.from(
       amountOfTickets * ticketValue
@@ -157,9 +154,6 @@ describe(`L1 Contract using ${USE_ERC20 ? "ERC20 tokens" : "ETH"}`, () => {
       initialBalances.alice
     );
 
-    // TODO: Add check for token balances.
-    if (!USE_ERC20) {
-      expect(expectedTotalTransferred.eq(actualTotalTransferred)).to.be.true;
-    }
+    expect(expectedTotalTransferred.eq(actualTotalTransferred)).to.be.true;
   });
 });

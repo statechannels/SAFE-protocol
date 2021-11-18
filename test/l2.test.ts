@@ -6,6 +6,7 @@ import { hashTicket, signData } from "../src/utils";
 import { EscrowEntry, Ticket } from "../src/types";
 import { L2Contract } from "../contract-types/L2Contract";
 import { L2Contract__factory } from "../contract-types/factories/L2Contract__factory";
+import { TestToken } from "../contract-types/TestToken";
 import { getBalances } from "./utils";
 
 const ONE_DAY = 60 * 60 * 24;
@@ -18,12 +19,21 @@ const escrowHash = ethers.utils.keccak256(
   ethers.utils.defaultAbiCoder.encode(["bytes32"], [preimage])
 );
 
+let tokenContract: TestToken;
 let l2Contract: L2Contract;
 
 describe("L2 Contract", function () {
   beforeEach(async () => {
     const l2Deployer = new L2Contract__factory(bobWallet);
     l2Contract = (await l2Deployer.deploy()).connect(aliceWallet); // Alice sends all further txs. She'll pay the gas in this example, and be msg.sender when it counts.
+
+    const tokenDeployer = await ethers.getContractFactory(
+      "TestToken",
+      bobWallet
+    );
+
+    tokenContract = await tokenDeployer.deploy(1_000_000_000);
+    await tokenContract.approve(l2Contract.address, 1_000_000_000);
   });
 
   it("allows funds to be refunded after claim expiry", async () => {
@@ -36,17 +46,29 @@ describe("L2 Contract", function () {
       claimStart: 0,
     };
     await l2Contract.lockFundsInEscrow(entry, { value: transferAmount });
-    const afterEscrow = await getBalances(aliceWallet, bobWallet);
+    const afterEscrow = await getBalances(
+      aliceWallet,
+      bobWallet,
+      tokenContract
+    );
     console.log(afterEscrow);
     await l2Contract.refund(entry);
-    const finalBalances = await getBalances(aliceWallet, bobWallet);
+    const finalBalances = await getBalances(
+      aliceWallet,
+      bobWallet,
+      tokenContract
+    );
 
     // TODO: Due to gas fees, it's hard to check that Alice got back transferAmount.
     expect(finalBalances.alice.gt(afterEscrow.alice)).to.be.true;
   });
 
   it("allows funds to be claimed after claim start", async () => {
-    const initialBalances = await getBalances(aliceWallet, bobWallet);
+    const initialBalances = await getBalances(
+      aliceWallet,
+      bobWallet,
+      tokenContract
+    );
     const currentBlock = await l2Contract.provider.getBlock(
       l2Contract.provider.getBlockNumber()
     );
@@ -62,7 +84,12 @@ describe("L2 Contract", function () {
     await l2Contract.lockFundsInEscrow(entry, { value: transferAmount });
 
     await l2Contract.claimFunds(preimage, entry);
-    const finalBalances = await getBalances(aliceWallet, bobWallet);
+
+    const finalBalances = await getBalances(
+      aliceWallet,
+      bobWallet,
+      tokenContract
+    );
     const actualTotalTransferred = finalBalances.bob.sub(initialBalances.bob);
 
     expect(actualTotalTransferred).to.eq(transferAmount);
@@ -118,13 +145,21 @@ describe("L2 Contract", function () {
       bobWallet.privateKey
     );
 
-    const initialBalance = await getBalances(aliceWallet, bobWallet);
+    const initialBalance = await getBalances(
+      aliceWallet,
+      bobWallet,
+      tokenContract
+    );
 
     await l2Contract
       .connect(aliceWallet)
       .lockFundsInEscrow(entry, { value: transferAmount });
 
-    const afterEscrowBalance = await getBalances(aliceWallet, bobWallet);
+    const afterEscrowBalance = await getBalances(
+      aliceWallet,
+      bobWallet,
+      tokenContract
+    );
 
     await l2Contract
       .connect(bobWallet)
@@ -141,7 +176,11 @@ describe("L2 Contract", function () {
         preimage
       );
 
-    const afterProveFraudBalance = await getBalances(aliceWallet, bobWallet);
+    const afterProveFraudBalance = await getBalances(
+      aliceWallet,
+      bobWallet,
+      tokenContract
+    );
 
     expect(
       initialBalance.alice.sub(afterEscrowBalance.alice).gt(transferAmount)
