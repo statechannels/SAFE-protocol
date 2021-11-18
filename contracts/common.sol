@@ -21,6 +21,8 @@ struct WithdrawalTicket {
     bytes32 escrowHash;
     /// The expiry date for this ticket. After this date the ticket can no longer be redeemed.
     uint256 expiry;
+    /// The address of an ERC20 contract, if 0 we assume the native currency
+    address token;
 }
 
 abstract contract EthSender {

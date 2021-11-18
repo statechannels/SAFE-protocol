@@ -1,7 +1,7 @@
 import { ethers } from "hardhat";
 const { expect } = require("chai");
 
-import { ALICE_PK, BOB_PK } from "../src/constants";
+import { ALICE_PK, BOB_PK, ETH_TOKEN_ADDRESS } from "../src/constants";
 import { hashTicket, signData } from "../src/utils";
 import { EscrowEntry, Ticket } from "../src/types";
 import { L2Contract } from "../contract-types/L2Contract";
@@ -92,6 +92,7 @@ describe("L2 Contract", function () {
       sender: bobWallet.address,
       escrowHash: escrowHash,
       expiry: ticketExpiry,
+      token: ETH_TOKEN_ADDRESS,
     };
     const fraudTicket: Ticket = {
       ...legitTicket,
@@ -158,6 +159,7 @@ describe("L2 Contract", function () {
       sender: bobWallet.address,
       escrowHash: escrowHash,
       expiry: 0,
+      token: ETH_TOKEN_ADDRESS,
     };
     const entry: EscrowEntry = {
       value: transferAmount,

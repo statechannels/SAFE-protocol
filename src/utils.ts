@@ -12,6 +12,7 @@ export function hashTicket(ticket: Ticket): string {
         ticket.sender,
         ticket.escrowHash,
         ticket.expiry,
+        ticket.token,
       ],
     ])
   );
