@@ -24,11 +24,13 @@ export type WithdrawalTicketStruct = {
   receiver: string;
   sender: string;
   escrowHash: BytesLike;
+  token: string;
 };
 
 export type WithdrawalTicketStructOutput = [
   BigNumber,
   BigNumber,
+  string,
   string,
   string,
   string
@@ -38,6 +40,7 @@ export type WithdrawalTicketStructOutput = [
   receiver: string;
   sender: string;
   escrowHash: string;
+  token: string;
 };
 
 export type SignatureStruct = { r: BytesLike; s: BytesLike; v: BigNumberish };
@@ -50,9 +53,10 @@ export type SignatureStructOutput = [string, string, number] & {
 
 export interface L1ContractInterface extends utils.Interface {
   functions: {
-    "claimTicket((uint256,uint256,address,address,bytes32),bytes32,(bytes32,bytes32,uint8))": FunctionFragment;
-    "claimTickets((uint256,uint256,address,address,bytes32)[],bytes32[],(bytes32,bytes32,uint8)[])": FunctionFragment;
-    "deposit()": FunctionFragment;
+    "claimTicket((uint256,uint256,address,address,bytes32,address),bytes32,(bytes32,bytes32,uint8))": FunctionFragment;
+    "claimTickets((uint256,uint256,address,address,bytes32,address)[],bytes32[],(bytes32,bytes32,uint8)[])": FunctionFragment;
+    "depositEth()": FunctionFragment;
+    "depositToken(address,uint256)": FunctionFragment;
   };
 
   encodeFunctionData(
@@ -63,7 +67,14 @@ export interface L1ContractInterface extends utils.Interface {
     functionFragment: "claimTickets",
     values: [WithdrawalTicketStruct[], BytesLike[], SignatureStruct[]]
   ): string;
-  encodeFunctionData(functionFragment: "deposit", values?: undefined): string;
+  encodeFunctionData(
+    functionFragment: "depositEth",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "depositToken",
+    values: [string, BigNumberish]
+  ): string;
 
   decodeFunctionResult(
     functionFragment: "claimTicket",
@@ -73,7 +84,11 @@ export interface L1ContractInterface extends utils.Interface {
     functionFragment: "claimTickets",
     data: BytesLike
   ): Result;
-  decodeFunctionResult(functionFragment: "deposit", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "depositEth", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "depositToken",
+    data: BytesLike
+  ): Result;
 
   events: {};
 }
@@ -119,8 +134,14 @@ export interface L1Contract extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
-    deposit(
+    depositEth(
       overrides?: PayableOverrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+
+    depositToken(
+      token: string,
+      amount: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
   };
 
@@ -138,8 +159,14 @@ export interface L1Contract extends BaseContract {
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
-  deposit(
+  depositEth(
     overrides?: PayableOverrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
+  depositToken(
+    token: string,
+    amount: BigNumberish,
+    overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
   callStatic: {
@@ -157,7 +184,13 @@ export interface L1Contract extends BaseContract {
       overrides?: CallOverrides
     ): Promise<void>;
 
-    deposit(overrides?: CallOverrides): Promise<void>;
+    depositEth(overrides?: CallOverrides): Promise<void>;
+
+    depositToken(
+      token: string,
+      amount: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<void>;
   };
 
   filters: {};
@@ -177,8 +210,14 @@ export interface L1Contract extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
-    deposit(
+    depositEth(
       overrides?: PayableOverrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+
+    depositToken(
+      token: string,
+      amount: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
   };
 
@@ -197,8 +236,14 @@ export interface L1Contract extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
-    deposit(
+    depositEth(
       overrides?: PayableOverrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
+    depositToken(
+      token: string,
+      amount: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
   };
 }
