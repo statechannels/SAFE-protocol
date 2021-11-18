@@ -10,6 +10,7 @@ import { hashTicket, signData } from "../src/utils";
 import { Ticket } from "../src/types";
 import { expect } from "chai";
 import { L1Contract } from "../src/contract-types/L1Contract";
+import { TestToken } from "../src/contract-types/TestToken";
 const receiverWallet = new ethers.Wallet(RECEIVER_PK, ethers.provider);
 const senderWallet = new ethers.Wallet(SENDER_PK, ethers.provider);
 
@@ -26,12 +27,18 @@ type Balances = { sender: BigNumber; receiver: BigNumber };
 async function getBalances(): Promise<Balances> {
   const receiverWallet = new Wallet(RECEIVER_PK, ethers.provider);
   const senderWallet = new Wallet(SENDER_PK, ethers.provider);
-  const receiver = await receiverWallet.getBalance();
-  const sender = await senderWallet.getBalance();
-  return { sender, receiver };
+  if (!USE_ERC20) {
+    const receiver = await receiverWallet.getBalance();
+    const sender = await senderWallet.getBalance();
+    return { sender, receiver };
+  } else {
+    const receiver = await tokenContract.balanceOf(receiverWallet.address);
+    const sender = await tokenContract.balanceOf(senderWallet.address);
+    return { sender, receiver };
+  }
 }
 let l1Contract: L1Contract;
-let tokenContract: Contract;
+let tokenContract: TestToken;
 
 describe(`L1 Contract using ${USE_ERC20 ? "ERC20 tokens" : "ETH"}`, () => {
   beforeEach(async () => {
@@ -46,8 +53,8 @@ describe(`L1 Contract using ${USE_ERC20 ? "ERC20 tokens" : "ETH"}`, () => {
     );
 
     l1Contract = await l1Deployer.deploy();
-    tokenContract = await tokenDeployer.deploy(100000000);
-    await tokenContract.approve(l1Contract.address, 100000000);
+    tokenContract = await tokenDeployer.deploy(1_000_000_000);
+    await tokenContract.approve(l1Contract.address, 1_000_000_000);
   });
 
   it(`can handle ${amountOfTickets} tickets being claimed sequentially`, async () => {
@@ -90,10 +97,7 @@ describe(`L1 Contract using ${USE_ERC20 ? "ERC20 tokens" : "ETH"}`, () => {
       initialBalances.receiver
     );
 
-    // TODO: Add check for token balances.
-    if (!USE_ERC20) {
-      expect(expectedTotalTransferred.eq(actualTotalTransferred)).to.be.true;
-    }
+    expect(expectedTotalTransferred.eq(actualTotalTransferred)).to.be.true;
   });
 
   it(`can handle a claim of ${amountOfTickets} tickets in batch sizes of ${ticketBatchSize}`, async () => {
@@ -144,9 +148,6 @@ describe(`L1 Contract using ${USE_ERC20 ? "ERC20 tokens" : "ETH"}`, () => {
       initialBalances.receiver
     );
 
-    // TODO: Add check for token balances.
-    if (!USE_ERC20) {
-      expect(expectedTotalTransferred.eq(actualTotalTransferred)).to.be.true;
-    }
+    expect(expectedTotalTransferred.eq(actualTotalTransferred)).to.be.true;
   });
 });
