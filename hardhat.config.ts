@@ -1,10 +1,14 @@
 import "@nomiclabs/hardhat-waffle";
 import "@nomiclabs/hardhat-ethers";
-
+import "@typechain/hardhat";
 import "hardhat-gas-reporter";
 import { HardhatUserConfig } from "hardhat/types";
 
 const config: HardhatUserConfig = {
+  typechain: {
+    outDir: "src/contract-types",
+    target: "ethers-v5",
+  },
   solidity: {
     version: "0.8.10",
     settings: {
