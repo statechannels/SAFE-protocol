@@ -2,16 +2,9 @@ import { ethers } from "hardhat";
 const { expect } = require("chai");
 
 import { Contract } from "ethers";
-import { RECEIVER_PK, SENDER_PK } from "../src/constants";
+import { ETH_TOKEN_ADDRESS, RECEIVER_PK, SENDER_PK } from "../src/constants";
 import { hashTicket, signData } from "../src/utils";
-
-type Ticket = {
-  value: number;
-  nonce: number;
-  receiver: string;
-  sender: string;
-  escrowHash: string;
-};
+import { Ticket } from "../src/types";
 
 const receiverWallet = new ethers.Wallet(RECEIVER_PK, ethers.provider); // Bob
 const senderWallet = new ethers.Wallet(SENDER_PK, ethers.provider); // Alice
@@ -39,6 +32,7 @@ describe("L2 Contract", function () {
       receiver: receiverWallet.address,
       sender: senderWallet.address,
       escrowHash: escrowHash,
+      token: ETH_TOKEN_ADDRESS,
     };
 
     const ticketHash = hashTicket(ticket);

@@ -1,10 +1,15 @@
 import { ethers } from "hardhat";
 import { BigNumber, Contract, Wallet } from "ethers";
-import { RECEIVER_PK, SENDER_PK } from "../src/constants";
+import {
+  ETH_TOKEN_ADDRESS,
+  RECEIVER_PK,
+  SENDER_PK,
+  USE_ERC20,
+} from "../src/constants";
 import { hashTicket, signData } from "../src/utils";
 import { Ticket } from "../src/types";
 import { expect } from "chai";
-
+import { L1Contract } from "../src/contract-types/L1Contract";
 const receiverWallet = new ethers.Wallet(RECEIVER_PK, ethers.provider);
 const senderWallet = new ethers.Wallet(SENDER_PK, ethers.provider);
 
@@ -25,20 +30,32 @@ async function getBalances(): Promise<Balances> {
   const sender = await senderWallet.getBalance();
   return { sender, receiver };
 }
+let l1Contract: L1Contract;
+let tokenContract: Contract;
 
-let l1Contract: Contract;
-describe("L1 Contract", function () {
+describe(`L1 Contract using ${USE_ERC20 ? "ERC20 tokens" : "ETH"}`, () => {
   beforeEach(async () => {
     const l1Deployer = await ethers.getContractFactory(
       "L1Contract",
       senderWallet
     );
     l1Contract = await l1Deployer.deploy();
+    const tokenDeployer = await ethers.getContractFactory(
+      "TestToken",
+      senderWallet
+    );
+
+    l1Contract = await l1Deployer.deploy();
+    tokenContract = await tokenDeployer.deploy(100000000);
+    await tokenContract.approve(l1Contract.address, 100000000);
   });
 
   it(`can handle ${amountOfTickets} tickets being claimed sequentially`, async () => {
     const initialBalances = await getBalances();
-    await l1Contract.deposit({ value: depositValue });
+
+    USE_ERC20
+      ? await l1Contract.depositToken(tokenContract.address, depositValue)
+      : await l1Contract.depositEth({ value: depositValue });
 
     const tickets: Ticket[] = [];
     const ticketSignatures = [];
@@ -49,6 +66,7 @@ describe("L1 Contract", function () {
         receiver: receiverWallet.address,
         sender: senderWallet.address,
         escrowHash: escrowHash,
+        token: USE_ERC20 ? tokenContract.address : ETH_TOKEN_ADDRESS,
       };
 
       const ticketHash = hashTicket(newTicket);
@@ -72,12 +90,18 @@ describe("L1 Contract", function () {
       initialBalances.receiver
     );
 
-    expect(expectedTotalTransferred.eq(actualTotalTransferred)).to.be.true;
+    // TODO: Add check for token balances.
+    if (!USE_ERC20) {
+      expect(expectedTotalTransferred.eq(actualTotalTransferred)).to.be.true;
+    }
   });
 
   it(`can handle a claim of ${amountOfTickets} tickets in batch sizes of ${ticketBatchSize}`, async () => {
     const initialBalances = await getBalances();
-    await l1Contract.deposit({ value: depositValue });
+
+    USE_ERC20
+      ? await l1Contract.depositToken(tokenContract.address, depositValue)
+      : await l1Contract.depositEth({ value: depositValue });
 
     const tickets: Ticket[] = [];
     const ticketSignatures = [];
@@ -88,6 +112,7 @@ describe("L1 Contract", function () {
         receiver: receiverWallet.address,
         sender: senderWallet.address,
         escrowHash: escrowHash,
+        token: USE_ERC20 ? tokenContract.address : ETH_TOKEN_ADDRESS,
       };
 
       const ticketHash = hashTicket(newTicket);
@@ -119,6 +144,9 @@ describe("L1 Contract", function () {
       initialBalances.receiver
     );
 
-    expect(expectedTotalTransferred.eq(actualTotalTransferred)).to.be.true;
+    // TODO: Add check for token balances.
+    if (!USE_ERC20) {
+      expect(expectedTotalTransferred.eq(actualTotalTransferred)).to.be.true;
+    }
   });
 });

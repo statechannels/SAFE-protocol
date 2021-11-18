@@ -19,4 +19,6 @@ struct WithdrawalTicket {
     address sender;
     /// The hash for the funds locked in escrow for this ticket.
     bytes32 escrowHash;
+    /// The address of an ERC20 contract, if 0 we assume the native currency
+    address token;
 }

@@ -4,4 +4,5 @@ export type Ticket = {
   receiver: string;
   sender: string;
   escrowHash: string;
+  token: string;
 };
