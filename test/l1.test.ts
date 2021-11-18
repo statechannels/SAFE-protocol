@@ -1,25 +1,10 @@
 import { ethers } from "hardhat";
 import { Contract } from "ethers";
-
-type Ticket = {
-  value: number;
-  nonce: number;
-  receiver: string;
-  sender: string;
-  escrowHash: string;
-};
-
-const abiType = [
-  "tuple(uint256 nonce,uint256 value,address receiver, address sender, bytes32 escrowHash)",
-];
-const receiverWallet = new ethers.Wallet(
-  "0x91f47a1911c0fd985b34c25962f661f0de606f7ad38ba156902dff48b4d05f97",
-  ethers.provider
-);
-const senderWallet = new ethers.Wallet(
-  "0xf3d5b8ba24833578a22960b2c7a8be1ebb7907ffe0b346111b8839e981b28b0c",
-  ethers.provider
-);
+import { RECEIVER_PK, SENDER_PK } from "../src/constants";
+import { hashTicket, signData } from "../src/utils";
+import { Ticket } from "../src/types";
+const receiverWallet = new ethers.Wallet(RECEIVER_PK, ethers.provider);
+const senderWallet = new ethers.Wallet(SENDER_PK, ethers.provider);
 
 const preimage = ethers.utils.hashMessage("Some secret preimage");
 const escrowHash = ethers.utils.keccak256(preimage);
@@ -46,17 +31,7 @@ describe("L1 Contract", function () {
       sender: senderWallet.address,
       escrowHash: escrowHash,
     };
-    const ticketHash = ethers.utils.keccak256(
-      ethers.utils.defaultAbiCoder.encode(abiType, [
-        [
-          ticket.value,
-          ticket.nonce,
-          ticket.receiver,
-          ticket.sender,
-          ticket.escrowHash,
-        ],
-      ])
-    );
+    const ticketHash = hashTicket(ticket);
 
     const { r, s, v } = await signData(ticketHash, senderWallet.privateKey);
 
@@ -77,17 +52,8 @@ describe("L1 Contract", function () {
         escrowHash: escrowHash,
       };
 
-      const ticketHash = ethers.utils.keccak256(
-        ethers.utils.defaultAbiCoder.encode(abiType, [
-          [
-            newTicket.value,
-            newTicket.nonce,
-            newTicket.receiver,
-            newTicket.sender,
-            newTicket.escrowHash,
-          ],
-        ])
-      );
+      const ticketHash = hashTicket(newTicket);
+
       const signature = await signData(ticketHash, senderWallet.privateKey);
 
       tickets.push(newTicket);
@@ -114,17 +80,7 @@ describe("L1 Contract", function () {
         escrowHash: escrowHash,
       };
 
-      const ticketHash = ethers.utils.keccak256(
-        ethers.utils.defaultAbiCoder.encode(abiType, [
-          [
-            newTicket.value,
-            newTicket.nonce,
-            newTicket.receiver,
-            newTicket.sender,
-            newTicket.escrowHash,
-          ],
-        ])
-      );
+      const ticketHash = hashTicket(newTicket);
       const signature = await signData(ticketHash, senderWallet.privateKey);
 
       tickets.push(newTicket);
@@ -145,13 +101,3 @@ describe("L1 Contract", function () {
     }
   });
 });
-
-// TODO: This was stolen from our old nitro protocol repo
-// Probably a cleaner way of signing it
-function signData(hashedData: string, privateKey: string): any {
-  const signingKey = new ethers.utils.SigningKey(privateKey);
-  const hashedMessage = ethers.utils.hashMessage(
-    ethers.utils.arrayify(hashedData)
-  );
-  return ethers.utils.splitSignature(signingKey.signDigest(hashedMessage));
-}
