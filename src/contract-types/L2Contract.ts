@@ -24,6 +24,7 @@ export type WithdrawalTicketStruct = {
   receiver: string;
   sender: string;
   escrowHash: BytesLike;
+  expiry: BigNumberish;
 };
 
 export type WithdrawalTicketStructOutput = [
@@ -31,13 +32,15 @@ export type WithdrawalTicketStructOutput = [
   BigNumber,
   string,
   string,
-  string
+  string,
+  BigNumber
 ] & {
   value: BigNumber;
   senderNonce: BigNumber;
   receiver: string;
   sender: string;
   escrowHash: string;
+  expiry: BigNumber;
 };
 
 export type SignatureStruct = { r: BytesLike; s: BytesLike; v: BigNumberish };
@@ -50,9 +53,9 @@ export type SignatureStructOutput = [string, string, number] & {
 
 export interface L2ContractInterface extends utils.Interface {
   functions: {
-    "commitToWithdrawal((uint256,uint256,address,address,bytes32),(bytes32,bytes32,uint8))": FunctionFragment;
-    "lockFundsInEscrow(address,bytes32,uint256,uint256)": FunctionFragment;
-    "proveFraud((uint256,uint256,address,address,bytes32),(bytes32,bytes32,uint8),(uint256,uint256,address,address,bytes32),(bytes32,bytes32,uint8),bytes32)": FunctionFragment;
+    "commitToWithdrawal((uint256,uint256,address,address,bytes32,uint256),(bytes32,bytes32,uint8))": FunctionFragment;
+    "lockFundsInEscrow(address,bytes32,uint256)": FunctionFragment;
+    "proveFraud((uint256,uint256,address,address,bytes32,uint256),(bytes32,bytes32,uint8),(uint256,uint256,address,address,bytes32,uint256),(bytes32,bytes32,uint8),bytes32)": FunctionFragment;
     "reclaimFunds(address,bytes32[])": FunctionFragment;
     "recoverSigner(bytes32,(bytes32,bytes32,uint8))": FunctionFragment;
     "transferFunds(bytes32[])": FunctionFragment;
@@ -64,7 +67,7 @@ export interface L2ContractInterface extends utils.Interface {
   ): string;
   encodeFunctionData(
     functionFragment: "lockFundsInEscrow",
-    values: [string, BytesLike, BigNumberish, BigNumberish]
+    values: [string, BytesLike, BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "proveFraud",
@@ -151,7 +154,6 @@ export interface L2Contract extends BaseContract {
       receiver: string,
       escrowHash: BytesLike,
       escrowExpiry: BigNumberish,
-      reclaimDate: BigNumberish,
       overrides?: PayableOverrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
@@ -192,7 +194,6 @@ export interface L2Contract extends BaseContract {
     receiver: string,
     escrowHash: BytesLike,
     escrowExpiry: BigNumberish,
-    reclaimDate: BigNumberish,
     overrides?: PayableOverrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
@@ -233,7 +234,6 @@ export interface L2Contract extends BaseContract {
       receiver: string,
       escrowHash: BytesLike,
       escrowExpiry: BigNumberish,
-      reclaimDate: BigNumberish,
       overrides?: CallOverrides
     ): Promise<void>;
 
@@ -277,7 +277,6 @@ export interface L2Contract extends BaseContract {
       receiver: string,
       escrowHash: BytesLike,
       escrowExpiry: BigNumberish,
-      reclaimDate: BigNumberish,
       overrides?: PayableOverrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
@@ -319,7 +318,6 @@ export interface L2Contract extends BaseContract {
       receiver: string,
       escrowHash: BytesLike,
       escrowExpiry: BigNumberish,
-      reclaimDate: BigNumberish,
       overrides?: PayableOverrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
