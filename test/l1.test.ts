@@ -40,7 +40,7 @@ describe("L1 Contract", function () {
 
     const tickets: Ticket[] = [];
     const ticketSignatures = [];
-    for (let i = 1; i <= amountOfTickets; i++) {
+    for (let i = 0; i < amountOfTickets; i++) {
       const newTicket = {
         nonce: i,
         value: ticketValue,
@@ -79,7 +79,7 @@ describe("L1 Contract", function () {
 
     const tickets: Ticket[] = [];
     const ticketSignatures = [];
-    for (let i = 1; i <= amountOfTickets; i++) {
+    for (let i = 0; i < amountOfTickets; i++) {
       const newTicket = {
         nonce: i,
         value: ticketValue,

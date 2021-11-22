@@ -45,7 +45,7 @@ contract L1Contract {
         );
 
         require(
-            ticket.nonce == nonces[ticket.sender] + 1,
+            ticket.nonce == nonces[ticket.sender],
             "Ticket nonce must be the next available nonce"
         );
 
