@@ -44,7 +44,7 @@ describe("L1 Contract", function () {
     await l1Contract.deposit({ value: 5 });
 
     const ticket: Ticket = {
-      nonce: 1,
+      senderNonce: 1,
       value: 5,
       receiver: receiverWallet.address,
       sender: senderWallet.address,
