@@ -102,6 +102,14 @@ contract L2Contract {
         WithdrawalTicket calldata ticket,
         Signature calldata ticketSignature
     ) public {
+        bytes32 ticketHash = keccak256(abi.encode(ticket));
+        address ticketSigner = recoverSigner(ticketHash, ticketSignature);
+
+        require(
+            ticket.sender == ticketSigner,
+            "The ticket must be signed by the sender."
+        );
+
         // sender is bumping nonce because of an unclaimed  L1 ticket
         if (ticket.delinquentValue! != 0) {
             nonces[ticket.sender]++;
@@ -112,13 +120,6 @@ contract L2Contract {
             "The ticket must use the next nonce."
         );
 
-        bytes32 ticketHash = keccak256(abi.encode(ticket));
-        address ticketSigner = recoverSigner(ticketHash, ticketSignature);
-
-        require(
-            ticket.sender == ticketSigner,
-            "The ticket must be signed by the sender."
-        );
 
         nonces[ticket.sender]++;
         ticketCommitments[ticket.sender][ticket.nonce] = ticketHash;
