@@ -4,10 +4,8 @@ pragma solidity ^0.8.10;
 import "./common.sol";
 
 contract L1Contract {
-    /// This is a record of the highest nonce per sender.
-    mapping(address => uint256) nonces;
-    /// This is a record of funds  allocated to different senders.
-    mapping(address => uint256) balances;
+    /// This is a set of accounting records for each liquidity provider
+    mapping(address => Provider) providers;
 
     /// Claims multiple tickets.
     function claimTickets(
@@ -54,14 +52,17 @@ contract L1Contract {
             "Ticket is not signed by sender"
         );
         require(
-            balances[ticket.sender] >= ticket.value,
+            ticket.nonce == providers[ticket.sender].nonce + 1,
+            "Ticket nonce must be the next available nonce"
+        );
+            providers[ticket.sender].balance >= ticket.value,
             "Sender does not have enough funds"
         );
 
-        nonces[ticket.sender]++;
+        providers[ticket.sender].nonce++;
         ticket.receiver.transfer(ticket.value);
         // TODO: Underflow check?
-        balances[msg.sender] -= ticket.value;
+        providers[ticket.sender].balance -= ticket.value;
     }
 
     function deposit() public payable {
