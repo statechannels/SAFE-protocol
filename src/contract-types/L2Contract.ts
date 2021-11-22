@@ -24,6 +24,7 @@ export type WithdrawalTicketStruct = {
   receiver: string;
   sender: string;
   escrowHash: BytesLike;
+  expiry: BigNumberish;
 };
 
 export type WithdrawalTicketStructOutput = [
@@ -31,13 +32,15 @@ export type WithdrawalTicketStructOutput = [
   BigNumber,
   string,
   string,
-  string
+  string,
+  BigNumber
 ] & {
   value: BigNumber;
   nonce: BigNumber;
   receiver: string;
   sender: string;
   escrowHash: string;
+  expiry: BigNumber;
 };
 
 export type SignatureStruct = { r: BytesLike; s: BytesLike; v: BigNumberish };
@@ -50,9 +53,9 @@ export type SignatureStructOutput = [string, string, number] & {
 
 export interface L2ContractInterface extends utils.Interface {
   functions: {
-    "commitToWithdrawal((uint256,uint256,address,address,bytes32),(bytes32,bytes32,uint8))": FunctionFragment;
+    "commitToWithdrawal((uint256,uint256,address,address,bytes32,uint256),(bytes32,bytes32,uint8))": FunctionFragment;
     "lockFundsInEscrow(address,bytes32,uint256,uint256)": FunctionFragment;
-    "proveFraud((uint256,uint256,address,address,bytes32),(bytes32,bytes32,uint8),(uint256,uint256,address,address,bytes32),(bytes32,bytes32,uint8),bytes32)": FunctionFragment;
+    "proveFraud((uint256,uint256,address,address,bytes32,uint256),(bytes32,bytes32,uint8),(uint256,uint256,address,address,bytes32,uint256),(bytes32,bytes32,uint8),bytes32)": FunctionFragment;
     "reclaimFunds(address,bytes32[])": FunctionFragment;
     "recoverSigner(bytes32,(bytes32,bytes32,uint8))": FunctionFragment;
     "transferFunds(bytes32[])": FunctionFragment;
