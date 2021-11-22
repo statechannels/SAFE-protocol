@@ -31,7 +31,7 @@ contract L2Contract {
         EscrowEntry memory entry = escrowEntries[receiver];
 
         require(
-            entry.reclaimDate >= block.timestamp,
+            block.timestamp >= entry.reclaimDate,
             "Funds are not reclaimable yet."
         );
         require(
@@ -47,7 +47,7 @@ contract L2Contract {
         EscrowEntry memory entry = escrowEntries[msg.sender];
 
         require(
-            entry.escrowExpiry <= block.timestamp,
+            block.timestamp <= entry.escrowExpiry,
             "The escrow payout time limit has expired."
         );
         require(
