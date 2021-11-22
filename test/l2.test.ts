@@ -41,7 +41,6 @@ describe("L2 Contract", function () {
       // Alice locks, and escrowHash is written to chain
       receiverWallet.address,
       escrowHash,
-      0,
       0
     );
 
