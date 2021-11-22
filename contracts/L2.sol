@@ -150,6 +150,11 @@ contract L2Contract {
             "Invalid preimage."
         );
 
+        require(
+            block.timestamp <= commitedTicket.expiry,
+            "The ticket has expired."
+        );
+
         entry.receiver.transfer(entry.value);
     }
 
