@@ -28,4 +28,7 @@ struct WithdrawalTicket {
     address sender;
     /// The hash for the funds locked in escrow for this ticket.
     bytes32 escrowHash;
+
+    /// The "missing" withdrawal balance from ticet {nonce-1}. Usally 0.
+    uint256 delinquentValue;
 }

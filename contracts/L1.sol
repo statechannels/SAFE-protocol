@@ -41,20 +41,30 @@ contract L1Contract {
             escrowHash == ticket.escrowHash,
             "The preimage must match the escrow hash on the ticket"
         );
-
-        require(
-            ticket.nonce == nonces[ticket.sender] + 1,
-            "Ticket nonce must be the next available nonce"
-        );
+        
+        // "register" the skipped nonce
+        if (ticket.delinquentValue > 0) {
+            // set aside outstanding balance for missing nonce
+            providers[ticket.sender].outstanding[
+                providers[ticket.sender].nonce
+            ] = ticket.delinquentValue;
+            // reduce the 'global' balance by the same
+            providers[ticket.sender].balance -= ticket.delinquentValue;
+            // skip this nonce
+            providers[ticket.sender].nonce++;
+        }
 
         require(
             ticketSigner == ticket.sender,
             "Ticket is not signed by sender"
         );
         require(
+            // todo: OR ticken.nonce is in providers[tiken.sender].outstanding
             ticket.nonce == providers[ticket.sender].nonce + 1,
             "Ticket nonce must be the next available nonce"
         );
+        require(
+            // todo: OR tocket.value === providers[ticket.sender][ticket.reciever]
             providers[ticket.sender].balance >= ticket.value,
             "Sender does not have enough funds"
         );
@@ -67,6 +77,6 @@ contract L1Contract {
 
     function deposit() public payable {
         // TODO: Overflow check?
-        balances[msg.sender] += msg.value;
+        providers[msg.sender].balance += msg.value;
     }
 }

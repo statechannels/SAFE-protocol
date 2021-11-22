@@ -102,6 +102,11 @@ contract L2Contract {
         WithdrawalTicket calldata ticket,
         Signature calldata ticketSignature
     ) public {
+        // sender is bumping nonce because of an unclaimed  L1 ticket
+        if (ticket.delinquentValue! != 0) {
+            nonces[ticket.sender]++;
+        }
+
         require(
             ticket.nonce == nonces[ticket.sender] + 1,
             "The ticket must use the next nonce."
