@@ -13,8 +13,6 @@ struct EscrowEntry {
     uint256 value;
     /// After this timestamp the escrow expires and the receiver cannot claim the funds.
     uint256 escrowExpiry;
-    /// After this timestamp funds can be reclaimed by the original sender..
-    uint256 reclaimDate;
     /// This is the hash of some secret preimage chosen by the sender.
     bytes32 escrowHash;
 }
@@ -23,7 +21,7 @@ contract L2Contract {
     /// A record of escrow funds indexed by sender.
     mapping(address => EscrowEntry) escrowEntries;
 
-    /// If a ticket has passed the reclaimDate (block.timestamp>=reclaimDate) then the funds can be reclaimed by the sender using this function.
+    /// If a ticket has passed the escrowExpiry, then the sender can reclaim the funds.
     function reclaimFunds(
         address payable receiver,
         bytes32[] calldata escrowSecret
@@ -31,7 +29,7 @@ contract L2Contract {
         EscrowEntry memory entry = escrowEntries[receiver];
 
         require(
-            block.timestamp >= entry.reclaimDate,
+            block.timestamp > entry.escrowExpiry,
             "Funds are not reclaimable yet."
         );
         require(
@@ -60,22 +58,15 @@ contract L2Contract {
 
     /// This function is called by the sender to lock funds in escrow.
     /// The receiver can claim the escrow funds until the escrowExpiry. After that the funds can only be reclaimed by the sender.
-    /// The sender can only reclaim the funds after the reclaimDate. The reclaimDate must be after the escrowExpiry.
     function lockFundsInEscrow(
         address payable receiver,
         bytes32 escrowHash,
-        uint256 escrowExpiry,
-        uint256 reclaimDate
+        uint256 escrowExpiry
     ) public payable {
         EscrowEntry memory entry = escrowEntries[receiver];
 
         // TODO: https://github.com/statechannels/fast-exit/issues/8
         require(entry.value == 0, "Funds already locked in escrow");
-
-        require(
-            escrowExpiry <= reclaimDate,
-            "Escrow expiry must be before reclaim date"
-        );
 
         // TODO: https://github.com/statechannels/fast-exit/issues/4
         escrowEntries[receiver] = EscrowEntry(
@@ -83,7 +74,6 @@ contract L2Contract {
             payable(msg.sender),
             msg.value,
             escrowExpiry,
-            reclaimDate,
             escrowHash
         );
     }
