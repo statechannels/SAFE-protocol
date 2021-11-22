@@ -19,8 +19,6 @@ const depositValue = ticketValue * amountOfTickets * 100;
 type Balances = { sender: BigNumber; receiver: BigNumber };
 
 async function getBalances(): Promise<Balances> {
-  const receiverWallet = new Wallet(RECEIVER_PK, ethers.provider);
-  const senderWallet = new Wallet(SENDER_PK, ethers.provider);
   const receiver = await receiverWallet.getBalance();
   const sender = await senderWallet.getBalance();
   return { sender, receiver };
