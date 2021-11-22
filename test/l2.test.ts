@@ -4,14 +4,7 @@ const { expect } = require("chai");
 import { Contract } from "ethers";
 import { RECEIVER_PK, SENDER_PK } from "../src/constants";
 import { hashTicket, signData } from "../src/utils";
-
-type Ticket = {
-  value: number;
-  senderNonce: number;
-  receiver: string;
-  sender: string;
-  escrowHash: string;
-};
+import { Ticket } from "../src/types";
 
 const receiverWallet = new ethers.Wallet(RECEIVER_PK, ethers.provider); // Bob
 const senderWallet = new ethers.Wallet(SENDER_PK, ethers.provider); // Alice
@@ -39,6 +32,7 @@ describe("L2 Contract", function () {
       receiver: receiverWallet.address,
       sender: senderWallet.address,
       escrowHash: escrowHash,
+      expiry: 0,
     };
 
     const ticketHash = hashTicket(ticket);

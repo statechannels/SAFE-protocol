@@ -11,6 +11,7 @@ const senderWallet = new ethers.Wallet(SENDER_PK, ethers.provider);
 const preimage = ethers.utils.hashMessage("Some secret preimage");
 const escrowHash = ethers.utils.keccak256(preimage);
 
+const ticketExpiry = 0;
 const ticketBatchSize = 10;
 const amountOfTickets = 100;
 const ticketValue = 10000;
@@ -47,6 +48,7 @@ describe("L1 Contract", function () {
         receiver: receiverWallet.address,
         sender: senderWallet.address,
         escrowHash: escrowHash,
+        expiry: ticketExpiry,
       };
 
       const ticketHash = hashTicket(newTicket);
@@ -86,6 +88,7 @@ describe("L1 Contract", function () {
         receiver: receiverWallet.address,
         sender: senderWallet.address,
         escrowHash: escrowHash,
+        expiry: ticketExpiry,
       };
 
       const ticketHash = hashTicket(newTicket);

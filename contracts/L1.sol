@@ -27,6 +27,7 @@ contract L1Contract {
         bytes32 escrowPreimage,
         Signature calldata signature
     ) public {
+        require(block.timestamp <= ticket.expiry, "The ticket is expired");
         bytes32 ticketHash = keccak256(abi.encode(ticket));
         bytes32 prefixedHash = keccak256(
             abi.encodePacked("\x19Ethereum Signed Message:\n32", ticketHash)
