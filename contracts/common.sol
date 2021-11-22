@@ -12,7 +12,7 @@ struct WithdrawalTicket {
     /// The amount of value to be transferred.
     uint256 value;
     /// Every ticket with a sender should have a unique nonce.
-    uint256 nonce;
+    uint256 senderNonce;
     /// The address that will receive the funds.
     address payable receiver;
     /// The address the funds are being sent on behalf of.

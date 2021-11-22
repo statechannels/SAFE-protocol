@@ -5,7 +5,7 @@ import "./common.sol";
 
 contract L1Contract {
     /// This is a record of the highest nonce per sender.
-    mapping(address => uint256) nonces;
+    mapping(address => uint256) senderNonces;
     /// This is a record of funds  allocated to different senders.
     mapping(address => uint256) balances;
 
@@ -45,7 +45,7 @@ contract L1Contract {
         );
 
         require(
-            ticket.nonce == nonces[ticket.sender] + 1,
+            ticket.senderNonce == senderNonces[ticket.sender],
             "Ticket nonce must be the next available nonce"
         );
 
@@ -58,7 +58,7 @@ contract L1Contract {
             "Sender does not have enough funds"
         );
 
-        nonces[ticket.sender]++;
+        senderNonces[ticket.sender]++;
         ticket.receiver.transfer(ticket.value);
         // TODO: Underflow check?
         balances[ticket.sender] -= ticket.value;

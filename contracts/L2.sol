@@ -88,9 +88,6 @@ contract L2Contract {
         );
     }
 
-    /// A record of current nonce for each sender.
-    mapping(address => uint256) nonces;
-
     /// A record of ticket commitment hashes  indexed by sender then nonce.
     mapping(address => mapping(uint256 => bytes32)) ticketCommitments;
 
@@ -102,11 +99,6 @@ contract L2Contract {
         WithdrawalTicket calldata ticket,
         Signature calldata ticketSignature
     ) public {
-        require(
-            ticket.nonce == nonces[ticket.sender] + 1,
-            "The ticket must use the next nonce."
-        );
-
         bytes32 ticketHash = keccak256(abi.encode(ticket));
         address ticketSigner = recoverSigner(ticketHash, ticketSignature);
 
@@ -115,8 +107,7 @@ contract L2Contract {
             "The ticket must be signed by the sender."
         );
 
-        nonces[ticket.sender]++;
-        ticketCommitments[ticket.sender][ticket.nonce] = ticketHash;
+        ticketCommitments[ticket.sender][ticket.senderNonce] = ticketHash;
     }
 
     /// This is used by Alice to reclaim her funds if Bob is acting maliciously and signing multiple tickets with the same nonce.
@@ -141,13 +132,14 @@ contract L2Contract {
             "The two tickets must be signed by the same signer."
         );
         require(
-            ticketCommitments[commitedTicket.sender][commitedTicket.nonce] ==
-                commitedHash,
+            ticketCommitments[commitedTicket.sender][
+                commitedTicket.senderNonce
+            ] == commitedHash,
             "The ticket must be commited to"
         );
 
         require(
-            commitedTicket.nonce == secondTicket.nonce,
+            commitedTicket.senderNonce == secondTicket.senderNonce,
             "The two tickets must have the same nonce."
         );
 

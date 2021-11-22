@@ -20,7 +20,7 @@ import { TypedEventFilter, TypedEvent, TypedListener, OnEvent } from "./common";
 
 export type WithdrawalTicketStruct = {
   value: BigNumberish;
-  nonce: BigNumberish;
+  senderNonce: BigNumberish;
   receiver: string;
   sender: string;
   escrowHash: BytesLike;
@@ -34,7 +34,7 @@ export type WithdrawalTicketStructOutput = [
   string
 ] & {
   value: BigNumber;
-  nonce: BigNumber;
+  senderNonce: BigNumber;
   receiver: string;
   sender: string;
   escrowHash: string;
