@@ -1,5 +1,5 @@
 import { Ticket } from "./types";
-import { ethers } from "hardhat";
+import { ethers } from "ethers";
 import { ABI_TYPE } from "./constants";
 
 export function hashTicket(ticket: Ticket): string {
