@@ -42,7 +42,7 @@ describe("L1 Contract", function () {
     const ticketSignatures = [];
     for (let i = 0; i < amountOfTickets; i++) {
       const newTicket = {
-        nonce: i,
+        senderNonce: i,
         value: ticketValue,
         receiver: receiverWallet.address,
         sender: senderWallet.address,
@@ -81,7 +81,7 @@ describe("L1 Contract", function () {
     const ticketSignatures = [];
     for (let i = 0; i < amountOfTickets; i++) {
       const newTicket = {
-        nonce: i,
+        senderNonce: i,
         value: ticketValue,
         receiver: receiverWallet.address,
         sender: senderWallet.address,

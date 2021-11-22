@@ -1,6 +1,6 @@
 export type Ticket = {
   value: number;
-  nonce: number;
+  senderNonce: number;
   receiver: string;
   sender: string;
   escrowHash: string;

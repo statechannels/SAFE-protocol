@@ -107,7 +107,7 @@ contract L2Contract {
             "The ticket must be signed by the sender."
         );
 
-        ticketCommitments[ticket.sender][ticket.nonce] = ticketHash;
+        ticketCommitments[ticket.sender][ticket.senderNonce] = ticketHash;
     }
 
     /// This is used by Alice to reclaim her funds if Bob is acting maliciously and signing multiple tickets with the same nonce.
@@ -132,13 +132,14 @@ contract L2Contract {
             "The two tickets must be signed by the same signer."
         );
         require(
-            ticketCommitments[commitedTicket.sender][commitedTicket.nonce] ==
-                commitedHash,
+            ticketCommitments[commitedTicket.sender][
+                commitedTicket.senderNonce
+            ] == commitedHash,
             "The ticket must be commited to"
         );
 
         require(
-            commitedTicket.nonce == secondTicket.nonce,
+            commitedTicket.senderNonce == secondTicket.senderNonce,
             "The two tickets must have the same nonce."
         );
 

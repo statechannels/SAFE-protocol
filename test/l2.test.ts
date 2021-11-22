@@ -7,7 +7,7 @@ import { hashTicket, signData } from "../src/utils";
 
 type Ticket = {
   value: number;
-  nonce: number;
+  senderNonce: number;
   receiver: string;
   sender: string;
   escrowHash: string;
@@ -34,7 +34,7 @@ describe("L2 Contract", function () {
 
   it("shouldn't allow proof of fraud with identical commitments", async () => {
     const ticket: Ticket = {
-      nonce: 1,
+      senderNonce: 1,
       value: 5,
       receiver: receiverWallet.address,
       sender: senderWallet.address,

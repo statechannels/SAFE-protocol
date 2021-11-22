@@ -7,7 +7,7 @@ export function hashTicket(ticket: Ticket): string {
     ethers.utils.defaultAbiCoder.encode(ABI_TYPE, [
       [
         ticket.value,
-        ticket.nonce,
+        ticket.senderNonce,
         ticket.receiver,
         ticket.sender,
         ticket.escrowHash,
