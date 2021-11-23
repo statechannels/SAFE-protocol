@@ -4,12 +4,13 @@ pragma solidity ^0.8.10;
 import "./common.sol";
 
 contract L1Contract is SignatureChecker {
-    /// This is a record of the highest nonce per sender.
+    /// This is a record of the current nonce per sender.
     mapping(address => uint256) senderNonces;
-    /// This is a record of funds  allocated to different senders.
+    /// This is a record of funds allocated to different senders.
     mapping(address => uint256) balances;
 
     /// Claims multiple tickets.
+    /// This is useful for batching multiple transfers into a single transaction.
     function claimTickets(
         WithdrawalTicket[] calldata tickets,
         bytes32[] calldata escrowPreimages,
@@ -27,12 +28,13 @@ contract L1Contract is SignatureChecker {
         bytes32 escrowPreimage,
         Signature calldata signature
     ) public {
-        require(block.timestamp <= ticket.expiry, "The ticket is expired");
-
         bytes32 ticketHash = keccak256(abi.encode(ticket));
-
         address ticketSigner = recoverSigner(ticketHash, signature);
         bytes32 escrowHash = keccak256(abi.encode(escrowPreimage));
+
+        // CHECKS
+        require(block.timestamp <= ticket.expiry, "The ticket is expired");
+
         require(
             escrowHash == ticket.escrowHash,
             "The preimage must match the escrow hash on the ticket"
@@ -52,14 +54,14 @@ contract L1Contract is SignatureChecker {
             "Sender does not have enough funds"
         );
 
+        // EFFECTS
         senderNonces[ticket.sender]++;
         ticket.receiver.transfer(ticket.value);
-        // TODO: Underflow check?
         balances[ticket.sender] -= ticket.value;
     }
 
     function deposit() public payable {
-        // TODO: Overflow check?
+        // EFFECTS
         balances[msg.sender] += msg.value;
     }
 }
