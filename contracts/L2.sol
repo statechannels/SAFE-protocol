@@ -20,7 +20,7 @@ struct EscrowEntry {
 }
 
 contract L2Contract {
-    /// A record of escrow funds indexed by sende then escrowHash.
+    /// A record of escrow funds indexed by sender then escrowHash.
     mapping(address => mapping(bytes32 => EscrowEntry)) escrowEntries;
 
     /// If a ticket has passed the claimExpiry, then the sender can reclaim the funds.
