@@ -110,8 +110,7 @@ contract L2Contract {
         Signature calldata firstSignature,
         WithdrawalTicket calldata secondTicket,
         Signature calldata secondSignature,
-        bytes32 escrowSecret,
-        bytes32 escrowHash
+        bytes32 escrowSecret
     ) public {
         bytes32 commitedHash = keccak256(abi.encode(commitedTicket));
         address commitedSigner = recoverSigner(commitedHash, firstSignature);
@@ -137,12 +136,10 @@ contract L2Contract {
             "The two tickets must have the same nonce."
         );
 
+        bytes32 escrowHash = keccak256(abi.encode(escrowSecret));
         EscrowEntry memory entry = escrowEntries[msg.sender][escrowHash];
 
-        require(
-            entry.escrowHash == keccak256(abi.encode(escrowSecret)),
-            "Invalid preimage."
-        );
+        require(entry.escrowHash == escrowHash, "Invalid preimage.");
 
         require(
             block.timestamp <= commitedTicket.expiry,

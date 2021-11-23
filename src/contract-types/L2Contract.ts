@@ -56,7 +56,7 @@ export interface L2ContractInterface extends utils.Interface {
     "claimFunds(bytes32[],bytes32)": FunctionFragment;
     "commitToWithdrawal((uint256,uint256,address,address,bytes32,uint256),(bytes32,bytes32,uint8))": FunctionFragment;
     "lockFundsInEscrow(address,bytes32,uint256,uint256)": FunctionFragment;
-    "proveFraud((uint256,uint256,address,address,bytes32,uint256),(bytes32,bytes32,uint8),(uint256,uint256,address,address,bytes32,uint256),(bytes32,bytes32,uint8),bytes32,bytes32)": FunctionFragment;
+    "proveFraud((uint256,uint256,address,address,bytes32,uint256),(bytes32,bytes32,uint8),(uint256,uint256,address,address,bytes32,uint256),(bytes32,bytes32,uint8),bytes32)": FunctionFragment;
     "recoverSigner(bytes32,(bytes32,bytes32,uint8))": FunctionFragment;
     "refund(address,bytes32)": FunctionFragment;
   };
@@ -80,7 +80,6 @@ export interface L2ContractInterface extends utils.Interface {
       SignatureStruct,
       WithdrawalTicketStruct,
       SignatureStruct,
-      BytesLike,
       BytesLike
     ]
   ): string;
@@ -165,7 +164,6 @@ export interface L2Contract extends BaseContract {
       secondTicket: WithdrawalTicketStruct,
       secondSignature: SignatureStruct,
       escrowSecret: BytesLike,
-      escrowHash: BytesLike,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
@@ -208,7 +206,6 @@ export interface L2Contract extends BaseContract {
     secondTicket: WithdrawalTicketStruct,
     secondSignature: SignatureStruct,
     escrowSecret: BytesLike,
-    escrowHash: BytesLike,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
@@ -251,7 +248,6 @@ export interface L2Contract extends BaseContract {
       secondTicket: WithdrawalTicketStruct,
       secondSignature: SignatureStruct,
       escrowSecret: BytesLike,
-      escrowHash: BytesLike,
       overrides?: CallOverrides
     ): Promise<void>;
 
@@ -297,7 +293,6 @@ export interface L2Contract extends BaseContract {
       secondTicket: WithdrawalTicketStruct,
       secondSignature: SignatureStruct,
       escrowSecret: BytesLike,
-      escrowHash: BytesLike,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
@@ -341,7 +336,6 @@ export interface L2Contract extends BaseContract {
       secondTicket: WithdrawalTicketStruct,
       secondSignature: SignatureStruct,
       escrowSecret: BytesLike,
-      escrowHash: BytesLike,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
