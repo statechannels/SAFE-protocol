@@ -73,13 +73,19 @@ contract L2Contract is SignatureChecker {
     /// This function is called by the sender to lock funds in escrow.
     /// The receiver can claim the escrow funds until the claimExpiry. After that the funds can only be reclaimed by the sender.
     function lockFundsInEscrow(EscrowEntry calldata entry) public payable {
+        bytes32 entryHash = keccak256(abi.encode(entry));
         bytes32 existing = escrowEntryHashes[entry.receiver][entry.escrowHash];
+
+        // CHECKS
         require(
             existing == 0,
             "There is already an escrow entry for escrowHash."
         );
+        // We could accept more than entry.value and refund the difference.
+        // For now we only accept the exact amount for simplicity.
+        require(msg.value == entry.value, "Incorrect amount of funds");
 
-        bytes32 entryHash = keccak256(abi.encode(entry));
+        // EFFECTS
         escrowEntryHashes[entry.receiver][entryHash] = entryHash;
     }
 
