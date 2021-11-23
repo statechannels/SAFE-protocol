@@ -1,9 +1,8 @@
 import { ethers } from "hardhat";
 const { expect } = require("chai");
 
-import { Contract } from "ethers";
 import { RECEIVER_PK, SENDER_PK } from "../src/constants";
-import { hashEscrowEntry, hashTicket, signData } from "../src/utils";
+import { hashTicket, signData } from "../src/utils";
 import { EscrowEntry, Ticket } from "../src/types";
 import { L2Contract } from "../src/contract-types/L2Contract";
 
@@ -45,7 +44,7 @@ describe("L2 Contract", function () {
     };
     const ticketHash = hashTicket(ticket);
 
-    await l2Contract.lockFundsInEscrow(entry);
+    await l2Contract.lockFundsInEscrow(entry, { value: 5 });
 
     const { r, s, v } = await signData(ticketHash, senderWallet.privateKey); // Bob signs
     const ticketSignature = { r, s, v };
