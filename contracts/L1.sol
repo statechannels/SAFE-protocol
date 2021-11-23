@@ -12,12 +12,25 @@ contract L1Contract {
     /// Claims multiple tickets.
     function claimTickets(
         WithdrawalTicket[] calldata tickets,
-        bytes32[] calldata escrowPreimages,
-        Signature[] calldata signatures
+        bytes32[] calldata escrowPreimages
     ) public {
+        // checks
         for (uint256 i = 0; i < tickets.length; i++) {
-            claimTicket(tickets[i], escrowPreimages[i], signatures[i]);
+            require(
+                senderNonces[msg.sender] + i == tickets[i].senderNonce, "Batched tickets must start with next available nonce"
+            );
+            require(msg.sender == tickets[i].sender, "Batched tickets must be redeemed by their sender");
         }
+
+        // effects
+        senderNonces[msg.sender] += tickets.length;
+        // senderNonces[sender] = tickets[tickets.length - 1] + 1; // is this better somehow?
+
+        // interactions
+        for (uint256 i = 0; i < tickets.length; i++) {
+            _claimVettedTicket(tickets[i], escrowPreimages[i]);
+        }
+    }
     }
 
     /// Claims a single ticket.
