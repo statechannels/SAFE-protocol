@@ -3,7 +3,7 @@ pragma solidity ^0.8.10;
 
 import "./common.sol";
 
-contract L1Contract {
+contract L1Contract is SignatureChecker {
     /// This is a record of the highest nonce per sender.
     mapping(address => uint256) senderNonces;
     /// This is a record of funds  allocated to different senders.
@@ -28,17 +28,10 @@ contract L1Contract {
         Signature calldata signature
     ) public {
         require(block.timestamp <= ticket.expiry, "The ticket is expired");
-        bytes32 ticketHash = keccak256(abi.encode(ticket));
-        bytes32 prefixedHash = keccak256(
-            abi.encodePacked("\x19Ethereum Signed Message:\n32", ticketHash)
-        );
-        address ticketSigner = ecrecover(
-            prefixedHash,
-            signature.v,
-            signature.r,
-            signature.s
-        );
 
+        bytes32 ticketHash = keccak256(abi.encode(ticket));
+
+        address ticketSigner = recoverSigner(ticketHash, signature);
         bytes32 escrowHash = keccak256(abi.encode(escrowPreimage));
         require(
             escrowHash == ticket.escrowHash,

@@ -56,6 +56,7 @@ export interface L1ContractInterface extends utils.Interface {
     "claimTicket((uint256,uint256,address,address,bytes32,uint256),bytes32,(bytes32,bytes32,uint8))": FunctionFragment;
     "claimTickets((uint256,uint256,address,address,bytes32,uint256)[],bytes32[],(bytes32,bytes32,uint8)[])": FunctionFragment;
     "deposit()": FunctionFragment;
+    "recoverSigner(bytes32,(bytes32,bytes32,uint8))": FunctionFragment;
   };
 
   encodeFunctionData(
@@ -67,6 +68,10 @@ export interface L1ContractInterface extends utils.Interface {
     values: [WithdrawalTicketStruct[], BytesLike[], SignatureStruct[]]
   ): string;
   encodeFunctionData(functionFragment: "deposit", values?: undefined): string;
+  encodeFunctionData(
+    functionFragment: "recoverSigner",
+    values: [BytesLike, SignatureStruct]
+  ): string;
 
   decodeFunctionResult(
     functionFragment: "claimTicket",
@@ -77,6 +82,10 @@ export interface L1ContractInterface extends utils.Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "deposit", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "recoverSigner",
+    data: BytesLike
+  ): Result;
 
   events: {};
 }
@@ -125,6 +134,12 @@ export interface L1Contract extends BaseContract {
     deposit(
       overrides?: PayableOverrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
+
+    recoverSigner(
+      hash: BytesLike,
+      signature: SignatureStruct,
+      overrides?: CallOverrides
+    ): Promise<[string]>;
   };
 
   claimTicket(
@@ -145,6 +160,12 @@ export interface L1Contract extends BaseContract {
     overrides?: PayableOverrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
+  recoverSigner(
+    hash: BytesLike,
+    signature: SignatureStruct,
+    overrides?: CallOverrides
+  ): Promise<string>;
+
   callStatic: {
     claimTicket(
       ticket: WithdrawalTicketStruct,
@@ -161,6 +182,12 @@ export interface L1Contract extends BaseContract {
     ): Promise<void>;
 
     deposit(overrides?: CallOverrides): Promise<void>;
+
+    recoverSigner(
+      hash: BytesLike,
+      signature: SignatureStruct,
+      overrides?: CallOverrides
+    ): Promise<string>;
   };
 
   filters: {};
@@ -183,6 +210,12 @@ export interface L1Contract extends BaseContract {
     deposit(
       overrides?: PayableOverrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
+
+    recoverSigner(
+      hash: BytesLike,
+      signature: SignatureStruct,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
   };
 
   populateTransaction: {
@@ -202,6 +235,12 @@ export interface L1Contract extends BaseContract {
 
     deposit(
       overrides?: PayableOverrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
+    recoverSigner(
+      hash: BytesLike,
+      signature: SignatureStruct,
+      overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
   };
 }

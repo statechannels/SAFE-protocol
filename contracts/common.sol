@@ -22,3 +22,16 @@ struct WithdrawalTicket {
     /// The expiry date for this ticket. After this date the ticket can no longer be redeemed.
     uint256 expiry;
 }
+
+abstract contract SignatureChecker {
+    function recoverSigner(bytes32 hash, Signature memory signature)
+        public
+        pure
+        returns (address)
+    {
+        bytes32 prefixedHash = keccak256(
+            abi.encodePacked("\x19Ethereum Signed Message:\n32", hash)
+        );
+        return ecrecover(prefixedHash, signature.v, signature.r, signature.s);
+    }
+}
