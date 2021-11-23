@@ -24,18 +24,12 @@ contract L2Contract {
     mapping(address => EscrowEntry) escrowEntries;
 
     /// If a ticket has passed the claimExpiry, then the sender can reclaim the funds.
-    function refund(address payable receiver, bytes32[] calldata escrowSecret)
-        public
-    {
+    function refund(address payable receiver) public {
         EscrowEntry memory entry = escrowEntries[receiver];
 
         require(
             block.timestamp > entry.claimExpiry,
             "Funds are not reclaimable yet."
-        );
-        require(
-            entry.escrowHash == keccak256(abi.encode(escrowSecret)),
-            "Invalid preimage."
         );
 
         entry.sender.transfer(entry.value);
