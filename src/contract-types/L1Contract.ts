@@ -54,7 +54,7 @@ export type SignatureStructOutput = [string, string, number] & {
 export interface L1ContractInterface extends utils.Interface {
   functions: {
     "claimTicket((uint256,uint256,address,address,bytes32,uint256),bytes32,(bytes32,bytes32,uint8))": FunctionFragment;
-    "claimTickets((uint256,uint256,address,address,bytes32,uint256)[],bytes32[],(bytes32,bytes32,uint8)[])": FunctionFragment;
+    "claimTickets((uint256,uint256,address,address,bytes32,uint256)[],bytes32[])": FunctionFragment;
     "deposit()": FunctionFragment;
   };
 
@@ -64,7 +64,7 @@ export interface L1ContractInterface extends utils.Interface {
   ): string;
   encodeFunctionData(
     functionFragment: "claimTickets",
-    values: [WithdrawalTicketStruct[], BytesLike[], SignatureStruct[]]
+    values: [WithdrawalTicketStruct[], BytesLike[]]
   ): string;
   encodeFunctionData(functionFragment: "deposit", values?: undefined): string;
 
@@ -118,7 +118,6 @@ export interface L1Contract extends BaseContract {
     claimTickets(
       tickets: WithdrawalTicketStruct[],
       escrowPreimages: BytesLike[],
-      signatures: SignatureStruct[],
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
@@ -137,7 +136,6 @@ export interface L1Contract extends BaseContract {
   claimTickets(
     tickets: WithdrawalTicketStruct[],
     escrowPreimages: BytesLike[],
-    signatures: SignatureStruct[],
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
@@ -156,7 +154,6 @@ export interface L1Contract extends BaseContract {
     claimTickets(
       tickets: WithdrawalTicketStruct[],
       escrowPreimages: BytesLike[],
-      signatures: SignatureStruct[],
       overrides?: CallOverrides
     ): Promise<void>;
 
@@ -176,7 +173,6 @@ export interface L1Contract extends BaseContract {
     claimTickets(
       tickets: WithdrawalTicketStruct[],
       escrowPreimages: BytesLike[],
-      signatures: SignatureStruct[],
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
@@ -196,7 +192,6 @@ export interface L1Contract extends BaseContract {
     claimTickets(
       tickets: WithdrawalTicketStruct[],
       escrowPreimages: BytesLike[],
-      signatures: SignatureStruct[],
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
