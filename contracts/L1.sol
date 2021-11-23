@@ -31,6 +31,27 @@ contract L1Contract {
             _claimVettedTicket(tickets[i], escrowPreimages[i]);
         }
     }
+
+    function _claimVettedTicket(
+        WithdrawalTicket calldata ticket,
+        bytes32 escrowPreimage
+    ) internal {
+        require(block.timestamp <= ticket.expiry, "The ticket is expired");
+        bytes32 escrowHash = keccak256(abi.encode(escrowPreimage));
+
+        require(
+            escrowHash == ticket.escrowHash,
+            "The preimage must match the escrow hash on the ticket"
+        );
+
+        require(
+            balances[ticket.sender] >= ticket.value,
+            "Sender does not have enough funds"
+        );
+
+        ticket.receiver.transfer(ticket.value);
+        // TODO: Underflow check?
+        balances[ticket.sender] -= ticket.value;
     }
 
     /// Claims a single ticket.
