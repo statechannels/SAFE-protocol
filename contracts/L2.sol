@@ -41,7 +41,7 @@ contract L2Contract {
         entry.sender.transfer(entry.value);
     }
 
-    /// If a ticket has not expired yet (block.timestamp<=claimExpiry) then the funds can be unlocked by the receiver using this function.
+    /// If the escrow is active ( claimStart <= block.timestamp < =claimExpiry), then the receiver can claim the funds.
     function claimFunds(bytes32[] calldata escrowSecret) public {
         EscrowEntry memory entry = escrowEntries[msg.sender];
 
@@ -52,7 +52,7 @@ contract L2Contract {
 
         require(
             block.timestamp >= entry.claimStart,
-            "The escrow claim period has not started"
+            "The escrow claim period has not started."
         );
         require(
             entry.escrowHash == keccak256(abi.encode(escrowSecret)),
