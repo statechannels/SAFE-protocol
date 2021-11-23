@@ -4,13 +4,13 @@ pragma solidity ^0.8.10;
 import "./common.sol";
 
 contract L1Contract is SignatureChecker {
-    /// This is a record of the current nonce per sender.
+    /// A record of the current nonce per sender.
     mapping(address => uint256) senderNonces;
-    /// This is a record of funds allocated to different senders.
+    /// A record of funds allocated to different senders.
     mapping(address => uint256) balances;
 
     /// Claims multiple tickets.
-    /// This is useful for batching multiple transfers into a single transaction.
+    /// Batches multiple transfers into a single transaction.
     function claimTickets(
         WithdrawalTicket[] calldata tickets,
         bytes32[] calldata escrowPreimages,
