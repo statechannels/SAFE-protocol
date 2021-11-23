@@ -19,7 +19,7 @@ struct EscrowEntry {
     bytes32 escrowHash;
 }
 
-contract L2Contract {
+contract L2Contract is SignatureChecker {
     /// A record of escrow funds indexed by sender then escrowHash.
     mapping(address => mapping(bytes32 => EscrowEntry)) escrowEntries;
 
@@ -147,16 +147,5 @@ contract L2Contract {
         );
 
         entry.receiver.transfer(entry.value);
-    }
-
-    function recoverSigner(bytes32 hash, Signature memory signature)
-        public
-        pure
-        returns (address)
-    {
-        bytes32 prefixedHash = keccak256(
-            abi.encodePacked("\x19Ethereum Signed Message:\n32", hash)
-        );
-        return ecrecover(prefixedHash, signature.v, signature.r, signature.s);
     }
 }
