@@ -1,5 +1,5 @@
 export const ABI_TYPE = [
-  "tuple(uint256 senderNonce,uint256 value,address receiver, address sender, bytes32 escrowHash)",
+  "tuple(uint256 senderNonce,uint256 value,address receiver, address sender, bytes32 escrowHash, uint256 expiry)",
 ];
 
 export const RECEIVER_PK =

@@ -24,6 +24,7 @@ export type WithdrawalTicketStruct = {
   receiver: string;
   sender: string;
   escrowHash: BytesLike;
+  expiry: BigNumberish;
 };
 
 export type WithdrawalTicketStructOutput = [
@@ -31,13 +32,15 @@ export type WithdrawalTicketStructOutput = [
   BigNumber,
   string,
   string,
-  string
+  string,
+  BigNumber
 ] & {
   value: BigNumber;
   senderNonce: BigNumber;
   receiver: string;
   sender: string;
   escrowHash: string;
+  expiry: BigNumber;
 };
 
 export type SignatureStruct = { r: BytesLike; s: BytesLike; v: BigNumberish };
@@ -50,8 +53,8 @@ export type SignatureStructOutput = [string, string, number] & {
 
 export interface L1ContractInterface extends utils.Interface {
   functions: {
-    "claimTicket((uint256,uint256,address,address,bytes32),bytes32,(bytes32,bytes32,uint8))": FunctionFragment;
-    "claimTickets((uint256,uint256,address,address,bytes32)[],bytes32[],(bytes32,bytes32,uint8)[])": FunctionFragment;
+    "claimTicket((uint256,uint256,address,address,bytes32,uint256),bytes32,(bytes32,bytes32,uint8))": FunctionFragment;
+    "claimTickets((uint256,uint256,address,address,bytes32,uint256)[],bytes32[],(bytes32,bytes32,uint8)[])": FunctionFragment;
     "deposit()": FunctionFragment;
   };
 

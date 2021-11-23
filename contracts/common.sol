@@ -19,4 +19,6 @@ struct WithdrawalTicket {
     address sender;
     /// The hash for the funds locked in escrow for this ticket.
     bytes32 escrowHash;
+    /// The expiry date for this ticket. After this date the ticket can no longer be redeemed.
+    uint256 expiry;
 }

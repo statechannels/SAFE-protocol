@@ -1,9 +1,11 @@
 import { ethers } from "hardhat";
 import { BigNumber, Contract, Wallet } from "ethers";
+
 import { RECEIVER_PK, SENDER_PK } from "../src/constants";
 import { hashTicket, signData } from "../src/utils";
 import { Ticket } from "../src/types";
-import { expect } from "chai";
+import { expect, use } from "chai";
+import { solidity } from "ethereum-waffle";
 
 const receiverWallet = new ethers.Wallet(RECEIVER_PK, ethers.provider);
 const senderWallet = new ethers.Wallet(SENDER_PK, ethers.provider);
@@ -11,6 +13,7 @@ const senderWallet = new ethers.Wallet(SENDER_PK, ethers.provider);
 const preimage = ethers.utils.hashMessage("Some secret preimage");
 const escrowHash = ethers.utils.keccak256(preimage);
 
+const ticketExpiry = 9_999_999_999;
 const ticketBatchSize = 10;
 const amountOfTickets = 100;
 const ticketValue = 10000;
@@ -25,6 +28,9 @@ async function getBalances(): Promise<Balances> {
 }
 
 let l1Contract: Contract;
+
+use(solidity);
+
 describe("L1 Contract", function () {
   beforeEach(async () => {
     const l1Deployer = await ethers.getContractFactory(
@@ -32,6 +38,26 @@ describe("L1 Contract", function () {
       senderWallet
     );
     l1Contract = await l1Deployer.deploy();
+  });
+
+  it("rejects an expired ticket", async () => {
+    await l1Contract.deposit({ value: 5 });
+
+    const ticket: Ticket = {
+      senderNonce: 1,
+      value: 5,
+      receiver: receiverWallet.address,
+      sender: senderWallet.address,
+      escrowHash: escrowHash,
+      expiry: 10,
+    };
+    const ticketHash = hashTicket(ticket);
+
+    const { r, s, v } = await signData(ticketHash, senderWallet.privateKey);
+
+    await expect(
+      l1Contract.claimTicket(ticket, preimage, { r, s, v })
+    ).to.be.revertedWith("The ticket is expired");
   });
 
   it(`can handle ${amountOfTickets} tickets being claimed sequentially`, async () => {
@@ -47,6 +73,7 @@ describe("L1 Contract", function () {
         receiver: receiverWallet.address,
         sender: senderWallet.address,
         escrowHash: escrowHash,
+        expiry: ticketExpiry,
       };
 
       const ticketHash = hashTicket(newTicket);
@@ -86,6 +113,7 @@ describe("L1 Contract", function () {
         receiver: receiverWallet.address,
         sender: senderWallet.address,
         escrowHash: escrowHash,
+        expiry: ticketExpiry,
       };
 
       const ticketHash = hashTicket(newTicket);

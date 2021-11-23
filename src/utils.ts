@@ -11,6 +11,7 @@ export function hashTicket(ticket: Ticket): string {
         ticket.receiver,
         ticket.sender,
         ticket.escrowHash,
+        ticket.expiry
       ],
     ])
   );
