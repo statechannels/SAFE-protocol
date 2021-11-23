@@ -1,5 +1,9 @@
-export const ABI_TYPE = [
+export const TICKET_ABI_TYPE = [
   "tuple(uint256 senderNonce,uint256 value,address receiver, address sender, bytes32 escrowHash, uint256 expiry)",
+];
+
+export const ESCROW_ABI_TYPE = [
+  "tuple(address receiver, address sender, uint256 value, uint256 claimStart, uint256 claimExpiry, bytes32 escrowHash)",
 ];
 
 export const RECEIVER_PK =

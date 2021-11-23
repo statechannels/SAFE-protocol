@@ -20,26 +20,36 @@ struct EscrowEntry {
 }
 
 contract L2Contract is SignatureChecker {
-    /// A record of escrow funds indexed by sender then escrowHash.
-    mapping(address => mapping(bytes32 => EscrowEntry)) escrowEntries;
+    /// A record of escrow funds indexed by sender then by escrowHash (the hash of the preimage).
+    mapping(address => mapping(bytes32 => bytes32)) escrowEntryHashes;
 
     /// If a ticket has passed the claimExpiry, then the sender can reclaim the funds.
-    function refund(address payable receiver, bytes32 escrowHash) public {
-        EscrowEntry memory entry = escrowEntries[receiver][escrowHash];
-
+    function refund(EscrowEntry calldata entry) public {
+        bytes32 entryHash = keccak256(abi.encode(entry));
+        require(
+            escrowEntryHashes[entry.sender][entry.escrowHash] == entryHash,
+            "Invalid escrow entry hash"
+        );
         require(
             block.timestamp > entry.claimExpiry,
             "Funds are not reclaimable yet."
         );
 
         entry.sender.transfer(entry.value);
+        // Clear the escrow entry now that the funds are refunded.
+        escrowEntryHashes[entry.receiver][entryHash] = 0;
     }
 
     /// If a ticket has not expired yet (block.timestamp<=claimExpiry) then the funds can be unlocked by the receiver using this function.
-    function claimFunds(bytes32[] calldata escrowSecret, bytes32 escrowHash)
-        public
-    {
-        EscrowEntry memory entry = escrowEntries[msg.sender][escrowHash];
+    function claimFunds(
+        bytes32[] calldata escrowSecret,
+        EscrowEntry calldata entry
+    ) public {
+        bytes32 entryHash = keccak256(abi.encode(entry));
+        require(
+            escrowEntryHashes[entry.sender][entryHash] == entryHash,
+            "There are no funds to claim"
+        );
 
         require(
             block.timestamp <= entry.claimExpiry,
@@ -56,29 +66,21 @@ contract L2Contract is SignatureChecker {
         );
 
         entry.receiver.transfer(entry.value);
+        // Clear the escrow entry now that the funds have been claimed.
+        escrowEntryHashes[entry.receiver][entryHash] = 0;
     }
 
     /// This function is called by the sender to lock funds in escrow.
     /// The receiver can claim the escrow funds until the claimExpiry. After that the funds can only be reclaimed by the sender.
-    function lockFundsInEscrow(
-        address payable receiver,
-        bytes32 escrowHash,
-        uint256 claimStart,
-        uint256 claimExpiry
-    ) public payable {
-        EscrowEntry memory entry = escrowEntries[receiver][escrowHash];
-
-        require(entry.value == 0, "Funds already locked in escrow");
-
-        // TODO: https://github.com/statechannels/fast-exit/issues/4
-        escrowEntries[receiver][escrowHash] = EscrowEntry(
-            receiver,
-            payable(msg.sender),
-            msg.value,
-            claimStart,
-            claimExpiry,
-            escrowHash
+    function lockFundsInEscrow(EscrowEntry calldata entry) public payable {
+        bytes32 existing = escrowEntryHashes[entry.receiver][entry.escrowHash];
+        require(
+            existing == 0,
+            "There is already an escrow entry for escrowHash."
         );
+
+        bytes32 entryHash = keccak256(abi.encode(entry));
+        escrowEntryHashes[entry.receiver][entryHash] = entryHash;
     }
 
     /// A record of ticket commitment hashes  indexed by sender then nonce.
@@ -110,6 +112,7 @@ contract L2Contract is SignatureChecker {
         Signature calldata firstSignature,
         WithdrawalTicket calldata secondTicket,
         Signature calldata secondSignature,
+        EscrowEntry calldata entry,
         bytes32 escrowSecret
     ) public {
         bytes32 commitedHash = keccak256(abi.encode(commitedTicket));
@@ -137,9 +140,11 @@ contract L2Contract is SignatureChecker {
         );
 
         bytes32 escrowHash = keccak256(abi.encode(escrowSecret));
-        EscrowEntry memory entry = escrowEntries[msg.sender][escrowHash];
-
-        require(entry.escrowHash == escrowHash, "Invalid preimage.");
+        bytes32 entryHash = keccak256(abi.encode(entry));
+        require(
+            entryHash == escrowEntryHashes[commitedTicket.sender][escrowHash],
+            "The escrow entry does not match the entry hash"
+        );
 
         require(
             block.timestamp <= commitedTicket.expiry,

@@ -3,8 +3,9 @@ const { expect } = require("chai");
 
 import { Contract } from "ethers";
 import { RECEIVER_PK, SENDER_PK } from "../src/constants";
-import { hashTicket, signData } from "../src/utils";
-import { Ticket } from "../src/types";
+import { hashEscrowEntry, hashTicket, signData } from "../src/utils";
+import { EscrowEntry, Ticket } from "../src/types";
+import { L2Contract } from "../src/contract-types/L2Contract";
 
 const receiverWallet = new ethers.Wallet(RECEIVER_PK, ethers.provider); // Bob
 const senderWallet = new ethers.Wallet(SENDER_PK, ethers.provider); // Alice
@@ -14,7 +15,7 @@ const escrowHash = ethers.utils.keccak256(
   ethers.utils.defaultAbiCoder.encode(["bytes32"], [preimage])
 );
 
-let l2Contract: Contract;
+let l2Contract: L2Contract;
 
 describe("L2 Contract", function () {
   beforeEach(async () => {
@@ -34,16 +35,17 @@ describe("L2 Contract", function () {
       escrowHash: escrowHash,
       expiry: 0,
     };
-
+    const entry: EscrowEntry = {
+      value: 5,
+      receiver: senderWallet.address,
+      sender: receiverWallet.address,
+      escrowHash: escrowHash,
+      claimExpiry: 0,
+      claimStart: 0,
+    };
     const ticketHash = hashTicket(ticket);
 
-    await l2Contract.lockFundsInEscrow(
-      // Alice locks, and escrowHash is written to chain
-      receiverWallet.address,
-      escrowHash,
-      0,
-      0
-    );
+    await l2Contract.lockFundsInEscrow(entry);
 
     const { r, s, v } = await signData(ticketHash, senderWallet.privateKey); // Bob signs
     const ticketSignature = { r, s, v };
@@ -63,6 +65,7 @@ describe("L2 Contract", function () {
         firstSignature,
         secondTicket,
         secondSignature,
+        entry,
         escrowSecret
       )
     ).to.be.revertedWith("Tickets must be distinct");
