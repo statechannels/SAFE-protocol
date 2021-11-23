@@ -26,6 +26,8 @@ contract L2Contract is SignatureChecker {
     /// If a ticket has passed the claimExpiry, then the sender can reclaim the funds.
     function refund(EscrowEntry calldata entry) public {
         bytes32 entryHash = keccak256(abi.encode(entry));
+
+        // CHECKS
         require(
             escrowEntryHashes[entry.sender][entry.escrowHash] == entryHash,
             "Invalid escrow entry hash"
@@ -35,6 +37,7 @@ contract L2Contract is SignatureChecker {
             "Funds are not reclaimable yet."
         );
 
+        // EFFECTS
         entry.sender.transfer(entry.value);
         // Clear the escrow entry now that the funds are refunded.
         escrowEntryHashes[entry.receiver][entryHash] = 0;
@@ -46,6 +49,8 @@ contract L2Contract is SignatureChecker {
         EscrowEntry calldata entry
     ) public {
         bytes32 entryHash = keccak256(abi.encode(entry));
+
+        // CHECKS
         require(
             escrowEntryHashes[entry.sender][entryHash] == entryHash,
             "There are no funds to claim"
@@ -65,6 +70,7 @@ contract L2Contract is SignatureChecker {
             "Invalid preimage."
         );
 
+        // EFFECTS
         entry.receiver.transfer(entry.value);
         // Clear the escrow entry now that the funds have been claimed.
         escrowEntryHashes[entry.receiver][entryHash] = 0;
@@ -102,12 +108,12 @@ contract L2Contract is SignatureChecker {
     ) public {
         bytes32 ticketHash = keccak256(abi.encode(ticket));
         address ticketSigner = recoverSigner(ticketHash, ticketSignature);
-
+        // CHECKS
         require(
             ticket.sender == ticketSigner,
             "The ticket must be signed by the sender."
         );
-
+        // EFFECTS
         ticketCommitments[ticket.sender][ticket.senderNonce] = ticketHash;
     }
 
@@ -127,6 +133,10 @@ contract L2Contract is SignatureChecker {
         bytes32 secondHash = keccak256(abi.encode(secondTicket));
         address secondSigner = recoverSigner(secondHash, secondSignature);
 
+        bytes32 escrowHash = keccak256(abi.encode(escrowSecret));
+        bytes32 entryHash = keccak256(abi.encode(entry));
+
+        // CHECKS
         require(commitedHash != secondHash, "Tickets must be distinct");
 
         require(
@@ -145,8 +155,6 @@ contract L2Contract is SignatureChecker {
             "The two tickets must have the same nonce."
         );
 
-        bytes32 escrowHash = keccak256(abi.encode(escrowSecret));
-        bytes32 entryHash = keccak256(abi.encode(entry));
         require(
             entryHash == escrowEntryHashes[commitedTicket.sender][escrowHash],
             "The escrow entry does not match the entry hash"
@@ -157,6 +165,7 @@ contract L2Contract is SignatureChecker {
             "The ticket has expired."
         );
 
+        // EFFECTS
         entry.receiver.transfer(entry.value);
     }
 }
