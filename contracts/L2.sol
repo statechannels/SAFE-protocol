@@ -11,8 +11,10 @@ struct EscrowEntry {
     address payable sender;
     /// The amount of funds to send.
     uint256 value;
-    /// After this timestamp the escrow expires and the receiver cannot claim the funds.
-    uint256 escrowExpiry;
+    /// After this timestamp a receiver may claim the funds using the preimage.
+    uint256 claimStart;
+    /// After this timestamp the receiver may no longer claim the funds, the sender can refund them.
+    uint256 claimExpiry;
     /// This is the hash of some secret preimage chosen by the sender.
     bytes32 escrowHash;
 }
@@ -21,15 +23,14 @@ contract L2Contract {
     /// A record of escrow funds indexed by sender.
     mapping(address => EscrowEntry) escrowEntries;
 
-    /// If a ticket has passed the escrowExpiry, then the sender can reclaim the funds.
-    function reclaimFunds(
-        address payable receiver,
-        bytes32[] calldata escrowSecret
-    ) public {
+    /// If a ticket has passed the claimExpiry, then the sender can reclaim the funds.
+    function refund(address payable receiver, bytes32[] calldata escrowSecret)
+        public
+    {
         EscrowEntry memory entry = escrowEntries[receiver];
 
         require(
-            block.timestamp > entry.escrowExpiry,
+            block.timestamp > entry.claimExpiry,
             "Funds are not reclaimable yet."
         );
         require(
@@ -40,13 +41,18 @@ contract L2Contract {
         entry.sender.transfer(entry.value);
     }
 
-    /// If a ticket has not expired yet (block.timestamp<=escrowExpiry) then the funds can be unlocked by the receiver using this function.
-    function transferFunds(bytes32[] calldata escrowSecret) public {
+    /// If a ticket has not expired yet (block.timestamp<=claimExpiry) then the funds can be unlocked by the receiver using this function.
+    function claimFunds(bytes32[] calldata escrowSecret) public {
         EscrowEntry memory entry = escrowEntries[msg.sender];
 
         require(
-            block.timestamp <= entry.escrowExpiry,
-            "The escrow payout time limit has expired."
+            block.timestamp <= entry.claimExpiry,
+            "The escrow claim period has expired."
+        );
+
+        require(
+            block.timestamp >= entry.claimStart,
+            "The escrow claim period has not started"
         );
         require(
             entry.escrowHash == keccak256(abi.encode(escrowSecret)),
@@ -57,11 +63,12 @@ contract L2Contract {
     }
 
     /// This function is called by the sender to lock funds in escrow.
-    /// The receiver can claim the escrow funds until the escrowExpiry. After that the funds can only be reclaimed by the sender.
+    /// The receiver can claim the escrow funds until the claimExpiry. After that the funds can only be reclaimed by the sender.
     function lockFundsInEscrow(
         address payable receiver,
         bytes32 escrowHash,
-        uint256 escrowExpiry
+        uint256 claimStart,
+        uint256 claimExpiry
     ) public payable {
         EscrowEntry memory entry = escrowEntries[receiver];
 
@@ -73,7 +80,8 @@ contract L2Contract {
             receiver,
             payable(msg.sender),
             msg.value,
-            escrowExpiry,
+            claimStart,
+            claimExpiry,
             escrowHash
         );
     }
