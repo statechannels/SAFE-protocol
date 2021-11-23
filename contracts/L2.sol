@@ -20,12 +20,12 @@ struct EscrowEntry {
 }
 
 contract L2Contract {
-    /// A record of escrow funds indexed by sender.
-    mapping(address => EscrowEntry) escrowEntries;
+    /// A record of escrow funds indexed by sende then escrowHash.
+    mapping(address => mapping(bytes32 => EscrowEntry)) escrowEntries;
 
     /// If a ticket has passed the claimExpiry, then the sender can reclaim the funds.
-    function refund(address payable receiver) public {
-        EscrowEntry memory entry = escrowEntries[receiver];
+    function refund(address payable receiver, bytes32 escrowHash) public {
+        EscrowEntry memory entry = escrowEntries[receiver][escrowHash];
 
         require(
             block.timestamp > entry.claimExpiry,
@@ -36,8 +36,10 @@ contract L2Contract {
     }
 
     /// If a ticket has not expired yet (block.timestamp<=claimExpiry) then the funds can be unlocked by the receiver using this function.
-    function claimFunds(bytes32[] calldata escrowSecret) public {
-        EscrowEntry memory entry = escrowEntries[msg.sender];
+    function claimFunds(bytes32[] calldata escrowSecret, bytes32 escrowHash)
+        public
+    {
+        EscrowEntry memory entry = escrowEntries[msg.sender][escrowHash];
 
         require(
             block.timestamp <= entry.claimExpiry,
@@ -64,13 +66,12 @@ contract L2Contract {
         uint256 claimStart,
         uint256 claimExpiry
     ) public payable {
-        EscrowEntry memory entry = escrowEntries[receiver];
+        EscrowEntry memory entry = escrowEntries[receiver][escrowHash];
 
-        // TODO: https://github.com/statechannels/fast-exit/issues/8
         require(entry.value == 0, "Funds already locked in escrow");
 
         // TODO: https://github.com/statechannels/fast-exit/issues/4
-        escrowEntries[receiver] = EscrowEntry(
+        escrowEntries[receiver][escrowHash] = EscrowEntry(
             receiver,
             payable(msg.sender),
             msg.value,
@@ -109,7 +110,8 @@ contract L2Contract {
         Signature calldata firstSignature,
         WithdrawalTicket calldata secondTicket,
         Signature calldata secondSignature,
-        bytes32 escrowSecret
+        bytes32 escrowSecret,
+        bytes32 escrowHash
     ) public {
         bytes32 commitedHash = keccak256(abi.encode(commitedTicket));
         address commitedSigner = recoverSigner(commitedHash, firstSignature);
@@ -135,7 +137,7 @@ contract L2Contract {
             "The two tickets must have the same nonce."
         );
 
-        EscrowEntry memory entry = escrowEntries[msg.sender];
+        EscrowEntry memory entry = escrowEntries[msg.sender][escrowHash];
 
         require(
             entry.escrowHash == keccak256(abi.encode(escrowSecret)),

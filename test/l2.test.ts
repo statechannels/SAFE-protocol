@@ -63,7 +63,8 @@ describe("L2 Contract", function () {
         firstSignature,
         secondTicket,
         secondSignature,
-        escrowSecret
+        escrowSecret,
+        escrowHash
       )
     ).to.be.revertedWith("Tickets must be distinct");
   });
