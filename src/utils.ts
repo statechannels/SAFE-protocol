@@ -1,17 +1,32 @@
-import { Ticket } from "./types";
+import { EscrowEntry, Ticket } from "./types";
 import { ethers } from "ethers";
-import { ABI_TYPE } from "./constants";
+import { ESCROW_ABI_TYPE, TICKET_ABI_TYPE } from "./constants";
 
 export function hashTicket(ticket: Ticket): string {
   return ethers.utils.keccak256(
-    ethers.utils.defaultAbiCoder.encode(ABI_TYPE, [
+    ethers.utils.defaultAbiCoder.encode(TICKET_ABI_TYPE, [
       [
         ticket.value,
         ticket.senderNonce,
         ticket.receiver,
         ticket.sender,
         ticket.escrowHash,
-        ticket.expiry
+        ticket.expiry,
+      ],
+    ])
+  );
+}
+
+export function hashEscrowEntry(entry: EscrowEntry): string {
+  return ethers.utils.keccak256(
+    ethers.utils.defaultAbiCoder.encode(ESCROW_ABI_TYPE, [
+      [
+        entry.receiver,
+        entry.sender,
+        entry.value,
+        entry.claimStart,
+        entry.claimExpiry,
+        entry.escrowHash,
       ],
     ])
   );

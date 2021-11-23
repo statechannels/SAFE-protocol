@@ -18,6 +18,31 @@ import { FunctionFragment, Result } from "@ethersproject/abi";
 import { Listener, Provider } from "@ethersproject/providers";
 import { TypedEventFilter, TypedEvent, TypedListener, OnEvent } from "./common";
 
+export type EscrowEntryStruct = {
+  receiver: string;
+  sender: string;
+  value: BigNumberish;
+  claimStart: BigNumberish;
+  claimExpiry: BigNumberish;
+  escrowHash: BytesLike;
+};
+
+export type EscrowEntryStructOutput = [
+  string,
+  string,
+  BigNumber,
+  BigNumber,
+  BigNumber,
+  string
+] & {
+  receiver: string;
+  sender: string;
+  value: BigNumber;
+  claimStart: BigNumber;
+  claimExpiry: BigNumber;
+  escrowHash: string;
+};
+
 export type WithdrawalTicketStruct = {
   value: BigNumberish;
   senderNonce: BigNumberish;
@@ -53,17 +78,17 @@ export type SignatureStructOutput = [string, string, number] & {
 
 export interface L2ContractInterface extends utils.Interface {
   functions: {
-    "claimFunds(bytes32[],bytes32)": FunctionFragment;
+    "claimFunds(bytes32[],(address,address,uint256,uint256,uint256,bytes32))": FunctionFragment;
     "commitToWithdrawal((uint256,uint256,address,address,bytes32,uint256),(bytes32,bytes32,uint8))": FunctionFragment;
-    "lockFundsInEscrow(address,bytes32,uint256,uint256)": FunctionFragment;
-    "proveFraud((uint256,uint256,address,address,bytes32,uint256),(bytes32,bytes32,uint8),(uint256,uint256,address,address,bytes32,uint256),(bytes32,bytes32,uint8),bytes32)": FunctionFragment;
+    "lockFundsInEscrow((address,address,uint256,uint256,uint256,bytes32))": FunctionFragment;
+    "proveFraud((uint256,uint256,address,address,bytes32,uint256),(bytes32,bytes32,uint8),(uint256,uint256,address,address,bytes32,uint256),(bytes32,bytes32,uint8),(address,address,uint256,uint256,uint256,bytes32),bytes32)": FunctionFragment;
     "recoverSigner(bytes32,(bytes32,bytes32,uint8))": FunctionFragment;
-    "refund(address,bytes32)": FunctionFragment;
+    "refund((address,address,uint256,uint256,uint256,bytes32))": FunctionFragment;
   };
 
   encodeFunctionData(
     functionFragment: "claimFunds",
-    values: [BytesLike[], BytesLike]
+    values: [BytesLike[], EscrowEntryStruct]
   ): string;
   encodeFunctionData(
     functionFragment: "commitToWithdrawal",
@@ -71,7 +96,7 @@ export interface L2ContractInterface extends utils.Interface {
   ): string;
   encodeFunctionData(
     functionFragment: "lockFundsInEscrow",
-    values: [string, BytesLike, BigNumberish, BigNumberish]
+    values: [EscrowEntryStruct]
   ): string;
   encodeFunctionData(
     functionFragment: "proveFraud",
@@ -80,6 +105,7 @@ export interface L2ContractInterface extends utils.Interface {
       SignatureStruct,
       WithdrawalTicketStruct,
       SignatureStruct,
+      EscrowEntryStruct,
       BytesLike
     ]
   ): string;
@@ -89,7 +115,7 @@ export interface L2ContractInterface extends utils.Interface {
   ): string;
   encodeFunctionData(
     functionFragment: "refund",
-    values: [string, BytesLike]
+    values: [EscrowEntryStruct]
   ): string;
 
   decodeFunctionResult(functionFragment: "claimFunds", data: BytesLike): Result;
@@ -140,7 +166,7 @@ export interface L2Contract extends BaseContract {
   functions: {
     claimFunds(
       escrowSecret: BytesLike[],
-      escrowHash: BytesLike,
+      entry: EscrowEntryStruct,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
@@ -151,10 +177,7 @@ export interface L2Contract extends BaseContract {
     ): Promise<ContractTransaction>;
 
     lockFundsInEscrow(
-      receiver: string,
-      escrowHash: BytesLike,
-      claimStart: BigNumberish,
-      claimExpiry: BigNumberish,
+      entry: EscrowEntryStruct,
       overrides?: PayableOverrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
@@ -163,6 +186,7 @@ export interface L2Contract extends BaseContract {
       firstSignature: SignatureStruct,
       secondTicket: WithdrawalTicketStruct,
       secondSignature: SignatureStruct,
+      entry: EscrowEntryStruct,
       escrowSecret: BytesLike,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
@@ -174,15 +198,14 @@ export interface L2Contract extends BaseContract {
     ): Promise<[string]>;
 
     refund(
-      receiver: string,
-      escrowHash: BytesLike,
+      entry: EscrowEntryStruct,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
   };
 
   claimFunds(
     escrowSecret: BytesLike[],
-    escrowHash: BytesLike,
+    entry: EscrowEntryStruct,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
@@ -193,10 +216,7 @@ export interface L2Contract extends BaseContract {
   ): Promise<ContractTransaction>;
 
   lockFundsInEscrow(
-    receiver: string,
-    escrowHash: BytesLike,
-    claimStart: BigNumberish,
-    claimExpiry: BigNumberish,
+    entry: EscrowEntryStruct,
     overrides?: PayableOverrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
@@ -205,6 +225,7 @@ export interface L2Contract extends BaseContract {
     firstSignature: SignatureStruct,
     secondTicket: WithdrawalTicketStruct,
     secondSignature: SignatureStruct,
+    entry: EscrowEntryStruct,
     escrowSecret: BytesLike,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
@@ -216,15 +237,14 @@ export interface L2Contract extends BaseContract {
   ): Promise<string>;
 
   refund(
-    receiver: string,
-    escrowHash: BytesLike,
+    entry: EscrowEntryStruct,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
   callStatic: {
     claimFunds(
       escrowSecret: BytesLike[],
-      escrowHash: BytesLike,
+      entry: EscrowEntryStruct,
       overrides?: CallOverrides
     ): Promise<void>;
 
@@ -235,10 +255,7 @@ export interface L2Contract extends BaseContract {
     ): Promise<void>;
 
     lockFundsInEscrow(
-      receiver: string,
-      escrowHash: BytesLike,
-      claimStart: BigNumberish,
-      claimExpiry: BigNumberish,
+      entry: EscrowEntryStruct,
       overrides?: CallOverrides
     ): Promise<void>;
 
@@ -247,6 +264,7 @@ export interface L2Contract extends BaseContract {
       firstSignature: SignatureStruct,
       secondTicket: WithdrawalTicketStruct,
       secondSignature: SignatureStruct,
+      entry: EscrowEntryStruct,
       escrowSecret: BytesLike,
       overrides?: CallOverrides
     ): Promise<void>;
@@ -257,11 +275,7 @@ export interface L2Contract extends BaseContract {
       overrides?: CallOverrides
     ): Promise<string>;
 
-    refund(
-      receiver: string,
-      escrowHash: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<void>;
+    refund(entry: EscrowEntryStruct, overrides?: CallOverrides): Promise<void>;
   };
 
   filters: {};
@@ -269,7 +283,7 @@ export interface L2Contract extends BaseContract {
   estimateGas: {
     claimFunds(
       escrowSecret: BytesLike[],
-      escrowHash: BytesLike,
+      entry: EscrowEntryStruct,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
@@ -280,10 +294,7 @@ export interface L2Contract extends BaseContract {
     ): Promise<BigNumber>;
 
     lockFundsInEscrow(
-      receiver: string,
-      escrowHash: BytesLike,
-      claimStart: BigNumberish,
-      claimExpiry: BigNumberish,
+      entry: EscrowEntryStruct,
       overrides?: PayableOverrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
@@ -292,6 +303,7 @@ export interface L2Contract extends BaseContract {
       firstSignature: SignatureStruct,
       secondTicket: WithdrawalTicketStruct,
       secondSignature: SignatureStruct,
+      entry: EscrowEntryStruct,
       escrowSecret: BytesLike,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
@@ -303,8 +315,7 @@ export interface L2Contract extends BaseContract {
     ): Promise<BigNumber>;
 
     refund(
-      receiver: string,
-      escrowHash: BytesLike,
+      entry: EscrowEntryStruct,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
   };
@@ -312,7 +323,7 @@ export interface L2Contract extends BaseContract {
   populateTransaction: {
     claimFunds(
       escrowSecret: BytesLike[],
-      escrowHash: BytesLike,
+      entry: EscrowEntryStruct,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
@@ -323,10 +334,7 @@ export interface L2Contract extends BaseContract {
     ): Promise<PopulatedTransaction>;
 
     lockFundsInEscrow(
-      receiver: string,
-      escrowHash: BytesLike,
-      claimStart: BigNumberish,
-      claimExpiry: BigNumberish,
+      entry: EscrowEntryStruct,
       overrides?: PayableOverrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
@@ -335,6 +343,7 @@ export interface L2Contract extends BaseContract {
       firstSignature: SignatureStruct,
       secondTicket: WithdrawalTicketStruct,
       secondSignature: SignatureStruct,
+      entry: EscrowEntryStruct,
       escrowSecret: BytesLike,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
@@ -346,8 +355,7 @@ export interface L2Contract extends BaseContract {
     ): Promise<PopulatedTransaction>;
 
     refund(
-      receiver: string,
-      escrowHash: BytesLike,
+      entry: EscrowEntryStruct,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
   };
