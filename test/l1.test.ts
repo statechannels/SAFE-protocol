@@ -105,7 +105,6 @@ describe("L1 Contract", function () {
     await l1Contract.deposit({ value: depositValue });
 
     const tickets: Ticket[] = [];
-    const ticketSignatures = [];
     for (let i = 0; i < amountOfTickets; i++) {
       const newTicket = {
         senderNonce: i,
@@ -120,7 +119,6 @@ describe("L1 Contract", function () {
       const signature = await signData(ticketHash, senderWallet.privateKey);
 
       tickets.push(newTicket);
-      ticketSignatures.push(signature);
     }
     const preimages = new Array(amountOfTickets).fill(preimage);
 
@@ -131,8 +129,7 @@ describe("L1 Contract", function () {
     ) {
       await l1Contract.claimTickets(
         tickets.slice(i - ticketBatchSize, i),
-        preimages.slice(i - ticketBatchSize, i),
-        ticketSignatures.slice(i - ticketBatchSize, i)
+        preimages.slice(i - ticketBatchSize, i)
       );
     }
 
