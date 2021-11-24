@@ -43,7 +43,7 @@ contract L2Contract is SignatureChecker {
         escrowEntryHashes[entry.receiver][entryHash] = 0;
     }
 
-    /// This is used by Bob to claim funds Alice has locked in escrow.
+    /// Used by Bob to claim funds Alice has locked in escrow.
     /// Bob needs to know the escrowSecret preimage to unlock the funds.
     function claimFunds(
         bytes32[] calldata escrowSecret,
@@ -77,7 +77,7 @@ contract L2Contract is SignatureChecker {
         escrowEntryHashes[entry.receiver][entryHash] = 0;
     }
 
-    /// This is used by Alice to lock funds in escrow for Bob.
+    /// Used by Alice to lock funds in escrow for Bob.
     /// Bob can claim the funds before entry.claimExpiry with the preimage escrowSecret.
     /// After entry.claimExpiry if Bob hasn't claimed the funds, Alice can reclaim them.
     function lockFundsInEscrow(EscrowEntry calldata entry) public payable {
