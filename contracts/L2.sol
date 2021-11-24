@@ -3,11 +3,11 @@ pragma solidity ^0.8.10;
 
 import "./common.sol";
 
-/// This represents an amount of funds locked in escrow on behalf of the sender.
+/// This represents an amount of funds locked in escrow on behalf of the sender (Alice)
 struct EscrowEntry {
-    /// Who will receive the funds if unlocked with the preimage
+    /// Who will receive the funds if unlocked with the preimage (Bob).
     address payable receiver;
-    /// Who will send the funds if unlocked with the preimage.
+    /// Who will send the funds if unlocked with the preimage (Alice).
     address payable sender;
     /// The amount of funds to send.
     uint256 value;
@@ -15,7 +15,7 @@ struct EscrowEntry {
     uint256 claimStart;
     /// After this timestamp the receiver may no longer claim the funds, the sender can refund them.
     uint256 claimExpiry;
-    /// This is the hash of some secret preimage chosen by the sender.
+    /// This is the hash of some secret preimage chosen by the sender (Alice).
     bytes32 escrowHash;
 }
 
@@ -23,7 +23,7 @@ contract L2Contract is SignatureChecker {
     /// A record of escrow funds indexed by sender then by escrowHash (the hash of the preimage).
     mapping(address => mapping(bytes32 => bytes32)) escrowEntryHashes;
 
-    /// If a ticket has passed the claimExpiry, then the sender can reclaim the funds.
+    /// If Bob never claims the funds, Alice can reclaim them after the entry.claimExpiry timestamp.
     function refund(EscrowEntry calldata entry) public {
         bytes32 entryHash = keccak256(abi.encode(entry));
 
@@ -43,7 +43,8 @@ contract L2Contract is SignatureChecker {
         escrowEntryHashes[entry.receiver][entryHash] = 0;
     }
 
-    /// If a ticket has not expired yet (block.timestamp<=claimExpiry) then the funds can be unlocked by the receiver using this function.
+    /// Used by Bob to claim funds Alice has locked in escrow.
+    /// Bob needs to know the escrowSecret preimage to unlock the funds.
     function claimFunds(
         bytes32[] calldata escrowSecret,
         EscrowEntry calldata entry
@@ -76,8 +77,9 @@ contract L2Contract is SignatureChecker {
         escrowEntryHashes[entry.receiver][entryHash] = 0;
     }
 
-    /// This function is called by the sender to lock funds in escrow.
-    /// The receiver can claim the escrow funds until the claimExpiry. After that the funds can only be reclaimed by the sender.
+    /// Used by Alice to lock funds in escrow for Bob.
+    /// Bob can claim the funds before entry.claimExpiry with the preimage escrowSecret.
+    /// After entry.claimExpiry if Bob hasn't claimed the funds, Alice can reclaim them.
     function lockFundsInEscrow(EscrowEntry calldata entry) public payable {
         bytes32 entryHash = keccak256(abi.encode(entry));
         bytes32 existing = escrowEntryHashes[entry.receiver][entry.escrowHash];
@@ -102,6 +104,7 @@ contract L2Contract is SignatureChecker {
     /// It serves two purposes:
     /// 1. It broadcasts the signed ticket out to the network.
     /// 2. It keeps track of commitments made so fraud can be penalized.
+    /// This is called by Bob to commit to a ticket to transfer L1 funds to Alice.
     function commitToWithdrawal(
         WithdrawalTicket calldata ticket,
         Signature calldata ticketSignature

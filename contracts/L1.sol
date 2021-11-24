@@ -23,6 +23,7 @@ contract L1Contract is SignatureChecker {
 
     /// Claims a single ticket.
     /// If the ticket, escrowPreimage, and signature are valid, the funds are transferred to the receiver.
+    /// Transfers funds from Bob to Alice on L1.
     function claimTicket(
         WithdrawalTicket calldata ticket,
         bytes32 escrowPreimage,
@@ -60,6 +61,7 @@ contract L1Contract is SignatureChecker {
         balances[ticket.sender] -= ticket.value;
     }
 
+    /// Used by Bob to deposit funds to fund various tickets.
     function deposit() public payable {
         // EFFECTS
         balances[msg.sender] += msg.value;
