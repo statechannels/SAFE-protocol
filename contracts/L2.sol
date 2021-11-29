@@ -29,7 +29,7 @@ contract L2Contract is SignatureChecker {
 
         // CHECKS
         require(
-            escrowEntryHashes[entry.sender][entry.escrowHash] == entryHash,
+            escrowEntryHashes[entry.receiver][entry.escrowHash] == entryHash,
             "Invalid escrow entry hash"
         );
         require(
@@ -53,7 +53,7 @@ contract L2Contract is SignatureChecker {
 
         // CHECKS
         require(
-            escrowEntryHashes[entry.sender][entryHash] == entryHash,
+            escrowEntryHashes[entry.receiver][entryHash] == entryHash,
             "There are no funds to claim"
         );
 
