@@ -78,7 +78,7 @@ export type SignatureStructOutput = [string, string, number] & {
 
 export interface L2ContractInterface extends utils.Interface {
   functions: {
-    "claimFunds(bytes32[],(address,address,uint256,uint256,uint256,bytes32))": FunctionFragment;
+    "claimFunds(bytes32,(address,address,uint256,uint256,uint256,bytes32))": FunctionFragment;
     "commitToWithdrawal((uint256,uint256,address,address,bytes32,uint256),(bytes32,bytes32,uint8))": FunctionFragment;
     "lockFundsInEscrow((address,address,uint256,uint256,uint256,bytes32))": FunctionFragment;
     "proveFraud((uint256,uint256,address,address,bytes32,uint256),(bytes32,bytes32,uint8),(uint256,uint256,address,address,bytes32,uint256),(bytes32,bytes32,uint8),(address,address,uint256,uint256,uint256,bytes32),bytes32)": FunctionFragment;
@@ -88,7 +88,7 @@ export interface L2ContractInterface extends utils.Interface {
 
   encodeFunctionData(
     functionFragment: "claimFunds",
-    values: [BytesLike[], EscrowEntryStruct]
+    values: [BytesLike, EscrowEntryStruct]
   ): string;
   encodeFunctionData(
     functionFragment: "commitToWithdrawal",
@@ -165,7 +165,7 @@ export interface L2Contract extends BaseContract {
 
   functions: {
     claimFunds(
-      escrowSecret: BytesLike[],
+      escrowSecret: BytesLike,
       entry: EscrowEntryStruct,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
@@ -204,7 +204,7 @@ export interface L2Contract extends BaseContract {
   };
 
   claimFunds(
-    escrowSecret: BytesLike[],
+    escrowSecret: BytesLike,
     entry: EscrowEntryStruct,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
@@ -243,7 +243,7 @@ export interface L2Contract extends BaseContract {
 
   callStatic: {
     claimFunds(
-      escrowSecret: BytesLike[],
+      escrowSecret: BytesLike,
       entry: EscrowEntryStruct,
       overrides?: CallOverrides
     ): Promise<void>;
@@ -282,7 +282,7 @@ export interface L2Contract extends BaseContract {
 
   estimateGas: {
     claimFunds(
-      escrowSecret: BytesLike[],
+      escrowSecret: BytesLike,
       entry: EscrowEntryStruct,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
@@ -322,7 +322,7 @@ export interface L2Contract extends BaseContract {
 
   populateTransaction: {
     claimFunds(
-      escrowSecret: BytesLike[],
+      escrowSecret: BytesLike,
       entry: EscrowEntryStruct,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;

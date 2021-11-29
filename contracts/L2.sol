@@ -45,10 +45,9 @@ contract L2Contract is SignatureChecker {
 
     /// Used by Bob to claim funds Alice has locked in escrow.
     /// Bob needs to know the escrowSecret preimage to unlock the funds.
-    function claimFunds(
-        bytes32[] calldata escrowSecret,
-        EscrowEntry calldata entry
-    ) public {
+    function claimFunds(bytes32 escrowSecret, EscrowEntry calldata entry)
+        public
+    {
         bytes32 entryHash = keccak256(abi.encode(entry));
 
         // CHECKS
