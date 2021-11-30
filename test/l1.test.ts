@@ -1,14 +1,15 @@
 import { ethers } from "hardhat";
 import { BigNumber, Contract, Wallet } from "ethers";
 
-import { RECEIVER_PK, SENDER_PK } from "../src/constants";
+import { ALICE_PK, BOB_PK } from "../src/constants";
 import { hashTicket, signData } from "../src/utils";
 import { Ticket } from "../src/types";
 import { expect, use } from "chai";
 import { solidity } from "ethereum-waffle";
+import { getBalances } from "./utils";
 
-const receiverWallet = new ethers.Wallet(RECEIVER_PK, ethers.provider);
-const senderWallet = new ethers.Wallet(SENDER_PK, ethers.provider);
+const alice = new ethers.Wallet(ALICE_PK, ethers.provider);
+const bob = new ethers.Wallet(BOB_PK, ethers.provider);
 
 const preimage = ethers.utils.hashMessage("Some secret preimage");
 const escrowHash = ethers.utils.keccak256(preimage);
@@ -19,14 +20,6 @@ const amountOfTickets = 100;
 const ticketValue = 10000;
 const depositValue = ticketValue * amountOfTickets * 100;
 
-type Balances = { sender: BigNumber; receiver: BigNumber };
-
-async function getBalances(): Promise<Balances> {
-  const receiver = await receiverWallet.getBalance();
-  const sender = await senderWallet.getBalance();
-  return { sender, receiver };
-}
-
 let l1Contract: Contract;
 
 use(solidity);
@@ -35,7 +28,7 @@ describe("L1 Contract", function () {
   beforeEach(async () => {
     const l1Deployer = await ethers.getContractFactory(
       "L1Contract",
-      senderWallet
+      bob
     );
     l1Contract = await l1Deployer.deploy();
   });
@@ -46,14 +39,14 @@ describe("L1 Contract", function () {
     const ticket: Ticket = {
       senderNonce: 1,
       value: 5,
-      receiver: receiverWallet.address,
-      sender: senderWallet.address,
+      receiver: alice.address,
+      sender: bob.address,
       escrowHash: escrowHash,
       expiry: 10,
     };
     const ticketHash = hashTicket(ticket);
 
-    const { r, s, v } = await signData(ticketHash, senderWallet.privateKey);
+    const { r, s, v } = await signData(ticketHash, bob.privateKey);
 
     await expect(
       l1Contract.claimTicket(ticket, preimage, { r, s, v })
@@ -61,7 +54,7 @@ describe("L1 Contract", function () {
   });
 
   it(`can handle ${amountOfTickets} tickets being claimed sequentially`, async () => {
-    const initialBalances = await getBalances();
+    const initialBalances = await getBalances(alice, bob);
     await l1Contract.deposit({ value: depositValue });
 
     const tickets: Ticket[] = [];
@@ -70,15 +63,15 @@ describe("L1 Contract", function () {
       const newTicket = {
         senderNonce: i,
         value: ticketValue,
-        receiver: receiverWallet.address,
-        sender: senderWallet.address,
+        receiver: alice.address,
+        sender: bob.address,
         escrowHash: escrowHash,
         expiry: ticketExpiry,
       };
 
       const ticketHash = hashTicket(newTicket);
 
-      const signature = await signData(ticketHash, senderWallet.privateKey);
+      const signature = await signData(ticketHash, bob.privateKey);
 
       tickets.push(newTicket);
       ticketSignatures.push(signature);
@@ -88,20 +81,20 @@ describe("L1 Contract", function () {
 
       await l1Contract.claimTicket(tickets[i], preimage, { r, s, v });
     }
-    const finalBalances = await getBalances();
+    const finalBalances = await getBalances(alice, bob);
 
     const expectedTotalTransferred = BigNumber.from(
       amountOfTickets * ticketValue
     );
-    const actualTotalTransferred = finalBalances.receiver.sub(
-      initialBalances.receiver
+    const actualTotalTransferred = finalBalances.alice.sub(
+      initialBalances.alice
     );
 
     expect(expectedTotalTransferred.eq(actualTotalTransferred)).to.be.true;
   });
 
   it(`can handle a claim of ${amountOfTickets} tickets in batch sizes of ${ticketBatchSize}`, async () => {
-    const initialBalances = await getBalances();
+    const initialBalances = await getBalances(alice, bob);
     await l1Contract.deposit({ value: depositValue });
 
     const tickets: Ticket[] = [];
@@ -110,14 +103,14 @@ describe("L1 Contract", function () {
       const newTicket = {
         senderNonce: i,
         value: ticketValue,
-        receiver: receiverWallet.address,
-        sender: senderWallet.address,
+        receiver: alice.address,
+        sender: bob.address,
         escrowHash: escrowHash,
         expiry: ticketExpiry,
       };
 
       const ticketHash = hashTicket(newTicket);
-      const signature = await signData(ticketHash, senderWallet.privateKey);
+      const signature = await signData(ticketHash, bob.privateKey);
 
       tickets.push(newTicket);
       ticketSignatures.push(signature);
@@ -136,13 +129,13 @@ describe("L1 Contract", function () {
       );
     }
 
-    const finalBalances = await getBalances();
+    const finalBalances = await getBalances(alice, bob);
 
     const expectedTotalTransferred = BigNumber.from(
       amountOfTickets * ticketValue
     );
-    const actualTotalTransferred = finalBalances.receiver.sub(
-      initialBalances.receiver
+    const actualTotalTransferred = finalBalances.alice.sub(
+      initialBalances.alice
     );
 
     expect(expectedTotalTransferred.eq(actualTotalTransferred)).to.be.true;

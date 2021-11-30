@@ -29,7 +29,7 @@ contract L2Contract is SignatureChecker {
 
         // CHECKS
         require(
-            escrowEntryHashes[entry.sender][entry.escrowHash] == entryHash,
+            escrowEntryHashes[entry.receiver][entry.escrowHash] == entryHash,
             "Invalid escrow entry hash"
         );
         require(
@@ -45,15 +45,14 @@ contract L2Contract is SignatureChecker {
 
     /// Used by Bob to claim funds Alice has locked in escrow.
     /// Bob needs to know the escrowSecret preimage to unlock the funds.
-    function claimFunds(
-        bytes32[] calldata escrowSecret,
-        EscrowEntry calldata entry
-    ) public {
+    function claimFunds(bytes32 escrowSecret, EscrowEntry calldata entry)
+        public
+    {
         bytes32 entryHash = keccak256(abi.encode(entry));
 
         // CHECKS
         require(
-            escrowEntryHashes[entry.sender][entryHash] == entryHash,
+            escrowEntryHashes[entry.receiver][entryHash] == entryHash,
             "There are no funds to claim"
         );
 
