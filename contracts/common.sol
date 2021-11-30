@@ -23,6 +23,14 @@ struct WithdrawalTicket {
     uint256 expiry;
 }
 
+abstract contract EthSender {
+    // This is based on https://solidity-by-example.org/sending-ether/
+    function send(address receiver, uint256 value) public {
+        (bool sent, ) = receiver.call{value: value}("");
+        require(sent, "Failed to send Ether");
+    }
+}
+
 abstract contract SignatureChecker {
     function recoverSigner(bytes32 hash, Signature memory signature)
         public

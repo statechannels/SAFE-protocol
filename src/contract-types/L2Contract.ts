@@ -84,6 +84,7 @@ export interface L2ContractInterface extends utils.Interface {
     "proveFraud((uint256,uint256,address,address,bytes32,uint256),(bytes32,bytes32,uint8),(uint256,uint256,address,address,bytes32,uint256),(bytes32,bytes32,uint8),(address,address,uint256,uint256,uint256,bytes32),bytes32)": FunctionFragment;
     "recoverSigner(bytes32,(bytes32,bytes32,uint8))": FunctionFragment;
     "refund((address,address,uint256,uint256,uint256,bytes32))": FunctionFragment;
+    "send(address,uint256)": FunctionFragment;
   };
 
   encodeFunctionData(
@@ -117,6 +118,10 @@ export interface L2ContractInterface extends utils.Interface {
     functionFragment: "refund",
     values: [EscrowEntryStruct]
   ): string;
+  encodeFunctionData(
+    functionFragment: "send",
+    values: [string, BigNumberish]
+  ): string;
 
   decodeFunctionResult(functionFragment: "claimFunds", data: BytesLike): Result;
   decodeFunctionResult(
@@ -133,6 +138,7 @@ export interface L2ContractInterface extends utils.Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "refund", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "send", data: BytesLike): Result;
 
   events: {};
 }
@@ -201,6 +207,12 @@ export interface L2Contract extends BaseContract {
       entry: EscrowEntryStruct,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
+
+    send(
+      receiver: string,
+      value: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
   };
 
   claimFunds(
@@ -241,6 +253,12 @@ export interface L2Contract extends BaseContract {
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
+  send(
+    receiver: string,
+    value: BigNumberish,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
   callStatic: {
     claimFunds(
       escrowSecret: BytesLike,
@@ -276,6 +294,12 @@ export interface L2Contract extends BaseContract {
     ): Promise<string>;
 
     refund(entry: EscrowEntryStruct, overrides?: CallOverrides): Promise<void>;
+
+    send(
+      receiver: string,
+      value: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<void>;
   };
 
   filters: {};
@@ -318,6 +342,12 @@ export interface L2Contract extends BaseContract {
       entry: EscrowEntryStruct,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
+
+    send(
+      receiver: string,
+      value: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
   };
 
   populateTransaction: {
@@ -356,6 +386,12 @@ export interface L2Contract extends BaseContract {
 
     refund(
       entry: EscrowEntryStruct,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
+    send(
+      receiver: string,
+      value: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
   };

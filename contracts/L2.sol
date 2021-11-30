@@ -19,7 +19,7 @@ struct EscrowEntry {
     bytes32 escrowHash;
 }
 
-contract L2Contract is SignatureChecker {
+contract L2Contract is SignatureChecker, EthSender {
     /// A record of escrow funds indexed by sender then by escrowHash (the hash of the preimage).
     mapping(address => mapping(bytes32 => bytes32)) escrowEntryHashes;
 
@@ -166,6 +166,6 @@ contract L2Contract is SignatureChecker {
         );
 
         // EFFECTS
-        entry.receiver.transfer(entry.value);
+        send(entry.sender, entry.value);
     }
 }
