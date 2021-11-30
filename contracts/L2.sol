@@ -38,7 +38,8 @@ contract L2Contract is SignatureChecker, EthSender {
         );
 
         // EFFECTS
-        entry.sender.transfer(entry.value);
+
+        send(entry.sender, entry.value);
         // Clear the escrow entry now that the funds are refunded.
         escrowEntryHashes[entry.receiver][entryHash] = 0;
     }
@@ -69,7 +70,7 @@ contract L2Contract is SignatureChecker, EthSender {
         );
 
         // EFFECTS
-        entry.receiver.transfer(entry.value);
+        send(entry.receiver, entry.value);
         // Clear the escrow entry now that the funds have been claimed.
         escrowEntryHashes[entry.receiver][entry.escrowHash] = 0;
     }
