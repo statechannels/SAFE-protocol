@@ -57,6 +57,7 @@ export interface L1ContractInterface extends utils.Interface {
     "claimTickets((uint256,uint256,address,address,bytes32,uint256)[],bytes32[],(bytes32,bytes32,uint8)[])": FunctionFragment;
     "deposit()": FunctionFragment;
     "recoverSigner(bytes32,(bytes32,bytes32,uint8))": FunctionFragment;
+    "send(address,uint256)": FunctionFragment;
   };
 
   encodeFunctionData(
@@ -72,6 +73,10 @@ export interface L1ContractInterface extends utils.Interface {
     functionFragment: "recoverSigner",
     values: [BytesLike, SignatureStruct]
   ): string;
+  encodeFunctionData(
+    functionFragment: "send",
+    values: [string, BigNumberish]
+  ): string;
 
   decodeFunctionResult(
     functionFragment: "claimTicket",
@@ -86,6 +91,7 @@ export interface L1ContractInterface extends utils.Interface {
     functionFragment: "recoverSigner",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(functionFragment: "send", data: BytesLike): Result;
 
   events: {};
 }
@@ -140,6 +146,12 @@ export interface L1Contract extends BaseContract {
       signature: SignatureStruct,
       overrides?: CallOverrides
     ): Promise<[string]>;
+
+    send(
+      receiver: string,
+      value: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
   };
 
   claimTicket(
@@ -166,6 +178,12 @@ export interface L1Contract extends BaseContract {
     overrides?: CallOverrides
   ): Promise<string>;
 
+  send(
+    receiver: string,
+    value: BigNumberish,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
   callStatic: {
     claimTicket(
       ticket: WithdrawalTicketStruct,
@@ -188,6 +206,12 @@ export interface L1Contract extends BaseContract {
       signature: SignatureStruct,
       overrides?: CallOverrides
     ): Promise<string>;
+
+    send(
+      receiver: string,
+      value: BigNumberish,
+      overrides?: CallOverrides
+    ): Promise<void>;
   };
 
   filters: {};
@@ -216,6 +240,12 @@ export interface L1Contract extends BaseContract {
       signature: SignatureStruct,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
+
+    send(
+      receiver: string,
+      value: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
   };
 
   populateTransaction: {
@@ -241,6 +271,12 @@ export interface L1Contract extends BaseContract {
       hash: BytesLike,
       signature: SignatureStruct,
       overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    send(
+      receiver: string,
+      value: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
   };
 }
