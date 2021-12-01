@@ -15,4 +15,5 @@ jobs:
         with:
           node-version: "16"
       - run: yarn
-      - run: yarn test
+      - run: yarn test:token
+      - run: yarn test:eth
