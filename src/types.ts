@@ -15,4 +15,5 @@ export type EscrowEntry = {
   claimStart: number;
   escrowHash: string;
   value: number;
+  token: string;
 };
