@@ -38,7 +38,6 @@ contract L2Contract is SignatureChecker, EthSender {
         );
 
         // EFFECTS
-
         send(entry.sender, entry.value);
         // Clear the escrow entry now that the funds are refunded.
         escrowEntryHashes[entry.receiver][entryHash] = 0;

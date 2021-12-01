@@ -43,6 +43,7 @@ describe("L2 Contract", function () {
     // TODO: Due to gas fees, it's hard to check that Alice got back transferAmount.
     expect(finalBalances.alice.gt(afterEscrow.alice)).to.be.true;
   });
+
   it("allows funds to be claimed after claim start", async () => {
     const initialBalances = await getBalances(aliceWallet, bobWallet);
     const currentBlock = await l2Contract.provider.getBlock(
