@@ -25,6 +25,24 @@ describe("L2 Contract", function () {
     l2Contract = (await l2Deployer.deploy()).connect(aliceWallet); // Alice sends all further txs. She'll pay the gas in this example, and be msg.sender when it counts.
   });
 
+  it("allows funds to be refunded after claim expiry", async () => {
+    const entry: EscrowEntry = {
+      value: transferAmount,
+      receiver: bobWallet.address,
+      sender: aliceWallet.address,
+      escrowHash: escrowHash,
+      claimExpiry: 1,
+      claimStart: 0,
+    };
+    await l2Contract.lockFundsInEscrow(entry, { value: transferAmount });
+    const afterEscrow = await getBalances(aliceWallet, bobWallet);
+    console.log(afterEscrow);
+    await l2Contract.refund(entry);
+    const finalBalances = await getBalances(aliceWallet, bobWallet);
+
+    // TODO: Due to gas fees, it's hard to check that Alice got back transferAmount.
+    expect(finalBalances.alice.gt(afterEscrow.alice)).to.be.true;
+  });
   it("allows funds to be claimed after claim start", async () => {
     const initialBalances = await getBalances(aliceWallet, bobWallet);
     const currentBlock = await l2Contract.provider.getBlock(
