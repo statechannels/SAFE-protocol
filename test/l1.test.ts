@@ -13,6 +13,7 @@ import { expect, use } from "chai";
 import { solidity } from "ethereum-waffle";
 import { getBalances } from "./utils";
 import { IERC20 } from "../src/contract-types/IERC20";
+import { L1Contract } from "../src/contract-types/L1Contract";
 const alice = new ethers.Wallet(ALICE_PK, ethers.provider);
 const bob = new ethers.Wallet(BOB_PK, ethers.provider);
 
@@ -25,7 +26,7 @@ const amountOfTickets = 100;
 const ticketValue = 10000;
 const depositValue = ticketValue * amountOfTickets * 100;
 
-let l1Contract: Contract;
+let l1Contract: L1Contract;
 let tokenContract: IERC20;
 use(solidity);
 
@@ -41,7 +42,9 @@ describe(`L1 Contract using ${USE_ERC20 ? "ERC20 tokens" : "ETH"}`, () => {
   });
 
   it("rejects an expired ticket", async () => {
-    await l1Contract.deposit({ value: 5 });
+    USE_ERC20
+      ? await l1Contract.depositToken(tokenContract.address, depositValue)
+      : await l1Contract.depositEth({ value: depositValue });
 
     const ticket: Ticket = {
       senderNonce: 1,
