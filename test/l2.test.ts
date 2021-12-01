@@ -139,7 +139,7 @@ describe("L2 Contract", function () {
     ).to.be.true;
 
     // TODO: Due to gas fees, it's hard to check that Alice got back transferAmount.
-    expect(afterProveFraudBalance.alice.gte(afterEscrowBalance.alice)).to.be
+    expect(afterProveFraudBalance.alice.gt(afterEscrowBalance.alice)).to.be
       .true;
   });
   it("shouldn't allow proof of fraud with identical commitments", async () => {
