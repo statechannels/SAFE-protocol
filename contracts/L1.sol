@@ -9,6 +9,8 @@ contract L1Contract is SignatureChecker, EthSender {
     /// A record of funds allocated to different senders.
     mapping(address => uint256) balances;
 
+    uint256[] claimedNonces;
+
     /// Claims multiple tickets.
     /// Batches multiple transfers into a single transaction.
     function claimTickets(
@@ -29,6 +31,7 @@ contract L1Contract is SignatureChecker, EthSender {
         bytes32 escrowPreimage,
         Signature calldata signature
     ) public {
+        claimedNonces.push(ticket.senderNonce);
         bytes32 ticketHash = keccak256(abi.encode(ticket));
         address ticketSigner = recoverSigner(ticketHash, signature);
         bytes32 escrowHash = keccak256(abi.encode(escrowPreimage));
