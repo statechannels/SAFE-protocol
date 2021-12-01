@@ -103,11 +103,17 @@ describe("L2 Contract", function () {
       claimExpiry: 0,
       claimStart: 0,
     };
-    const legitHash = hashTicket(legitTicket);
-    const fraudHash = hashTicket(fraudTicket);
+    const legitTicketHash = hashTicket(legitTicket);
+    const fraudTicketHash = hashTicket(fraudTicket);
 
-    const legitSignature = await signData(legitHash, bobWallet.privateKey);
-    const fraudSignature = await signData(fraudHash, bobWallet.privateKey);
+    const legitSignature = await signData(
+      legitTicketHash,
+      bobWallet.privateKey
+    );
+    const fraudSignature = await signData(
+      fraudTicketHash,
+      bobWallet.privateKey
+    );
 
     const initialBalance = await getBalances(aliceWallet, bobWallet);
 
