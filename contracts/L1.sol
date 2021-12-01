@@ -31,6 +31,11 @@ contract L1Contract is SignatureChecker, EthSender {
         bytes32 escrowPreimage,
         Signature calldata signature
     ) public {
+        for (uint256 i; i < claimedNonces.length; i++) {
+            if (claimedNonces[i] == ticket.senderNonce) {
+                revert("Ticket has already been claimed.");
+            }
+        }
         claimedNonces.push(ticket.senderNonce);
         bytes32 ticketHash = keccak256(abi.encode(ticket));
         address ticketSigner = recoverSigner(ticketHash, signature);
