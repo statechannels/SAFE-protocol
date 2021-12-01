@@ -28,7 +28,7 @@ const escrowHash = ethers.utils.keccak256(
 let tokenContract: TestToken;
 let l2Contract: L2Contract;
 
-describe("L2 Contract", function () {
+describe(`L2 Contract using ${USE_ERC20 ? "ERC20 tokens" : "ETH"}`, () => {
   beforeEach(async () => {
     const l2Deployer = new L2Contract__factory(bobWallet);
     l2Contract = (await l2Deployer.deploy()).connect(aliceWallet); // Alice sends all further txs. She'll pay the gas in this example, and be msg.sender when it counts.
