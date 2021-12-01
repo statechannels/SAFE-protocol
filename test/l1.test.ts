@@ -37,8 +37,9 @@ describe(`L1 Contract using ${USE_ERC20 ? "ERC20 tokens" : "ETH"}`, () => {
     const tokenDeployer = await ethers.getContractFactory("TestToken", bob);
 
     l1Contract = await l1Deployer.deploy();
-    tokenContract = await tokenDeployer.deploy(1_000_000_000);
-    await tokenContract.approve(l1Contract.address, 1_000_000_000);
+    tokenContract = await tokenDeployer.deploy(depositValue);
+
+    await tokenContract.approve(l1Contract.address, depositValue);
   });
 
   it("rejects an expired ticket", async () => {

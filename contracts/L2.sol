@@ -19,7 +19,7 @@ struct EscrowEntry {
     bytes32 escrowHash;
 }
 
-contract L2Contract is SignatureChecker, EthSender {
+contract L2Contract is SignatureChecker, FundsSender {
     /// A record of escrow funds indexed by sender then by escrowHash (the hash of the preimage).
     mapping(address => mapping(bytes32 => bytes32)) escrowEntryHashes;
 
@@ -38,7 +38,8 @@ contract L2Contract is SignatureChecker, EthSender {
         );
 
         // EFFECTS
-        send(entry.sender, entry.value);
+        // TODO: Support ERC20
+        send(entry.sender, entry.value, address(0));
         // Clear the escrow entry now that the funds are refunded.
         escrowEntryHashes[entry.receiver][entryHash] = 0;
     }
@@ -69,7 +70,7 @@ contract L2Contract is SignatureChecker, EthSender {
         );
 
         // EFFECTS
-        send(entry.receiver, entry.value);
+        send(entry.receiver, entry.value, address(0));
         // Clear the escrow entry now that the funds have been claimed.
         escrowEntryHashes[entry.receiver][entry.escrowHash] = 0;
     }
@@ -166,7 +167,7 @@ contract L2Contract is SignatureChecker, EthSender {
         );
 
         // EFFECTS
-        send(entry.sender, entry.value);
+        send(entry.sender, entry.value, address(0));
         // Clear the escrow entry now that the funds have been claimed.
         escrowEntryHashes[entry.receiver][entry.escrowHash] = 0;
     }

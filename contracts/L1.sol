@@ -4,7 +4,7 @@ pragma solidity ^0.8.10;
 import "./common.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-contract L1Contract is SignatureChecker, EthSender {
+contract L1Contract is SignatureChecker, FundsSender {
     /// A record of the current nonce per sender.
     mapping(address => uint256) senderNonces;
     /// This is the amount of tokens(or native currency) allocated to senders.
@@ -59,7 +59,7 @@ contract L1Contract is SignatureChecker, EthSender {
 
         // EFFECTS
         senderNonces[ticket.sender]++;
-        send(ticket.receiver, ticket.value);
+        send(ticket.receiver, ticket.value, ticket.token);
         balances[ticket.sender][ticket.token] -= ticket.value;
     }
 
