@@ -19,7 +19,7 @@ struct EscrowEntry {
     bytes32 escrowHash;
 }
 
-contract L2Contract is SignatureChecker {
+contract L2Contract is SignatureChecker, EthSender {
     /// A record of escrow funds indexed by sender then by escrowHash (the hash of the preimage).
     mapping(address => mapping(bytes32 => bytes32)) escrowEntryHashes;
 
@@ -38,7 +38,7 @@ contract L2Contract is SignatureChecker {
         );
 
         // EFFECTS
-        entry.sender.transfer(entry.value);
+        send(entry.sender, entry.value);
         // Clear the escrow entry now that the funds are refunded.
         escrowEntryHashes[entry.receiver][entryHash] = 0;
     }
@@ -48,11 +48,9 @@ contract L2Contract is SignatureChecker {
     function claimFunds(bytes32 escrowSecret, EscrowEntry calldata entry)
         public
     {
-        bytes32 entryHash = keccak256(abi.encode(entry));
-
         // CHECKS
         require(
-            escrowEntryHashes[entry.receiver][entryHash] == entryHash,
+            escrowEntryHashes[entry.receiver][entry.escrowHash] != 0,
             "There are no funds to claim"
         );
 
@@ -71,9 +69,9 @@ contract L2Contract is SignatureChecker {
         );
 
         // EFFECTS
-        entry.receiver.transfer(entry.value);
+        send(entry.receiver, entry.value);
         // Clear the escrow entry now that the funds have been claimed.
-        escrowEntryHashes[entry.receiver][entryHash] = 0;
+        escrowEntryHashes[entry.receiver][entry.escrowHash] = 0;
     }
 
     /// Used by Alice to lock funds in escrow for Bob.
@@ -93,7 +91,7 @@ contract L2Contract is SignatureChecker {
         require(msg.value == entry.value, "Incorrect amount of funds");
 
         // EFFECTS
-        escrowEntryHashes[entry.receiver][entryHash] = entryHash;
+        escrowEntryHashes[entry.receiver][entry.escrowHash] = entryHash;
     }
 
     /// A record of ticket commitment hashes  indexed by sender then nonce.
@@ -168,6 +166,8 @@ contract L2Contract is SignatureChecker {
         );
 
         // EFFECTS
-        entry.receiver.transfer(entry.value);
+        send(entry.sender, entry.value);
+        // Clear the escrow entry now that the funds have been claimed.
+        escrowEntryHashes[entry.receiver][entry.escrowHash] = 0;
     }
 }

@@ -3,7 +3,7 @@ pragma solidity ^0.8.10;
 
 import "./common.sol";
 
-contract L1Contract is SignatureChecker {
+contract L1Contract is SignatureChecker, EthSender {
     /// A record of the current nonce per sender.
     mapping(address => uint256) senderNonces;
     /// A record of funds allocated to different senders.
@@ -57,7 +57,7 @@ contract L1Contract is SignatureChecker {
 
         // EFFECTS
         senderNonces[ticket.sender]++;
-        ticket.receiver.transfer(ticket.value);
+        send(ticket.receiver, ticket.value);
         balances[ticket.sender] -= ticket.value;
     }
 
