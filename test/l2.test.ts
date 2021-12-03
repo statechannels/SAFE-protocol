@@ -4,7 +4,8 @@ const { expect } = require("chai");
 import { ALICE_PK, BOB_PK } from "../src/constants";
 import { hashTicket, signData } from "../src/utils";
 import { EscrowEntry, Ticket } from "../src/types";
-import { L2Contract } from "../src/contract-types/L2Contract";
+import { L2Contract } from "../contract-types/L2Contract";
+import { L2Contract__factory } from "../contract-types/factories/L2Contract__factory";
 import { getBalances } from "./utils";
 
 const ONE_DAY = 60 * 60 * 24;
@@ -21,7 +22,7 @@ let l2Contract: L2Contract;
 
 describe("L2 Contract", function () {
   beforeEach(async () => {
-    const l2Deployer = await ethers.getContractFactory("L2Contract", bobWallet); // Bob deploys
+    const l2Deployer = new L2Contract__factory(bobWallet);
     l2Contract = (await l2Deployer.deploy()).connect(aliceWallet); // Alice sends all further txs. She'll pay the gas in this example, and be msg.sender when it counts.
   });
 

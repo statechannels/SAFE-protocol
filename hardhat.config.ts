@@ -6,7 +6,7 @@ import { HardhatUserConfig } from "hardhat/types";
 
 const config: HardhatUserConfig = {
   typechain: {
-    outDir: "src/contract-types",
+    outDir: "contract-types",
     target: "ethers-v5",
   },
   solidity: {

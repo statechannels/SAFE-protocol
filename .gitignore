@@ -12,3 +12,5 @@
 /artifacts
 /cache
 node_modules
+
+/contract-types
