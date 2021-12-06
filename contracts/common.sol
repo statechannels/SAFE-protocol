@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.10;
 
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
 struct Signature {
     bytes32 r;
     bytes32 s;
@@ -21,13 +23,24 @@ struct WithdrawalTicket {
     bytes32 escrowHash;
     /// The expiry date for this ticket. After this date the ticket can no longer be redeemed.
     uint256 expiry;
+    /// The address of an ERC20 contract, if 0 we assume the native currency
+    address token;
 }
 
-abstract contract EthSender {
+abstract contract FundsSender {
     // This is based on https://solidity-by-example.org/sending-ether/
-    function send(address receiver, uint256 value) public {
-        (bool sent, ) = receiver.call{value: value}("");
-        require(sent, "Failed to send Ether");
+    function send(
+        address receiver,
+        uint256 value,
+        address tokenAddress
+    ) public {
+        if (tokenAddress == address(0)) {
+            (bool sent, ) = receiver.call{value: value}("");
+            require(sent, "Failed to send Ether");
+        } else {
+            IERC20 tokenContract = IERC20(tokenAddress);
+            tokenContract.transfer(receiver, value);
+        }
     }
 }
 

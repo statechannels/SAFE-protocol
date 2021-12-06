@@ -2,6 +2,7 @@
 pragma solidity ^0.8.10;
 
 import "./common.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /// This represents an amount of funds locked in escrow on behalf of the sender (Alice)
 struct EscrowEntry {
@@ -17,9 +18,11 @@ struct EscrowEntry {
     uint256 claimExpiry;
     /// This is the hash of some secret preimage chosen by the sender (Alice).
     bytes32 escrowHash;
+    /// The address of an ERC20 contract, if 0 we assume the native currency
+    address token;
 }
 
-contract L2Contract is SignatureChecker, EthSender {
+contract L2Contract is SignatureChecker, FundsSender {
     /// A record of escrow funds indexed by sender then by escrowHash (the hash of the preimage).
     mapping(address => mapping(bytes32 => bytes32)) escrowEntryHashes;
 
@@ -38,7 +41,7 @@ contract L2Contract is SignatureChecker, EthSender {
         );
 
         // EFFECTS
-        send(entry.sender, entry.value);
+        send(entry.sender, entry.value, entry.token);
         // Clear the escrow entry now that the funds are refunded.
         escrowEntryHashes[entry.receiver][entryHash] = 0;
     }
@@ -69,7 +72,7 @@ contract L2Contract is SignatureChecker, EthSender {
         );
 
         // EFFECTS
-        send(entry.receiver, entry.value);
+        send(entry.receiver, entry.value, entry.token);
         // Clear the escrow entry now that the funds have been claimed.
         escrowEntryHashes[entry.receiver][entry.escrowHash] = 0;
     }
@@ -86,11 +89,22 @@ contract L2Contract is SignatureChecker, EthSender {
             existing == 0,
             "There is already an escrow entry for escrowHash."
         );
-        // We could accept more than entry.value and refund the difference.
-        // For now we only accept the exact amount for simplicity.
-        require(msg.value == entry.value, "Incorrect amount of funds");
 
+        if (entry.token == address(0)) {
+            // We could accept more than entry.value and refund the difference.
+            // For now we only accept the exact amount for simplicity.
+            require(msg.value == entry.value, "Incorrect amount of funds");
+        }
         // EFFECTS
+        if (entry.token != address(0)) {
+            IERC20 tokenContract = IERC20(entry.token);
+            tokenContract.transferFrom(
+                entry.sender,
+                address(this),
+                entry.value
+            );
+        }
+
         escrowEntryHashes[entry.receiver][entry.escrowHash] = entryHash;
     }
 
@@ -166,7 +180,7 @@ contract L2Contract is SignatureChecker, EthSender {
         );
 
         // EFFECTS
-        send(entry.sender, entry.value);
+        send(entry.sender, entry.value, entry.token);
         // Clear the escrow entry now that the funds have been claimed.
         escrowEntryHashes[entry.receiver][entry.escrowHash] = 0;
     }

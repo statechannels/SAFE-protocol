@@ -1,12 +1,21 @@
 import { ethers } from "hardhat";
-import { BigNumber, Contract, Wallet } from "ethers";
+import { BigNumber, Contract } from "ethers";
 
-import { ALICE_PK, BOB_PK } from "../src/constants";
+import {
+  ALICE_PK,
+  BOB_PK,
+  ETH_TOKEN_ADDRESS,
+  USE_ERC20,
+} from "../src/constants";
 import { hashTicket, signData } from "../src/utils";
 import { Ticket } from "../src/types";
 import { expect, use } from "chai";
 import { solidity } from "ethereum-waffle";
 import { getBalances } from "./utils";
+import { IERC20 } from "../src/contract-types/IERC20";
+import { L1Contract } from "../contract-types/L1Contract";
+import { L1Contract__factory } from "../contract-types/factories/L1Contract__factory";
+import { TestToken__factory } from "../contract-types/factories/TestToken__factory";
 
 const alice = new ethers.Wallet(ALICE_PK, ethers.provider);
 const bob = new ethers.Wallet(BOB_PK, ethers.provider);
@@ -20,21 +29,26 @@ const amountOfTickets = 100;
 const ticketValue = 10000;
 const depositValue = ticketValue * amountOfTickets * 100;
 
-let l1Contract: Contract;
-
+let l1Contract: L1Contract;
+let tokenContract: IERC20;
 use(solidity);
 
-describe("L1 Contract", function () {
+describe(`L1 Contract using ${USE_ERC20 ? "ERC20 tokens" : "ETH"}`, () => {
   beforeEach(async () => {
-    const l1Deployer = await ethers.getContractFactory(
-      "L1Contract",
-      bob
-    );
+    const l1Deployer = new L1Contract__factory(bob);
     l1Contract = await l1Deployer.deploy();
+    const tokenDeployer = new TestToken__factory(bob);
+
+    l1Contract = await l1Deployer.deploy();
+    tokenContract = (await tokenDeployer.deploy(depositValue)) as IERC20;
+
+    await tokenContract.approve(l1Contract.address, depositValue);
   });
 
   it("rejects an expired ticket", async () => {
-    await l1Contract.deposit({ value: 5 });
+    USE_ERC20
+      ? await l1Contract.depositToken(tokenContract.address, depositValue)
+      : await l1Contract.depositEth({ value: depositValue });
 
     const ticket: Ticket = {
       senderNonce: 1,
@@ -43,6 +57,7 @@ describe("L1 Contract", function () {
       sender: bob.address,
       escrowHash: escrowHash,
       expiry: 10,
+      token: USE_ERC20 ? tokenContract.address : ETH_TOKEN_ADDRESS,
     };
     const ticketHash = hashTicket(ticket);
 
@@ -54,8 +69,11 @@ describe("L1 Contract", function () {
   });
 
   it(`can handle ${amountOfTickets} tickets being claimed sequentially`, async () => {
-    const initialBalances = await getBalances(alice, bob);
-    await l1Contract.deposit({ value: depositValue });
+    const initialBalances = await getBalances(alice, bob, tokenContract);
+
+    USE_ERC20
+      ? await l1Contract.depositToken(tokenContract.address, depositValue)
+      : await l1Contract.depositEth({ value: depositValue });
 
     const tickets: Ticket[] = [];
     const ticketSignatures = [];
@@ -67,6 +85,7 @@ describe("L1 Contract", function () {
         sender: bob.address,
         escrowHash: escrowHash,
         expiry: ticketExpiry,
+        token: USE_ERC20 ? tokenContract.address : ETH_TOKEN_ADDRESS,
       };
 
       const ticketHash = hashTicket(newTicket);
@@ -81,7 +100,7 @@ describe("L1 Contract", function () {
 
       await l1Contract.claimTicket(tickets[i], preimage, { r, s, v });
     }
-    const finalBalances = await getBalances(alice, bob);
+    const finalBalances = await getBalances(alice, bob, tokenContract);
 
     const expectedTotalTransferred = BigNumber.from(
       amountOfTickets * ticketValue
@@ -94,8 +113,11 @@ describe("L1 Contract", function () {
   });
 
   it(`can handle a claim of ${amountOfTickets} tickets in batch sizes of ${ticketBatchSize}`, async () => {
-    const initialBalances = await getBalances(alice, bob);
-    await l1Contract.deposit({ value: depositValue });
+    const initialBalances = await getBalances(alice, bob, tokenContract);
+
+    USE_ERC20
+      ? await l1Contract.depositToken(tokenContract.address, depositValue)
+      : await l1Contract.depositEth({ value: depositValue });
 
     const tickets: Ticket[] = [];
     const ticketSignatures = [];
@@ -107,6 +129,7 @@ describe("L1 Contract", function () {
         sender: bob.address,
         escrowHash: escrowHash,
         expiry: ticketExpiry,
+        token: USE_ERC20 ? tokenContract.address : ETH_TOKEN_ADDRESS,
       };
 
       const ticketHash = hashTicket(newTicket);
@@ -129,7 +152,7 @@ describe("L1 Contract", function () {
       );
     }
 
-    const finalBalances = await getBalances(alice, bob);
+    const finalBalances = await getBalances(alice, bob, tokenContract);
 
     const expectedTotalTransferred = BigNumber.from(
       amountOfTickets * ticketValue

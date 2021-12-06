@@ -5,6 +5,7 @@ export type Ticket = {
   sender: string;
   escrowHash: string;
   expiry: number;
+  token: string;
 };
 
 export type EscrowEntry = {
@@ -14,4 +15,5 @@ export type EscrowEntry = {
   claimStart: number;
   escrowHash: string;
   value: number;
+  token: string;
 };

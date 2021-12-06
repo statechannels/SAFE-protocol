@@ -12,6 +12,7 @@ export function hashTicket(ticket: Ticket): string {
         ticket.sender,
         ticket.escrowHash,
         ticket.expiry,
+        ticket.token,
       ],
     ])
   );
@@ -27,6 +28,7 @@ export function hashEscrowEntry(entry: EscrowEntry): string {
         entry.claimStart,
         entry.claimExpiry,
         entry.escrowHash,
+        entry.token
       ],
     ])
   );
