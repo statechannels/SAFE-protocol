@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 contract L1Contract is SignatureChecker, FundsSender {
     /// A record of the current nonce per sender.
     mapping(address => uint256) senderNonces;
-    /// This is the amount of tokens(or native currency) allocated to senders.
+    /// The amount of tokens (or native currency) allocated to senders.
     /// Indexed by sender address then token address.
     mapping(address => mapping(address => uint256)) balances;
 
