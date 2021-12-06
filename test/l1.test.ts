@@ -13,7 +13,7 @@ import { expect, use } from "chai";
 import { solidity } from "ethereum-waffle";
 import { getBalances } from "./utils";
 import { IERC20 } from "../src/contract-types/IERC20";
-import { L1Contract } from "../src/contract-types/L1Contract";
+import { L1Contract } from "../contract-types/L1Contract";
 const alice = new ethers.Wallet(ALICE_PK, ethers.provider);
 const bob = new ethers.Wallet(BOB_PK, ethers.provider);
 
