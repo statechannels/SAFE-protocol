@@ -12,7 +12,7 @@ import { Ticket } from "../src/types";
 import { expect, use } from "chai";
 import { solidity } from "ethereum-waffle";
 import { getBalances } from "./utils";
-import { IERC20 } from "../src/contract-types/IERC20";
+import { IERC20 } from "../contract-types/IERC20";
 import { L1Contract } from "../contract-types/L1Contract";
 import { L1Contract__factory } from "../contract-types/factories/L1Contract__factory";
 import { TestToken__factory } from "../contract-types/factories/TestToken__factory";

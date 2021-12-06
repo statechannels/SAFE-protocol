@@ -14,7 +14,7 @@ import { L2Contract__factory } from "../contract-types/factories/L2Contract__fac
 import { TestToken } from "../contract-types/TestToken";
 import { getBalances } from "./utils";
 import { TestToken__factory } from "../contract-types/factories/TestToken__factory";
-import { IERC20 } from "../src/contract-types/IERC20";
+import { IERC20 } from "../contract-types/IERC20";
 
 const ONE_DAY = 60 * 60 * 24;
 const aliceWallet = new ethers.Wallet(ALICE_PK, ethers.provider);
