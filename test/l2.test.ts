@@ -13,6 +13,8 @@ import { L2Contract } from "../contract-types/L2Contract";
 import { L2Contract__factory } from "../contract-types/factories/L2Contract__factory";
 import { TestToken } from "../contract-types/TestToken";
 import { getBalances } from "./utils";
+import { TestToken__factory } from "../contract-types/factories/TestToken__factory";
+import { IERC20 } from "../src/contract-types/IERC20";
 
 const ONE_DAY = 60 * 60 * 24;
 const aliceWallet = new ethers.Wallet(ALICE_PK, ethers.provider);
@@ -25,7 +27,7 @@ const escrowHash = ethers.utils.keccak256(
   ethers.utils.defaultAbiCoder.encode(["bytes32"], [preimage])
 );
 
-let tokenContract: TestToken;
+let tokenContract: IERC20;
 let l2Contract: L2Contract;
 
 describe(`L2 Contract using ${USE_ERC20 ? "ERC20 tokens" : "ETH"}`, () => {
@@ -33,14 +35,11 @@ describe(`L2 Contract using ${USE_ERC20 ? "ERC20 tokens" : "ETH"}`, () => {
     const l2Deployer = new L2Contract__factory(bobWallet);
     l2Contract = (await l2Deployer.deploy()).connect(aliceWallet); // Alice sends all further txs. She'll pay the gas in this example, and be msg.sender when it counts.
 
-    const tokenDeployer = await ethers.getContractFactory(
-      "TestToken",
-      bobWallet
-    );
+    const tokenDeployer = new TestToken__factory(bobWallet);
 
     // Bob deploys the contract and gets totalTokens
     // He then sends half to Alice
-    tokenContract = await tokenDeployer.deploy(totalTokens);
+    tokenContract = (await tokenDeployer.deploy(totalTokens)) as IERC20;
     await tokenContract.transfer(aliceWallet.address, totalTokens.div(2));
 
     // Both Alice and Bob approve the L2 contract to spend tokens on their behalf

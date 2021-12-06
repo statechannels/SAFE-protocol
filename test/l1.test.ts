@@ -14,6 +14,9 @@ import { solidity } from "ethereum-waffle";
 import { getBalances } from "./utils";
 import { IERC20 } from "../src/contract-types/IERC20";
 import { L1Contract } from "../contract-types/L1Contract";
+import { L1Contract__factory } from "../contract-types/factories/L1Contract__factory";
+import { TestToken__factory } from "../contract-types/factories/TestToken__factory";
+
 const alice = new ethers.Wallet(ALICE_PK, ethers.provider);
 const bob = new ethers.Wallet(BOB_PK, ethers.provider);
 
@@ -32,12 +35,12 @@ use(solidity);
 
 describe(`L1 Contract using ${USE_ERC20 ? "ERC20 tokens" : "ETH"}`, () => {
   beforeEach(async () => {
-    const l1Deployer = await ethers.getContractFactory("L1Contract", bob);
+    const l1Deployer = new L1Contract__factory(bob);
     l1Contract = await l1Deployer.deploy();
-    const tokenDeployer = await ethers.getContractFactory("TestToken", bob);
+    const tokenDeployer = new TestToken__factory(bob);
 
     l1Contract = await l1Deployer.deploy();
-    tokenContract = await tokenDeployer.deploy(depositValue);
+    tokenContract = (await tokenDeployer.deploy(depositValue)) as IERC20;
 
     await tokenContract.approve(l1Contract.address, depositValue);
   });
