@@ -1,6 +1,6 @@
 import { BigNumber, Contract, Wallet } from "ethers";
 import { USE_ERC20 } from "../src/constants";
-import { IERC20 } from "../src/contract-types/IERC20";
+import { IERC20 } from "../contract-types/IERC20";
 
 export type Balances = { alice: BigNumber; bob: BigNumber };
 
