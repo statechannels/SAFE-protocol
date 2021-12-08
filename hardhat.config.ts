@@ -1,7 +1,6 @@
 import "@nomiclabs/hardhat-waffle";
 import "@nomiclabs/hardhat-ethers";
 import "@typechain/hardhat";
-import "hardhat-gas-reporter";
 import { HardhatUserConfig } from "hardhat/types";
 
 const config: HardhatUserConfig = {
