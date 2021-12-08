@@ -93,7 +93,7 @@ describe(`L1 Contract`, () => {
     await tokenContract.approve(l1Contract.address, DEPOSIT_VALUE);
   });
 
-  it.skip("rejects an expired ticket", async () => {
+  it("rejects an expired ticket", async () => {
     await l1Contract.depositEth({ value: DEPOSIT_VALUE });
 
     const ticket: Ticket = {
