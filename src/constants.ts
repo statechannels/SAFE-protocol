@@ -12,3 +12,6 @@ export const BOB_PK =
   "0xf3d5b8ba24833578a22960b2c7a8be1ebb7907ffe0b346111b8839e981b28b0c";
 
 export const ETH_TOKEN_ADDRESS = "0x0000000000000000000000000000000000000000";
+
+export const RUN_BENCHMARKS =
+  process.env["RUN_BENCHMARKS"]?.toLocaleLowerCase() === "true";

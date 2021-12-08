@@ -25,6 +25,7 @@
   },
   "scripts": {
     "test": "yarn hardhat test",
+    "test:benchmark": "RUN_BENCHMARKS=true yarn hardhat test",
     "typechain": "yarn hardhat typechain",
     "postinstall": "yarn typechain"
   }

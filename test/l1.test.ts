@@ -1,7 +1,12 @@
 import { ethers } from "hardhat";
 import { BigNumber } from "ethers";
 
-import { ALICE_PK, BOB_PK, ETH_TOKEN_ADDRESS } from "../src/constants";
+import {
+  ALICE_PK,
+  BOB_PK,
+  ETH_TOKEN_ADDRESS,
+  RUN_BENCHMARKS,
+} from "../src/constants";
 import { hashTicket, signData } from "../src/utils";
 import { Ticket } from "../src/types";
 import { expect, use } from "chai";
@@ -44,6 +49,14 @@ type ScenarioGasUsage = Scenario & {
 };
 
 const scenarios: Scenario[] = [
+  { transferType: "ETH", batchSize: 1, amountOfTickets: 20 },
+  { transferType: "ETH", batchSize: 10, amountOfTickets: 20 },
+
+  { transferType: "ERC20", batchSize: 1, amountOfTickets: 20 },
+  { transferType: "ERC20", batchSize: 10, amountOfTickets: 20 },
+];
+
+const benchmarkScenarios: Scenario[] = [
   { transferType: "ETH", batchSize: 1, amountOfTickets: 100 },
   { transferType: "ETH", batchSize: 5, amountOfTickets: 100 },
   { transferType: "ETH", batchSize: 20, amountOfTickets: 100 },
@@ -113,7 +126,7 @@ describe(`L1 Contract`, () => {
       l1Contract.claimTicket(ticket, preimage, { r, s, v })
     ).to.be.revertedWith("The ticket is expired");
   });
-  for (const scenario of scenarios) {
+  for (const scenario of RUN_BENCHMARKS ? benchmarkScenarios : scenarios) {
     it(`can handle a claim of ${scenario.amountOfTickets} tickets in batch sizes of ${scenario.batchSize} using ${scenario.transferType}`, async () => {
       const initialBalances = await getBalances(
         alice,
