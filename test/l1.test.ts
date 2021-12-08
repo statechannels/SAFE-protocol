@@ -11,13 +11,16 @@ import { hashTicket, signData } from "../src/utils";
 import { Ticket } from "../src/types";
 import { expect, use } from "chai";
 import { solidity } from "ethereum-waffle";
-import { getBalances } from "./utils";
+import {
+  getBalances,
+  ClaimTicketsScenario,
+  ClaimTicketsScenarioGasUsage,
+  printScenarioGasUsage,
+} from "./utils";
 import { IERC20 } from "../contract-types/IERC20";
 import { L1Contract } from "../contract-types/L1Contract";
 import { L1Contract__factory } from "../contract-types/factories/L1Contract__factory";
 import { TestToken__factory } from "../contract-types/factories/TestToken__factory";
-
-import Table from "cli-table";
 
 const alice = new ethers.Wallet(ALICE_PK, ethers.provider);
 const bob = new ethers.Wallet(BOB_PK, ethers.provider);
@@ -36,19 +39,7 @@ let tokenContract: IERC20;
 
 use(solidity);
 
-export type TransferType = "ERC20" | "ETH";
-
-type Scenario = {
-  transferType: TransferType;
-  batchSize: number;
-  amountOfTickets: number;
-};
-
-type ScenarioGasUsage = Scenario & {
-  totalGasUsed: BigNumber;
-};
-
-const scenarios: Scenario[] = [
+const scenarios: ClaimTicketsScenario[] = [
   { transferType: "ETH", batchSize: 1, amountOfTickets: 20 },
   { transferType: "ETH", batchSize: 10, amountOfTickets: 20 },
 
@@ -56,7 +47,7 @@ const scenarios: Scenario[] = [
   { transferType: "ERC20", batchSize: 10, amountOfTickets: 20 },
 ];
 
-const benchmarkScenarios: Scenario[] = [
+const benchmarkScenarios: ClaimTicketsScenario[] = [
   { transferType: "ETH", batchSize: 1, amountOfTickets: 100 },
   { transferType: "ETH", batchSize: 5, amountOfTickets: 100 },
   { transferType: "ETH", batchSize: 20, amountOfTickets: 100 },
@@ -69,30 +60,9 @@ const benchmarkScenarios: Scenario[] = [
   { transferType: "ERC20", batchSize: 100, amountOfTickets: 100 },
 ];
 
-const gasUsageScenarios: ScenarioGasUsage[] = [];
+const gasUsageScenarios: ClaimTicketsScenarioGasUsage[] = [];
 after(() => {
-  const table = new Table({
-    head: [
-      "Transfer Type",
-      "Total Gas Used",
-      "Total Claims",
-      "Batch Size",
-      " Average Gas Per Claim",
-    ],
-  });
-  for (const scenario of gasUsageScenarios) {
-    const averagePerClaim = scenario.totalGasUsed
-      .div(scenario.amountOfTickets)
-      .toNumber();
-    table.push([
-      scenario.transferType,
-      scenario.totalGasUsed,
-      scenario.amountOfTickets,
-      scenario.batchSize,
-      averagePerClaim,
-    ]);
-  }
-  console.log(table.toString());
+  printScenarioGasUsage(gasUsageScenarios);
 });
 describe(`L1 Contract`, () => {
   beforeEach(async () => {

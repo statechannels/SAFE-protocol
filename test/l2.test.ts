@@ -7,10 +7,9 @@ import { EscrowEntry, Ticket } from "../src/types";
 import { L2Contract } from "../contract-types/L2Contract";
 import { L2Contract__factory } from "../contract-types/factories/L2Contract__factory";
 import { TestToken } from "../contract-types/TestToken";
-import { getBalances } from "./utils";
+import { getBalances, TransferType } from "./utils";
 import { TestToken__factory } from "../contract-types/factories/TestToken__factory";
 import { IERC20 } from "../contract-types/IERC20";
-import { TransferType } from "./l1.test";
 
 const ONE_DAY = 60 * 60 * 24;
 const aliceWallet = new ethers.Wallet(ALICE_PK, ethers.provider);
