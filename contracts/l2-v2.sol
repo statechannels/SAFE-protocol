@@ -37,7 +37,7 @@ uint256 constant authorizationWindow = 60;
 uint256 constant l2ClaimWindow = 180;
 
 contract L2 is SignatureChecker {
-    RegisteredSwap[] registeredSwaps;
+    RegisteredSwap[] public registeredSwaps;
     // `batches` is used to record the fact that tickets with nonce
     // between startingNonce and startingNonce + numSwaps-1 are
     // authorized, claimed or returned.
@@ -72,7 +72,7 @@ contract L2 is SignatureChecker {
         Signature calldata signature
     ) public {
         RegisteredSwap[] memory swapsToAuthorize = new RegisteredSwap[](
-            last - first
+            last - first + 1
         );
         uint256 total = 0;
         for (uint256 i = first; i <= last; i++) {
@@ -84,8 +84,14 @@ contract L2 is SignatureChecker {
         );
         uint256 earliestTimestamp = registeredSwaps[first].timestamp;
 
-        require(recoverSigner(message, signature) == lpAddress);
-        require(earliestTimestamp + authorizationWindow > block.timestamp);
+        require(
+            recoverSigner(message, signature) == lpAddress,
+            "Signed by liquidity provider"
+        );
+        require(
+            earliestTimestamp + authorizationWindow > block.timestamp,
+            "Within autorization window"
+        );
 
         batches[first] = Batch({
             numSwaps: last - first + 1,
@@ -98,9 +104,15 @@ contract L2 is SignatureChecker {
 
     function claimL2Funds(uint256 first) public {
         Batch memory batch = batches[first];
-        require(batch.status == BatchStatus.Pending);
-        require(batch.latestTimestamp + authorizationWindow < block.timestamp);
-        require(batch.earliestTimestamp + l2ClaimWindow > block.timestamp);
+        require(batch.status == BatchStatus.Pending, "Batch is pending");
+        require(
+            batch.latestTimestamp + authorizationWindow < block.timestamp,
+            "After authorization window"
+        );
+        require(
+            batch.earliestTimestamp + l2ClaimWindow > block.timestamp,
+            "Before end of claim window"
+        );
 
         batch.status = BatchStatus.Claimed;
         batches[first] = batch;

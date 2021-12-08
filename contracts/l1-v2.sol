@@ -12,17 +12,23 @@ contract l1 is SignatureChecker {
         RegisteredSwap[] calldata swaps,
         Signature calldata signature
     ) public {
-        uint256 firstNonce = latestNonceWithdrawn + 1;
-        bytes32 message = keccak256(abi.encode(SignedSwaps(firstNonce, swaps)));
+        bytes32 message = keccak256(
+            abi.encode(SignedSwaps(latestNonceWithdrawn, swaps))
+        );
 
-        // TODO: update to Bob
-        require(recoverSigner(message, signature) == address(0));
-        require(swaps[0].timestamp + l1ClaimWindow > block.timestamp);
+        require(
+            recoverSigner(message, signature) == lpAddress,
+            "Signed by liquidity provider"
+        );
+        require(
+            swaps[0].timestamp + l1ClaimWindow > block.timestamp,
+            "Within claim window"
+        );
 
         for (uint256 i = 0; i < swaps.length; i++) {
             swaps[i].l1Recipient.call{value: swaps[i].value}("");
         }
 
-        latestNonceWithdrawn = firstNonce + swaps.length; // maybe off by one;
+        latestNonceWithdrawn = latestNonceWithdrawn + swaps.length; // maybe off by one;
     }
 }
