@@ -1,0 +1,35 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.10;
+
+struct RegisteredSwap {
+    /// Who will get the funds if executed
+    address l1Recipient;
+    /// The amount of funds to send.
+    uint256 value;
+    /// The timestamp when the swap was registered
+    uint256 timestamp;
+}
+
+struct SignedSwaps {
+    uint256 startIndex;
+    RegisteredSwap[] swaps;
+}
+
+struct Signature {
+    bytes32 r;
+    bytes32 s;
+    uint8 v;
+}
+
+abstract contract SignatureChecker {
+    function recoverSigner(bytes32 hash, Signature memory signature)
+        public
+        pure
+        returns (address)
+    {
+        bytes32 prefixedHash = keccak256(
+            abi.encodePacked("\x19Ethereum Signed Message:\n32", hash)
+        );
+        return ecrecover(prefixedHash, signature.v, signature.r, signature.s);
+    }
+}
