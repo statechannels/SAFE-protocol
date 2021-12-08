@@ -1,6 +1,10 @@
-import { EscrowEntry, Ticket } from "./types";
+import { EscrowEntry, SignedSwaps, Ticket } from "./types";
 import { ethers } from "ethers";
-import { ESCROW_ABI_TYPE, TICKET_ABI_TYPE } from "./constants";
+import {
+  ESCROW_ABI_TYPE,
+  SIGNED_SWAPS_ABI_TYPE,
+  TICKET_ABI_TYPE,
+} from "./constants";
 
 export function hashTicket(ticket: Ticket): string {
   return ethers.utils.keccak256(
@@ -14,7 +18,7 @@ export function hashTicket(ticket: Ticket): string {
         ticket.expiry,
         ticket.token,
       ],
-    ])
+    ]),
   );
 }
 
@@ -28,9 +32,17 @@ export function hashEscrowEntry(entry: EscrowEntry): string {
         entry.claimStart,
         entry.claimExpiry,
         entry.escrowHash,
-        entry.token
+        entry.token,
       ],
-    ])
+    ]),
+  );
+}
+
+export function hashSwaps(signedSwaps: SignedSwaps): string {
+  return ethers.utils.keccak256(
+    ethers.utils.defaultAbiCoder.encode(SIGNED_SWAPS_ABI_TYPE, [
+      [signedSwaps.startIndex, signedSwaps.swaps],
+    ]),
   );
 }
 
@@ -39,7 +51,7 @@ export function hashEscrowEntry(entry: EscrowEntry): string {
 export function signData(hashedData: string, privateKey: string): any {
   const signingKey = new ethers.utils.SigningKey(privateKey);
   const hashedMessage = ethers.utils.hashMessage(
-    ethers.utils.arrayify(hashedData)
+    ethers.utils.arrayify(hashedData),
   );
   return ethers.utils.splitSignature(signingKey.signDigest(hashedMessage));
 }

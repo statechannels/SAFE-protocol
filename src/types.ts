@@ -1,3 +1,5 @@
+import { RegisteredSwapStruct } from "../contract-types/L1";
+
 export type Ticket = {
   value: number;
   senderNonce: number;
@@ -16,4 +18,9 @@ export type EscrowEntry = {
   escrowHash: string;
   value: number;
   token: string;
+};
+
+export type SignedSwaps = {
+  startIndex: number;
+  swaps: RegisteredSwapStruct[];
 };
