@@ -1,11 +1,11 @@
-import { SignedSwaps } from "./types";
+import { SwapsWithIndex } from "./types";
 import { ethers } from "ethers";
 import { SIGNED_SWAPS_ABI_TYPE } from "./constants";
 
-export function hashSwaps(signedSwaps: SignedSwaps): string {
+export function hashSwaps(swapsWithIndex: SwapsWithIndex): string {
   return ethers.utils.keccak256(
     ethers.utils.defaultAbiCoder.encode(SIGNED_SWAPS_ABI_TYPE, [
-      [signedSwaps.startIndex, signedSwaps.swaps],
+      [swapsWithIndex.startIndex, swapsWithIndex.swaps],
     ]),
   );
 }

@@ -3,7 +3,7 @@ import { ethers } from "hardhat";
 import { L1__factory } from "../contract-types/factories/L1__factory";
 import { L2__factory } from "../contract-types/factories/L2__factory";
 import { L2DepositStruct } from "../contract-types/L2";
-import { SignedSwaps } from "../src/types";
+import { SwapsWithIndex } from "../src/types";
 import { hashSwaps, signData } from "../src/utils";
 
 // Address 0x2a47Cd5718D67Dc81eAfB24C99d4db159B0e7bCa
@@ -38,9 +38,13 @@ it.only("e2e swap", async () => {
 
   const swap = await lpL2.registeredSwaps(0);
 
-  const signedSwaps: SignedSwaps = { startIndex: 0, swaps: [swap] };
-  const signature = signData(hashSwaps(signedSwaps), lpPK);
-  await lpL2.authorizeWithdrawal(0, 0, signData(hashSwaps(signedSwaps), lpPK));
+  const swapsWithIndex: SwapsWithIndex = { startIndex: 0, swaps: [swap] };
+  const signature = signData(hashSwaps(swapsWithIndex), lpPK);
+  await lpL2.authorizeWithdrawal(
+    0,
+    0,
+    signData(hashSwaps(swapsWithIndex), lpPK),
+  );
   await lpL1.claimBatch([swap], signature);
 
   await ethers.provider.send("evm_increaseTime", [121]);

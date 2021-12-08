@@ -80,7 +80,7 @@ contract L2 is SignatureChecker {
             total += registeredSwaps[i].value;
         }
         bytes32 message = keccak256(
-            abi.encode(SignedSwaps(first, swapsToAuthorize))
+            abi.encode(SwapsWithIndex(first, swapsToAuthorize))
         );
         uint256 earliestTimestamp = registeredSwaps[first].timestamp;
 

@@ -13,7 +13,7 @@ contract l1 is SignatureChecker {
         Signature calldata signature
     ) public {
         bytes32 message = keccak256(
-            abi.encode(SignedSwaps(latestNonceWithdrawn, swaps))
+            abi.encode(SwapsWithIndex(latestNonceWithdrawn, swaps))
         );
 
         require(
