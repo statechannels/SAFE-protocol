@@ -14,7 +14,7 @@ struct RegisteredSwap {
     uint256 timestamp;
 }
 
-struct SignedSwaps {
+struct SwapsWithIndex {
     uint256 startIndex;
     RegisteredSwap[] swaps;
 }
