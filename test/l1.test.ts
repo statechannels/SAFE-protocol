@@ -14,7 +14,7 @@ import { solidity } from "ethereum-waffle";
 import {
   getBalances,
   ClaimTicketsScenario,
-  ClaimTicketsScenarioGasUsage,
+  ScenarioGasUsage,
   printScenarioGasUsage,
 } from "./utils";
 import { IERC20 } from "../contract-types/IERC20";
@@ -60,7 +60,7 @@ const benchmarkScenarios: ClaimTicketsScenario[] = [
   { transferType: "ERC20", batchSize: 100, amountOfTickets: 100 },
 ];
 
-const gasUsageScenarios: ClaimTicketsScenarioGasUsage[] = [];
+const gasUsageScenarios: ScenarioGasUsage[] = [];
 after(() => {
   printScenarioGasUsage(gasUsageScenarios);
 });

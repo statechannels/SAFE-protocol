@@ -31,32 +31,34 @@ export type ClaimTicketsScenario = {
   amountOfTickets: number;
 };
 
-export type ClaimTicketsScenarioGasUsage = ClaimTicketsScenario & {
+export type Scenario = ClaimTicketsScenario;
+
+export type ScenarioGasUsage = Scenario & {
   totalGasUsed: BigNumber;
 };
 
-export function printScenarioGasUsage(
-  scenarios: ClaimTicketsScenarioGasUsage[]
-) {
+export function printScenarioGasUsage(scenarios: ScenarioGasUsage[]) {
+  console.log("L1 Claim Tickets Gas Usage");
   const table = new Table({
     head: [
+      "Ticket Batch Size",
       "Transfer Type",
+      " Average Gas Per Ticket",
       "Total Gas Used",
-      "Total Claims",
-      "Batch Size",
-      " Average Gas Per Claim",
+      "Amount of Tickets Claimed",
     ],
+    colAligns: ["right", "left", "right", "right", "right"],
   });
   for (const scenario of scenarios) {
     const averagePerClaim = scenario.totalGasUsed
       .div(scenario.amountOfTickets)
       .toNumber();
     table.push([
+      scenario.batchSize,
       scenario.transferType,
+      averagePerClaim,
       scenario.totalGasUsed,
       scenario.amountOfTickets,
-      scenario.batchSize,
-      averagePerClaim,
     ]);
   }
   console.log(table.toString());
