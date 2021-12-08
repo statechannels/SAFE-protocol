@@ -11,6 +11,4 @@ export const ALICE_PK =
 export const BOB_PK =
   "0xf3d5b8ba24833578a22960b2c7a8be1ebb7907ffe0b346111b8839e981b28b0c";
 
-export const USE_ERC20 = process.env.USE_ERC20 === "true";
-
 export const ETH_TOKEN_ADDRESS = "0x0000000000000000000000000000000000000000";
