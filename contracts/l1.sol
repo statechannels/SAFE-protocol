@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.10;
 
-import "./common-v2.sol";
+import "./common.sol";
 
 uint256 constant l1ClaimWindow = 120;
 
