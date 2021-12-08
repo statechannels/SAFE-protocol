@@ -20,12 +20,11 @@ const bob = new ethers.Wallet(BOB_PK, ethers.provider);
 const preimage = ethers.utils.hashMessage("Some secret preimage");
 const escrowHash = ethers.utils.keccak256(preimage);
 
-const ticketExpiry = 9_999_999_999;
+const TICKET_EXPIRY = 9_999_999_999;
+const TICKET_VALUE = 10000;
 
-const amountOfTickets = 100;
-const ticketBatchSizes = [1, 5, 20, 50, 100];
-const ticketValue = 10000;
-const depositValue = ticketValue * amountOfTickets * 100;
+// We deposit a a large amount of funds so all tickets will be funded
+const DEPOSIT_VALUE = BigNumber.from(TICKET_VALUE).mul(1_000_000);
 
 let l1Contract: L1Contract;
 let tokenContract: IERC20;
@@ -89,13 +88,13 @@ describe(`L1 Contract`, () => {
     const tokenDeployer = new TestToken__factory(bob);
 
     l1Contract = await l1Deployer.deploy();
-    tokenContract = (await tokenDeployer.deploy(depositValue)) as IERC20;
+    tokenContract = (await tokenDeployer.deploy(DEPOSIT_VALUE)) as IERC20;
 
-    await tokenContract.approve(l1Contract.address, depositValue);
+    await tokenContract.approve(l1Contract.address, DEPOSIT_VALUE);
   });
 
   it.skip("rejects an expired ticket", async () => {
-    await l1Contract.depositEth({ value: depositValue });
+    await l1Contract.depositEth({ value: DEPOSIT_VALUE });
 
     const ticket: Ticket = {
       senderNonce: 1,
@@ -124,19 +123,19 @@ describe(`L1 Contract`, () => {
       );
 
       scenario.transferType === "ERC20"
-        ? await l1Contract.depositToken(tokenContract.address, depositValue)
-        : await l1Contract.depositEth({ value: depositValue });
+        ? await l1Contract.depositToken(tokenContract.address, DEPOSIT_VALUE)
+        : await l1Contract.depositEth({ value: DEPOSIT_VALUE });
 
       const tickets: Ticket[] = [];
       const ticketSignatures = [];
-      for (let i = 0; i < amountOfTickets; i++) {
+      for (let i = 0; i < scenario.amountOfTickets; i++) {
         const newTicket = {
           senderNonce: i,
-          value: ticketValue,
+          value: TICKET_VALUE,
           receiver: alice.address,
           sender: bob.address,
           escrowHash: escrowHash,
-          expiry: ticketExpiry,
+          expiry: TICKET_EXPIRY,
           token:
             scenario.transferType === "ERC20"
               ? tokenContract.address
@@ -149,7 +148,7 @@ describe(`L1 Contract`, () => {
         tickets.push(newTicket);
         ticketSignatures.push(signature);
       }
-      const preimages = new Array(amountOfTickets).fill(preimage);
+      const preimages = new Array(scenario.amountOfTickets).fill(preimage);
 
       let totalGasUsed = BigNumber.from(0);
 
@@ -175,7 +174,7 @@ describe(`L1 Contract`, () => {
       );
 
       const expectedTotalTransferred = BigNumber.from(
-        amountOfTickets * ticketValue
+        scenario.amountOfTickets * TICKET_VALUE
       );
       const actualTotalTransferred = finalBalances.alice.sub(
         initialBalances.alice
