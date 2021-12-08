@@ -84,8 +84,7 @@ contract L2 is SignatureChecker {
         );
         uint256 earliestTimestamp = registeredSwaps[first].timestamp;
 
-        // TODO: change to Bob
-        require(recoverSigner(message, signature) == address(0));
+        require(recoverSigner(message, signature) == lpAddress);
         require(earliestTimestamp + authorizationWindow > block.timestamp);
 
         batches[first] = Batch({
@@ -105,7 +104,6 @@ contract L2 is SignatureChecker {
 
         batch.status = BatchStatus.Claimed;
         batches[first] = batch;
-        // TODO: send funds to Bob
-        address(0).call{value: batch.total}("");
+        lpAddress.call{value: batch.total}("");
     }
 }
