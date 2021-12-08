@@ -1,12 +1,7 @@
 import { ethers } from "hardhat";
 import { BigNumber } from "ethers";
 
-import {
-  ALICE_PK,
-  BOB_PK,
-  ETH_TOKEN_ADDRESS,
-  USE_ERC20,
-} from "../src/constants";
+import { ALICE_PK, BOB_PK, ETH_TOKEN_ADDRESS } from "../src/constants";
 import { hashTicket, signData } from "../src/utils";
 import { Ticket } from "../src/types";
 import { expect, use } from "chai";
@@ -28,41 +23,66 @@ const escrowHash = ethers.utils.keccak256(preimage);
 const ticketExpiry = 9_999_999_999;
 
 const amountOfTickets = 100;
-const ticketBatchSizes = [5, 20, 50, 100];
+const ticketBatchSizes = [1, 5, 20, 50, 100];
 const ticketValue = 10000;
 const depositValue = ticketValue * amountOfTickets * 100;
 
 let l1Contract: L1Contract;
 let tokenContract: IERC20;
-use(solidity);
-type GasUsed = { gasUsed: BigNumber; claims: number; batchSize: number };
 
-const gasPerScenario: Record<string, GasUsed> = {};
+use(solidity);
+
+export type TransferType = "ERC20" | "ETH";
+
+type Scenario = {
+  transferType: TransferType;
+  batchSize: number;
+  amountOfTickets: number;
+};
+
+type ScenarioGasUsage = Scenario & {
+  totalGasUsed: BigNumber;
+};
+
+const scenarios: Scenario[] = [
+  { transferType: "ETH", batchSize: 1, amountOfTickets: 100 },
+  { transferType: "ETH", batchSize: 5, amountOfTickets: 100 },
+  { transferType: "ETH", batchSize: 20, amountOfTickets: 100 },
+  { transferType: "ETH", batchSize: 50, amountOfTickets: 100 },
+  { transferType: "ETH", batchSize: 100, amountOfTickets: 100 },
+  { transferType: "ERC20", batchSize: 1, amountOfTickets: 100 },
+  { transferType: "ERC20", batchSize: 5, amountOfTickets: 100 },
+  { transferType: "ERC20", batchSize: 20, amountOfTickets: 100 },
+  { transferType: "ERC20", batchSize: 50, amountOfTickets: 100 },
+  { transferType: "ERC20", batchSize: 100, amountOfTickets: 100 },
+];
+
+const gasUsageScenarios: ScenarioGasUsage[] = [];
 after(() => {
   const table = new Table({
     head: [
-      "Scenario",
+      "Transfer Type",
       "Total Gas Used",
       "Total Claims",
       "Batch Size",
       " Average Gas Per Claim",
     ],
   });
-  for (const scenario of Object.keys(gasPerScenario)) {
-    const averagePerClaim = gasPerScenario[scenario].gasUsed
-      .div(gasPerScenario[scenario].claims)
+  for (const scenario of gasUsageScenarios) {
+    const averagePerClaim = scenario.totalGasUsed
+      .div(scenario.amountOfTickets)
       .toNumber();
     table.push([
-      scenario,
-      gasPerScenario[scenario].gasUsed,
-      gasPerScenario[scenario].claims,
-      gasPerScenario[scenario].batchSize,
+      scenario.transferType,
+      scenario.totalGasUsed,
+      scenario.amountOfTickets,
+      scenario.batchSize,
       averagePerClaim,
     ]);
   }
   console.log(table.toString());
 });
-describe(`L1 Contract using ${USE_ERC20 ? "ERC20 tokens" : "ETH"}`, () => {
+describe(`L1 Contract`, () => {
   beforeEach(async () => {
     const l1Deployer = new L1Contract__factory(bob);
     l1Contract = await l1Deployer.deploy();
@@ -74,10 +94,8 @@ describe(`L1 Contract using ${USE_ERC20 ? "ERC20 tokens" : "ETH"}`, () => {
     await tokenContract.approve(l1Contract.address, depositValue);
   });
 
-  it("rejects an expired ticket", async () => {
-    USE_ERC20
-      ? await l1Contract.depositToken(tokenContract.address, depositValue)
-      : await l1Contract.depositEth({ value: depositValue });
+  it.skip("rejects an expired ticket", async () => {
+    await l1Contract.depositEth({ value: depositValue });
 
     const ticket: Ticket = {
       senderNonce: 1,
@@ -86,7 +104,7 @@ describe(`L1 Contract using ${USE_ERC20 ? "ERC20 tokens" : "ETH"}`, () => {
       sender: bob.address,
       escrowHash: escrowHash,
       expiry: 10,
-      token: USE_ERC20 ? tokenContract.address : ETH_TOKEN_ADDRESS,
+      token: ETH_TOKEN_ADDRESS,
     };
     const ticketHash = hashTicket(ticket);
 
@@ -96,75 +114,16 @@ describe(`L1 Contract using ${USE_ERC20 ? "ERC20 tokens" : "ETH"}`, () => {
       l1Contract.claimTicket(ticket, preimage, { r, s, v })
     ).to.be.revertedWith("The ticket is expired");
   });
-
-  it(`can handle ${amountOfTickets} tickets being claimed sequentially`, async () => {
-    const ticketGasUsage = {
-      gasUsed: BigNumber.from(0),
-      claims: 0,
-      batchSize: 0,
-    };
-    const initialBalances = await getBalances(alice, bob, tokenContract);
-
-    USE_ERC20
-      ? await l1Contract.depositToken(tokenContract.address, depositValue)
-      : await l1Contract.depositEth({ value: depositValue });
-
-    const tickets: Ticket[] = [];
-    const ticketSignatures = [];
-    for (let i = 0; i < amountOfTickets; i++) {
-      const newTicket = {
-        senderNonce: i,
-        value: ticketValue,
-        receiver: alice.address,
-        sender: bob.address,
-        escrowHash: escrowHash,
-        expiry: ticketExpiry,
-        token: USE_ERC20 ? tokenContract.address : ETH_TOKEN_ADDRESS,
-      };
-
-      const ticketHash = hashTicket(newTicket);
-
-      const signature = await signData(ticketHash, bob.privateKey);
-
-      tickets.push(newTicket);
-      ticketSignatures.push(signature);
-    }
-    for (let i = 0; i < tickets.length; i++) {
-      const { r, s, v } = ticketSignatures[i];
-
-      const result = await l1Contract.claimTicket(tickets[i], preimage, {
-        r,
-        s,
-        v,
-      });
-      ticketGasUsage.gasUsed = ticketGasUsage.gasUsed.add(
-        (await result.wait()).gasUsed
+  for (const scenario of scenarios) {
+    it(`can handle a claim of ${scenario.amountOfTickets} tickets in batch sizes of ${scenario.batchSize} using ${scenario.transferType}`, async () => {
+      const initialBalances = await getBalances(
+        alice,
+        bob,
+        tokenContract,
+        scenario.transferType
       );
-      ticketGasUsage.claims++;
-    }
-    const finalBalances = await getBalances(alice, bob, tokenContract);
 
-    const expectedTotalTransferred = BigNumber.from(
-      amountOfTickets * ticketValue
-    );
-    const actualTotalTransferred = finalBalances.alice.sub(
-      initialBalances.alice
-    );
-
-    expect(expectedTotalTransferred.eq(actualTotalTransferred)).to.be.true;
-
-    gasPerScenario["sequential claims"] = ticketGasUsage;
-  });
-  for (const ticketBatchSize of ticketBatchSizes) {
-    it(`can handle a claim of ${amountOfTickets} tickets in batch sizes of ${ticketBatchSize}`, async () => {
-      const ticketGasUsage = {
-        gasUsed: BigNumber.from(0),
-        claims: 0,
-        batchSize: ticketBatchSize,
-      };
-      const initialBalances = await getBalances(alice, bob, tokenContract);
-
-      USE_ERC20
+      scenario.transferType === "ERC20"
         ? await l1Contract.depositToken(tokenContract.address, depositValue)
         : await l1Contract.depositEth({ value: depositValue });
 
@@ -178,7 +137,10 @@ describe(`L1 Contract using ${USE_ERC20 ? "ERC20 tokens" : "ETH"}`, () => {
           sender: bob.address,
           escrowHash: escrowHash,
           expiry: ticketExpiry,
-          token: USE_ERC20 ? tokenContract.address : ETH_TOKEN_ADDRESS,
+          token:
+            scenario.transferType === "ERC20"
+              ? tokenContract.address
+              : ETH_TOKEN_ADDRESS,
         };
 
         const ticketHash = hashTicket(newTicket);
@@ -189,24 +151,28 @@ describe(`L1 Contract using ${USE_ERC20 ? "ERC20 tokens" : "ETH"}`, () => {
       }
       const preimages = new Array(amountOfTickets).fill(preimage);
 
+      let totalGasUsed = BigNumber.from(0);
+
       for (
-        let i = ticketBatchSize;
+        let i = scenario.batchSize;
         i <= tickets.length;
-        i = i + ticketBatchSize
+        i = i + scenario.batchSize
       ) {
         const result = await l1Contract.claimTickets(
-          tickets.slice(i - ticketBatchSize, i),
-          preimages.slice(i - ticketBatchSize, i),
-          ticketSignatures.slice(i - ticketBatchSize, i)
+          tickets.slice(i - scenario.batchSize, i),
+          preimages.slice(i - scenario.batchSize, i),
+          ticketSignatures.slice(i - scenario.batchSize, i)
         );
 
-        ticketGasUsage.gasUsed = ticketGasUsage.gasUsed.add(
-          (await result.wait()).gasUsed
-        );
-        ticketGasUsage.claims += ticketBatchSize;
+        totalGasUsed = totalGasUsed.add((await result.wait()).gasUsed);
       }
 
-      const finalBalances = await getBalances(alice, bob, tokenContract);
+      const finalBalances = await getBalances(
+        alice,
+        bob,
+        tokenContract,
+        scenario.transferType
+      );
 
       const expectedTotalTransferred = BigNumber.from(
         amountOfTickets * ticketValue
@@ -216,7 +182,8 @@ describe(`L1 Contract using ${USE_ERC20 ? "ERC20 tokens" : "ETH"}`, () => {
       );
 
       expect(expectedTotalTransferred.eq(actualTotalTransferred)).to.be.true;
-      gasPerScenario[`batched claims ${ticketBatchSize}`] = ticketGasUsage;
+
+      gasUsageScenarios.push({ ...scenario, totalGasUsed });
     });
   }
 });

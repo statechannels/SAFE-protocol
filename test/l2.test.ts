@@ -63,14 +63,16 @@ describe(`L2 Contract using ${USE_ERC20 ? "ERC20 tokens" : "ETH"}`, () => {
     const afterEscrow = await getBalances(
       aliceWallet,
       bobWallet,
-      tokenContract
+      tokenContract,
+      USE_ERC20 ? "ERC20" : "ETH"
     );
 
     await l2Contract.refund(entry);
     const finalBalances = await getBalances(
       aliceWallet,
       bobWallet,
-      tokenContract
+      tokenContract,
+      USE_ERC20 ? "ERC20" : "ETH"
     );
 
     // TODO: Due to gas fees, it's hard to check that Alice got back transferAmount.
@@ -81,7 +83,8 @@ describe(`L2 Contract using ${USE_ERC20 ? "ERC20 tokens" : "ETH"}`, () => {
     const initialBalances = await getBalances(
       aliceWallet,
       bobWallet,
-      tokenContract
+      tokenContract,
+      USE_ERC20 ? "ERC20" : "ETH"
     );
     const currentBlock = await l2Contract.provider.getBlock(
       l2Contract.provider.getBlockNumber()
@@ -103,7 +106,8 @@ describe(`L2 Contract using ${USE_ERC20 ? "ERC20 tokens" : "ETH"}`, () => {
     const finalBalances = await getBalances(
       aliceWallet,
       bobWallet,
-      tokenContract
+      tokenContract,
+      USE_ERC20 ? "ERC20" : "ETH"
     );
 
     const actualTotalTransferred = finalBalances.bob.sub(initialBalances.bob);
@@ -166,7 +170,8 @@ describe(`L2 Contract using ${USE_ERC20 ? "ERC20 tokens" : "ETH"}`, () => {
     const initialBalance = await getBalances(
       aliceWallet,
       bobWallet,
-      tokenContract
+      tokenContract,
+      USE_ERC20 ? "ERC20" : "ETH"
     );
 
     await l2Contract
@@ -176,7 +181,8 @@ describe(`L2 Contract using ${USE_ERC20 ? "ERC20 tokens" : "ETH"}`, () => {
     const afterEscrowBalance = await getBalances(
       aliceWallet,
       bobWallet,
-      tokenContract
+      tokenContract,
+      USE_ERC20 ? "ERC20" : "ETH"
     );
 
     await l2Contract
@@ -197,7 +203,8 @@ describe(`L2 Contract using ${USE_ERC20 ? "ERC20 tokens" : "ETH"}`, () => {
     const afterProveFraudBalance = await getBalances(
       aliceWallet,
       bobWallet,
-      tokenContract
+      tokenContract,
+      USE_ERC20 ? "ERC20" : "ETH"
     );
 
     expect(
