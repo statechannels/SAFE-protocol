@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.10;
 
-import "./common-v2.sol";
+import "./common.sol";
 
 struct L2Deposit {
     // the nonce of the most recent "L1AmountAssertion" that Alice trusts
