@@ -25,16 +25,6 @@ const config: HardhatUserConfig = {
       accounts: [
         {
           privateKey:
-            "0x91f47a1911c0fd985b34c25962f661f0de606f7ad38ba156902dff48b4d05f97",
-          balance: "10000000000000000000000",
-        },
-        {
-          privateKey:
-            "0xf3d5b8ba24833578a22960b2c7a8be1ebb7907ffe0b346111b8839e981b28b0c",
-          balance: "10000000000000000000000",
-        },
-        {
-          privateKey:
             "0xe1743f0184b85ac1412311be9d6e5d333df23e22efdf615d0135ca2b9ed67938",
           balance: "10000000000000000000000",
         },
