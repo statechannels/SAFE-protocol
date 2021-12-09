@@ -69,6 +69,7 @@ contract L2 is SignatureChecker {
         registeredSwaps.push(swap);
     }
 
+    // TODO: validate that batches are non-overlapping.
     function authorizeWithdrawal(
         uint256 first,
         uint256 last,
