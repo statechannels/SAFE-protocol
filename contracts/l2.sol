@@ -38,9 +38,8 @@ uint256 constant l2ClaimWindow = 180;
 
 contract L2 is SignatureChecker {
     RegisteredSwap[] public registeredSwaps;
-    // `batches` is used to record the fact that tickets with nonce
-    // between startingNonce and startingNonce + numSwaps-1 are
-    // authorized, claimed or returned.
+    // `batches` is used to record the fact that tickets with nonce between startingNonce and startingNonce + numSwaps-1 are authorized, claimed or returned.
+    // Indexed by nonce
     mapping(uint256 => Batch) batches;
 
     // TODO: check payment amount
