@@ -29,6 +29,6 @@ contract l1 is SignatureChecker {
             swaps[i].l1Recipient.call{value: swaps[i].value}("");
         }
 
-        latestNonceWithdrawn = latestNonceWithdrawn + swaps.length; // maybe off by one;
+        latestNonceWithdrawn = latestNonceWithdrawn + swaps.length;
     }
 }
