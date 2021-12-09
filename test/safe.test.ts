@@ -1,8 +1,10 @@
+import { ethers as ethersTypes } from "ethers";
 import { ethers } from "hardhat";
 
 import { L1__factory } from "../contract-types/factories/L1__factory";
 import { L2__factory } from "../contract-types/factories/L2__factory";
-import { L2DepositStruct } from "../contract-types/L2";
+import { L1 } from "../contract-types/L1";
+import { L2, L2DepositStruct } from "../contract-types/L2";
 import { SwapsWithIndex } from "../src/types";
 import { hashSwaps, signData } from "../src/utils";
 
@@ -18,56 +20,75 @@ const lpPK =
 
 const customerWallet = new ethers.Wallet(customerPK, ethers.provider);
 const customer2Wallet = new ethers.Wallet(customer2PK, ethers.provider);
-const lpWallet = new ethers.Wallet(customerPK, ethers.provider);
+const lpWallet = new ethers.Wallet(lpPK, ethers.provider);
 
 const l1Deployer = new L1__factory(lpWallet);
 const l2Deployer = new L2__factory(lpWallet);
 
-it.only("e2e swap", async () => {
-  const l1 = await l1Deployer.deploy();
-  const l2 = await l2Deployer.deploy();
+let lpL1: L1;
+let customerL2: L2, customer2L2: L2, lpL2: L2;
 
-  const customerL2 = l2.connect(customerWallet);
-  const customer2L2 = l2.connect(customer2Wallet);
+async function waitForTx(
+  txPromise: Promise<ethersTypes.providers.TransactionResponse>,
+) {
+  return (await txPromise).wait();
+}
 
-  const lpL2 = l2.connect(lpWallet);
-  const lpL1 = l1.connect(lpWallet);
-
-  const tx = await lpWallet.sendTransaction({
-    to: l1.address,
-    value: ethers.utils.parseEther("10"),
-  });
-  await tx.wait();
-
+async function swap(trustedNonce: number, trustedAmount: number) {
+  const depositAmount = 1;
   const deposit: L2DepositStruct = {
-    trustedNonce: 0,
-    trustedAmount: 10,
-    depositAmount: 1,
+    trustedNonce,
+    trustedAmount,
+    depositAmount,
     l1Recipient: customerWallet.address,
   };
   const deposit2: L2DepositStruct = {
     ...deposit,
-    l1Recipient: customerWallet.address,
+    l1Recipient: customer2Wallet.address,
   };
 
-  await customerL2.depositOnL2(deposit, { value: 1 });
-  await customer2L2.depositOnL2(deposit2, { value: 1 });
+  await waitForTx(customerL2.depositOnL2(deposit, { value: depositAmount }));
+  await waitForTx(customer2L2.depositOnL2(deposit2, { value: depositAmount }));
 
-  const swap = await lpL2.registeredSwaps(0);
-  const swap2 = await lpL2.registeredSwaps(1);
+  const swap = await lpL2.registeredSwaps(trustedNonce);
+  const swap2 = await lpL2.registeredSwaps(trustedNonce + 1);
 
   const swapsWithIndex: SwapsWithIndex = {
-    startIndex: 0,
+    startIndex: trustedNonce,
     swaps: [swap, swap2],
   };
   const signature = signData(hashSwaps(swapsWithIndex), lpPK);
-  await lpL2.authorizeWithdrawal(
-    0,
-    1,
-    signData(hashSwaps(swapsWithIndex), lpPK),
+  await waitForTx(
+    lpL2.authorizeWithdrawal(
+      trustedNonce,
+      trustedNonce + 1,
+      signData(hashSwaps(swapsWithIndex), lpPK),
+    ),
   );
-  await lpL1.claimBatch([swap, swap2], signature);
+  await waitForTx(lpL1.claimBatch([swap, swap2], signature));
 
   await ethers.provider.send("evm_increaseTime", [121]);
-  await lpL2.claimL2Funds(0);
+  await waitForTx(lpL2.claimL2Funds(trustedNonce));
+}
+
+beforeEach(async () => {
+  const l1 = await l1Deployer.deploy();
+  const l2 = await l2Deployer.deploy();
+
+  customerL2 = l2.connect(customerWallet);
+  customer2L2 = l2.connect(customer2Wallet);
+
+  lpL2 = l2.connect(lpWallet);
+  lpL1 = l1.connect(lpWallet);
+
+  const tx = await lpWallet.sendTransaction({
+    to: l1.address,
+    value: ethers.utils.parseUnits("10", "wei"),
+  });
+  await tx.wait();
+});
+
+it("e2e swap", async () => {
+  await swap(0, 10);
+  await swap(2, 8);
 });
