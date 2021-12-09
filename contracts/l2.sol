@@ -58,6 +58,10 @@ contract L2 is SignatureChecker {
             amountAvailable >= amountReserved + deposit.depositAmount,
             "Must have enough funds for swap"
         );
+        require(
+            msg.value == deposit.depositAmount,
+            "Value sent must match depositAmount"
+        );
         RegisteredSwap memory swap = RegisteredSwap({
             l1Recipient: deposit.l1Recipient,
             value: deposit.depositAmount,
@@ -122,6 +126,7 @@ contract L2 is SignatureChecker {
 
         batch.status = BatchStatus.Claimed;
         batches[first] = batch;
-        lpAddress.call{value: batch.total}("");
+        (bool sent, ) = lpAddress.call{value: batch.total}("");
+        require(sent, "Failed to send Ether");
     }
 }

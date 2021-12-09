@@ -27,6 +27,12 @@ it.only("e2e swap", async () => {
   const lpL2 = l2.connect(lpWallet);
   const lpL1 = l1.connect(lpWallet);
 
+  const tx = await lpWallet.sendTransaction({
+    to: l1.address,
+    value: ethers.utils.parseEther("10"),
+  });
+  await tx.wait();
+
   const deposit: L2DepositStruct = {
     trustedNonce: 0,
     trustedAmount: 10,
@@ -34,7 +40,7 @@ it.only("e2e swap", async () => {
     l1Recipient: customerWallet.address,
   };
 
-  await customerL2.depositOnL2(deposit);
+  await customerL2.depositOnL2(deposit, { value: 1 });
 
   const swap = await lpL2.registeredSwaps(0);
 
