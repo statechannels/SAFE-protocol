@@ -55,7 +55,10 @@ contract L2 is SignatureChecker {
 
         // We don't allow swaps to be registered if there are not enough funds
         // remaining on L1 after accounting for already registered swaps.
-        require(amountAvailable >= amountReserved + deposit.depositAmount);
+        require(
+            amountAvailable >= amountReserved + deposit.depositAmount,
+            "Must have enough funds for swap"
+        );
         RegisteredSwap memory swap = RegisteredSwap({
             l1Recipient: deposit.l1Recipient,
             value: deposit.depositAmount,
@@ -86,11 +89,11 @@ contract L2 is SignatureChecker {
 
         require(
             recoverSigner(message, signature) == lpAddress,
-            "Signed by liquidity provider"
+            "Must be signed by liquidity provider"
         );
         require(
             earliestTimestamp + authorizationWindow > block.timestamp,
-            "Within autorization window"
+            "Must be within autorization window"
         );
 
         batches[first] = Batch({
@@ -104,14 +107,17 @@ contract L2 is SignatureChecker {
 
     function claimL2Funds(uint256 first) public {
         Batch memory batch = batches[first];
-        require(batch.status == BatchStatus.Pending, "Batch is pending");
+        require(
+            batch.status == BatchStatus.Pending,
+            "Batch status must be pending"
+        );
         require(
             batch.latestTimestamp + authorizationWindow < block.timestamp,
-            "After authorization window"
+            "Must be after authorization window"
         );
         require(
             batch.earliestTimestamp + l2ClaimWindow > block.timestamp,
-            "Before end of claim window"
+            "Must be before end of claim window"
         );
 
         batch.status = BatchStatus.Claimed;

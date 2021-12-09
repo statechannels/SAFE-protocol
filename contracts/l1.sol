@@ -18,11 +18,11 @@ contract l1 is SignatureChecker {
 
         require(
             recoverSigner(message, signature) == lpAddress,
-            "Signed by liquidity provider"
+            "Must be signed by liquidity provider"
         );
         require(
             swaps[0].timestamp + l1ClaimWindow > block.timestamp,
-            "Within claim window"
+            "Must be within claim window"
         );
 
         for (uint256 i = 0; i < swaps.length; i++) {
