@@ -25,7 +25,7 @@ enum BatchStatus {
 }
 
 struct Batch {
-    uint256 numSwaps;
+    uint256 numTickets;
     uint256 total;
     uint256 earliestTimestamp;
     uint256 latestTimestamp;
@@ -37,8 +37,8 @@ uint256 constant authorizationWindow = 60;
 uint256 constant l2ClaimWindow = 180;
 
 contract L2 is SignatureChecker {
-    RegisteredSwap[] public registeredSwaps;
-    // `batches` is used to record the fact that tickets with nonce between startingNonce and startingNonce + numSwaps-1 are authorized, claimed or returned.
+    RegisteredTicket[] public registeredTickets;
+    // `batches` is used to record the fact that tickets with nonce between startingNonce and startingNonce + numTickets-1 are authorized, claimed or returned.
     // Indexed by nonce
     mapping(uint256 => Batch) batches;
 
@@ -48,28 +48,28 @@ contract L2 is SignatureChecker {
         uint256 trustedNonce = deposit.trustedNonce;
 
         uint256 amountReserved = 0;
-        for (uint256 i = trustedNonce; i < registeredSwaps.length; i++) {
-            amountReserved += registeredSwaps[i].value;
+        for (uint256 i = trustedNonce; i < registeredTickets.length; i++) {
+            amountReserved += registeredTickets[i].value;
         }
 
-        // We don't allow swaps to be registered if there are not enough funds
-        // remaining on L1 after accounting for already registered swaps.
+        // We don't allow tickets to be registered if there are not enough funds
+        // remaining on L1 after accounting for already registered tickets.
         require(
             amountAvailable >= amountReserved + deposit.depositAmount,
-            "Must have enough funds for swap"
+            "Must have enough funds for ticket"
         );
         require(
             msg.value == deposit.depositAmount,
             "Value sent must match depositAmount"
         );
-        RegisteredSwap memory swap = RegisteredSwap({
+        RegisteredTicket memory ticket = RegisteredTicket({
             l1Recipient: deposit.l1Recipient,
             value: deposit.depositAmount,
             timestamp: block.timestamp
         });
 
-        // swap's nonce is now its index in `registeredSwaps`
-        registeredSwaps.push(swap);
+        // ticket's nonce is now its index in `registeredTickets`
+        registeredTickets.push(ticket);
     }
 
     // TODO: validate that batches are non-overlapping.
@@ -78,18 +78,18 @@ contract L2 is SignatureChecker {
         uint256 last,
         Signature calldata signature
     ) public {
-        RegisteredSwap[] memory swapsToAuthorize = new RegisteredSwap[](
+        RegisteredTicket[] memory ticketsToAuthorize = new RegisteredTicket[](
             last - first + 1
         );
         uint256 total = 0;
         for (uint256 i = first; i <= last; i++) {
-            swapsToAuthorize[i - first] = registeredSwaps[i];
-            total += registeredSwaps[i].value;
+            ticketsToAuthorize[i - first] = registeredTickets[i];
+            total += registeredTickets[i].value;
         }
         bytes32 message = keccak256(
-            abi.encode(SwapsWithIndex(first, swapsToAuthorize))
+            abi.encode(TicketsWithIndex(first, ticketsToAuthorize))
         );
-        uint256 earliestTimestamp = registeredSwaps[first].timestamp;
+        uint256 earliestTimestamp = registeredTickets[first].timestamp;
 
         require(
             recoverSigner(message, signature) == lpAddress,
@@ -101,10 +101,10 @@ contract L2 is SignatureChecker {
         );
 
         batches[first] = Batch({
-            numSwaps: last - first + 1,
+            numTickets: last - first + 1,
             total: total,
             earliestTimestamp: earliestTimestamp,
-            latestTimestamp: registeredSwaps[last].timestamp,
+            latestTimestamp: registeredTickets[last].timestamp,
             status: BatchStatus.Pending
         });
     }

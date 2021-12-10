@@ -5,8 +5,8 @@ import { L1__factory } from "../contract-types/factories/L1__factory";
 import { L2__factory } from "../contract-types/factories/L2__factory";
 import { L1 } from "../contract-types/L1";
 import { L2, L2DepositStruct } from "../contract-types/L2";
-import { SwapsWithIndex } from "../src/types";
-import { hashSwaps, signData } from "../src/utils";
+import { TicketsWithIndex } from "../src/types";
+import { hashTickets, signData } from "../src/utils";
 
 // Address 0x2a47Cd5718D67Dc81eAfB24C99d4db159B0e7bCa
 const customerPK =
@@ -34,7 +34,7 @@ async function waitForTx(
   return (await txPromise).wait();
 }
 
-async function swap(trustedNonce: number, trustedAmount: number) {
+async function ticket(trustedNonce: number, trustedAmount: number) {
   const depositAmount = 1;
   const deposit: L2DepositStruct = {
     trustedNonce,
@@ -50,22 +50,22 @@ async function swap(trustedNonce: number, trustedAmount: number) {
   await waitForTx(customerL2.depositOnL2(deposit, { value: depositAmount }));
   await waitForTx(customer2L2.depositOnL2(deposit2, { value: depositAmount }));
 
-  const swap = await lpL2.registeredSwaps(trustedNonce);
-  const swap2 = await lpL2.registeredSwaps(trustedNonce + 1);
+  const ticket = await lpL2.registeredTickets(trustedNonce);
+  const ticket2 = await lpL2.registeredTickets(trustedNonce + 1);
 
-  const swapsWithIndex: SwapsWithIndex = {
+  const ticketsWithIndex: TicketsWithIndex = {
     startIndex: trustedNonce,
-    swaps: [swap, swap2],
+    tickets: [ticket, ticket2],
   };
-  const signature = signData(hashSwaps(swapsWithIndex), lpPK);
+  const signature = signData(hashTickets(ticketsWithIndex), lpPK);
   await waitForTx(
     lpL2.authorizeWithdrawal(
       trustedNonce,
       trustedNonce + 1,
-      signData(hashSwaps(swapsWithIndex), lpPK),
+      signData(hashTickets(ticketsWithIndex), lpPK),
     ),
   );
-  await waitForTx(lpL1.claimBatch([swap, swap2], signature));
+  await waitForTx(lpL1.claimBatch([ticket, ticket2], signature));
 
   await ethers.provider.send("evm_increaseTime", [121]);
   await waitForTx(lpL2.claimL2Funds(trustedNonce));
@@ -88,7 +88,7 @@ beforeEach(async () => {
   await tx.wait();
 });
 
-it("e2e swap", async () => {
-  await swap(0, 10);
-  await swap(2, 8);
+it("e2e ticket", async () => {
+  await ticket(0, 10);
+  await ticket(2, 8);
 });
