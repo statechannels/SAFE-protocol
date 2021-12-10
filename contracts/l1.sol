@@ -3,10 +3,8 @@ pragma solidity ^0.8.10;
 
 import "./common.sol";
 
-uint256 constant l1ClaimWindow = 120;
-
 contract l1 is SignatureChecker {
-    uint256 latestNonceWithdrawn = 0;
+    uint256 nextNonce = 0;
 
     receive() external payable {}
 
@@ -15,16 +13,12 @@ contract l1 is SignatureChecker {
         Signature calldata signature
     ) public {
         bytes32 message = keccak256(
-            abi.encode(SwapsWithIndex(latestNonceWithdrawn, swaps))
+            abi.encode(SwapsWithIndex(nextNonce, swaps))
         );
 
         require(
             recoverSigner(message, signature) == lpAddress,
             "Must be signed by liquidity provider"
-        );
-        require(
-            swaps[0].timestamp + l1ClaimWindow > block.timestamp,
-            "Must be within claim window"
         );
 
         for (uint256 i = 0; i < swaps.length; i++) {
@@ -34,6 +28,6 @@ contract l1 is SignatureChecker {
             require(sent, "Failed to send Ether");
         }
 
-        latestNonceWithdrawn = latestNonceWithdrawn + swaps.length;
+        nextNonce = nextNonce + swaps.length;
     }
 }
