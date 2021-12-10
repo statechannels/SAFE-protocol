@@ -1,6 +1,6 @@
-import { RegisteredSwapStruct } from "../contract-types/L1";
+import { RegisteredTicketStruct } from "../contract-types/L1";
 
-export type SwapsWithIndex = {
+export type TicketsWithIndex = {
   startIndex: number;
-  swaps: RegisteredSwapStruct[];
+  tickets: RegisteredTicketStruct[];
 };

@@ -1,11 +1,11 @@
-import { SwapsWithIndex } from "./types";
+import { TicketsWithIndex } from "./types";
 import { ethers } from "ethers";
 import { SIGNED_SWAPS_ABI_TYPE } from "./constants";
 
-export function hashSwaps(swapsWithIndex: SwapsWithIndex): string {
+export function hashTickets(ticketsWithIndex: TicketsWithIndex): string {
   return ethers.utils.keccak256(
     ethers.utils.defaultAbiCoder.encode(SIGNED_SWAPS_ABI_TYPE, [
-      [swapsWithIndex.startIndex, swapsWithIndex.swaps],
+      [ticketsWithIndex.startIndex, ticketsWithIndex.tickets],
     ]),
   );
 }

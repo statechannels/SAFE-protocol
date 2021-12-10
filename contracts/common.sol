@@ -5,18 +5,18 @@ address constant lpAddress = address(
     0x9552ceB4e6FA8c356c1A76A8Bc8b1EFA7B9fb205
 );
 
-struct RegisteredSwap {
+struct RegisteredTicket {
     /// Who will get the funds if executed
     address l1Recipient;
     /// The amount of funds to send.
     uint256 value;
-    /// The timestamp when the swap was registered
+    /// The timestamp when the ticket was registered
     uint256 timestamp;
 }
 
-struct SwapsWithIndex {
+struct TicketsWithIndex {
     uint256 startIndex;
-    RegisteredSwap[] swaps;
+    RegisteredTicket[] tickets;
 }
 
 struct Signature {
