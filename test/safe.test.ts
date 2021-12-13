@@ -34,7 +34,7 @@ async function waitForTx(
   return (await txPromise).wait();
 }
 
-async function ticket(trustedNonce: number, trustedAmount: number) {
+async function swap(trustedNonce: number, trustedAmount: number) {
   const depositAmount = 1;
   const deposit: L2DepositStruct = {
     trustedNonce,
