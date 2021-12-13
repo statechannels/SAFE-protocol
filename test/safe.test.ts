@@ -64,6 +64,7 @@ async function swap(trustedNonce: number, trustedAmount: number) {
   const signature = signData(hashTickets(ticketsWithIndex), lpPK);
   await waitForTx(
     lpL2.authorizeWithdrawal(trustedNonce, trustedNonce + 1, signature, {
+      // TODO: remove this after addressing https://github.com/statechannels/SAFE-protocol/issues/70
       gasLimit: 30_000_000,
     }),
   );
