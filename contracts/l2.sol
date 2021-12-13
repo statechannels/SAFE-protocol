@@ -41,6 +41,7 @@ contract L2 is SignatureChecker {
     // `batches` is used to record the fact that tickets with nonce between startingNonce and startingNonce + numTickets-1 are authorized, claimed or returned.
     // Indexed by nonce
     mapping(uint256 => Batch) batches;
+    uint256 nextNonceToAuthorize = 0;
 
     // TODO: check payment amount
     function depositOnL2(L2Deposit calldata deposit) public payable {
@@ -91,6 +92,7 @@ contract L2 is SignatureChecker {
         );
         uint256 earliestTimestamp = registeredTickets[first].timestamp;
 
+        require(nextNonceToAuthorize == first, "Batches must be gapless");
         require(
             recoverSigner(message, signature) == lpAddress,
             "Must be signed by liquidity provider"
@@ -107,6 +109,7 @@ contract L2 is SignatureChecker {
             latestTimestamp: registeredTickets[last].timestamp,
             status: BatchStatus.Pending
         });
+        nextNonceToAuthorize = last + 1;
     }
 
     function claimL2Funds(uint256 first) public {
