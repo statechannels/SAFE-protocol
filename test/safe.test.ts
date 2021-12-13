@@ -1,3 +1,7 @@
+import chai, { expect } from "chai";
+import chaiAsPromised from "chai-as-promised";
+chai.use(chaiAsPromised);
+
 import { ethers as ethersTypes } from "ethers";
 import { ethers } from "hardhat";
 
@@ -59,11 +63,9 @@ async function swap(trustedNonce: number, trustedAmount: number) {
   };
   const signature = signData(hashTickets(ticketsWithIndex), lpPK);
   await waitForTx(
-    lpL2.authorizeWithdrawal(
-      trustedNonce,
-      trustedNonce + 1,
-      signData(hashTickets(ticketsWithIndex), lpPK),
-    ),
+    lpL2.authorizeWithdrawal(trustedNonce, trustedNonce + 1, signature, {
+      gasLimit: 30_000_000,
+    }),
   );
   await waitForTx(lpL1.claimBatch([ticket, ticket2], signature));
 
@@ -81,14 +83,20 @@ beforeEach(async () => {
   lpL2 = l2.connect(lpWallet);
   lpL1 = l1.connect(lpWallet);
 
-  const tx = await lpWallet.sendTransaction({
-    to: l1.address,
-    value: ethers.utils.parseUnits("10", "wei"),
-  });
-  await tx.wait();
+  await waitForTx(
+    lpWallet.sendTransaction({
+      to: l1.address,
+      value: ethers.utils.parseUnits("10", "wei"),
+    }),
+  );
 });
 
-it("e2e swap", async () => {
+it("Successfull e2e swap", async () => {
   await swap(0, 10);
   await swap(2, 8);
+});
+
+it.only("Unable to authorize overlapping batches", async () => {
+  await swap(0, 10);
+  await expect(swap(1, 9)).to.be.rejectedWith("Batches must be gapless");
 });
