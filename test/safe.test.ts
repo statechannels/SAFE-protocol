@@ -89,6 +89,6 @@ beforeEach(async () => {
 });
 
 it("e2e ticket", async () => {
-  await ticket(0, 10);
-  await ticket(2, 8);
+  await swap(0, 10);
+  await swap(2, 8);
 });
