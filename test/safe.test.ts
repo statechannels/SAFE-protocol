@@ -97,7 +97,7 @@ it("Successfull e2e swap", async () => {
   await swap(2, 8);
 });
 
-it.only("Unable to authorize overlapping batches", async () => {
+it("Unable to authorize overlapping batches", async () => {
   await swap(0, 10);
   await expect(swap(1, 9)).to.be.rejectedWith("Batches must be gapless");
 });
