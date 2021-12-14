@@ -37,7 +37,7 @@ uint256 constant authorizationWindow = 60;
 uint256 constant l2ClaimWindow = 180;
 
 contract L2 is SignatureChecker {
-    RegisteredTicket[] public registeredTickets;
+    Ticket[] public tickets;
     // `batches` is used to record the fact that tickets with nonce between startingNonce and startingNonce + numTickets-1 are authorized, claimed or returned.
     // Indexed by nonce
     mapping(uint256 => Batch) batches;
@@ -49,8 +49,8 @@ contract L2 is SignatureChecker {
         uint256 trustedNonce = deposit.trustedNonce;
 
         uint256 amountReserved = 0;
-        for (uint256 i = trustedNonce; i < registeredTickets.length; i++) {
-            amountReserved += registeredTickets[i].value;
+        for (uint256 i = trustedNonce; i < tickets.length; i++) {
+            amountReserved += tickets[i].value;
         }
 
         // We don't allow tickets to be registered if there are not enough funds
@@ -63,14 +63,14 @@ contract L2 is SignatureChecker {
             msg.value == deposit.depositAmount,
             "Value sent must match depositAmount"
         );
-        RegisteredTicket memory ticket = RegisteredTicket({
+        Ticket memory ticket = Ticket({
             l1Recipient: deposit.l1Recipient,
             value: deposit.depositAmount,
             timestamp: block.timestamp
         });
 
-        // ticket's nonce is now its index in `registeredTickets`
-        registeredTickets.push(ticket);
+        // ticket's nonce is now its index in `tickets`
+        tickets.push(ticket);
     }
 
     // TODO: validate that batches are non-overlapping.
@@ -79,18 +79,16 @@ contract L2 is SignatureChecker {
         uint256 last,
         Signature calldata signature
     ) public {
-        RegisteredTicket[] memory ticketsToAuthorize = new RegisteredTicket[](
-            last - first + 1
-        );
+        Ticket[] memory ticketsToAuthorize = new Ticket[](last - first + 1);
         uint256 total = 0;
         for (uint256 i = first; i <= last; i++) {
-            ticketsToAuthorize[i - first] = registeredTickets[i];
-            total += registeredTickets[i].value;
+            ticketsToAuthorize[i - first] = tickets[i];
+            total += tickets[i].value;
         }
         bytes32 message = keccak256(
             abi.encode(TicketsWithIndex(first, ticketsToAuthorize))
         );
-        uint256 earliestTimestamp = registeredTickets[first].timestamp;
+        uint256 earliestTimestamp = tickets[first].timestamp;
 
         require(nextNonceToAuthorize == first, "Batches must be gapless");
         require(
@@ -106,7 +104,7 @@ contract L2 is SignatureChecker {
             numTickets: last - first + 1,
             total: total,
             earliestTimestamp: earliestTimestamp,
-            latestTimestamp: registeredTickets[last].timestamp,
+            latestTimestamp: tickets[last].timestamp,
             status: BatchStatus.Pending
         });
         nextNonceToAuthorize = last + 1;
