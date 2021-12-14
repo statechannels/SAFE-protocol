@@ -116,8 +116,8 @@ contract L2 is SignatureChecker {
             "Batch status must be pending"
         );
         require(
-            batch.authorizedAt + safetyDelay < block.timestamp,
-            "Must be after safetyDelay"
+            block.timestamp > batch.authorizedAt + safetyDelay,
+            "SafetyDelay must have passed since authorization timestamp"
         );
 
         batch.status = BatchStatus.Claimed;
