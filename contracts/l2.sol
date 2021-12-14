@@ -27,7 +27,7 @@ enum BatchStatus {
 struct Batch {
     uint256 numTickets;
     uint256 total;
-    uint256 timestamp;
+    uint256 authorizedAt;
     BatchStatus status;
 }
 
@@ -103,7 +103,7 @@ contract L2 is SignatureChecker {
         batches[first] = Batch({
             numTickets: last - first + 1,
             total: total,
-            timestamp: block.timestamp,
+            authorizedAt: block.timestamp,
             status: BatchStatus.Pending
         });
         nextNonceToAuthorize = last + 1;
@@ -116,7 +116,7 @@ contract L2 is SignatureChecker {
             "Batch status must be pending"
         );
         require(
-            batch.timestamp + safetyDelay < block.timestamp,
+            batch.authorizedAt + safetyDelay < block.timestamp,
             "Must be after safetyDelay"
         );
 
