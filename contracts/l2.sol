@@ -102,7 +102,7 @@ contract L2 is SignatureChecker {
         batches[first] = Batch({
             numTickets: last - first + 1,
             total: total,
-            timestamp: earliestTimestamp,
+            timestamp: block.timestamp,
             status: BatchStatus.Pending
         });
         nextNonceToAuthorize = last + 1;
