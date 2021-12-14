@@ -94,8 +94,9 @@ contract L2 is SignatureChecker {
             recoverSigner(message, signature) == lpAddress,
             "Must be signed by liquidity provider"
         );
+        uint256 maxAuthTime = earliestTimestamp + maxAuthDelay;
         require(
-            earliestTimestamp + maxAuthDelay > block.timestamp,
+            block.timestamp <= maxAuthTime,
             "Must be within autorization window"
         );
 
