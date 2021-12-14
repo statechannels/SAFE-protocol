@@ -33,8 +33,8 @@ struct Batch {
 }
 
 // TODO: update these values after prototype phase
-uint256 constant authorizationWindow = 60;
-uint256 constant l2ClaimWindow = 180;
+uint256 constant authWindow = 60;
+uint256 constant safetyDelay = 60;
 
 contract L2 is SignatureChecker {
     Ticket[] public tickets;
@@ -96,7 +96,7 @@ contract L2 is SignatureChecker {
             "Must be signed by liquidity provider"
         );
         require(
-            earliestTimestamp + authorizationWindow > block.timestamp,
+            earliestTimestamp + authWindow > block.timestamp,
             "Must be within autorization window"
         );
 
@@ -117,11 +117,11 @@ contract L2 is SignatureChecker {
             "Batch status must be pending"
         );
         require(
-            batch.latestTimestamp + authorizationWindow < block.timestamp,
+            batch.latestTimestamp + authWindow < block.timestamp,
             "Must be after authorization window"
         );
         require(
-            batch.earliestTimestamp + l2ClaimWindow > block.timestamp,
+            batch.earliestTimestamp + safetyDelay > block.timestamp,
             "Must be before end of claim window"
         );
 
