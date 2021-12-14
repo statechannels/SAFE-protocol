@@ -5,7 +5,7 @@ address constant lpAddress = address(
     0x9552ceB4e6FA8c356c1A76A8Bc8b1EFA7B9fb205
 );
 
-struct RegisteredTicket {
+struct Ticket {
     /// Who will get the funds if executed
     address l1Recipient;
     /// The amount of funds to send.
@@ -16,7 +16,7 @@ struct RegisteredTicket {
 
 struct TicketsWithIndex {
     uint256 startIndex;
-    RegisteredTicket[] tickets;
+    Ticket[] tickets;
 }
 
 struct Signature {

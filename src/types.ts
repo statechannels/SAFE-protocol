@@ -1,6 +1,6 @@
-import { RegisteredTicketStruct } from "../contract-types/L1";
+import { TicketStruct } from "../contract-types/L1";
 
 export type TicketsWithIndex = {
   startIndex: number;
-  tickets: RegisteredTicketStruct[];
+  tickets: TicketStruct[];
 };

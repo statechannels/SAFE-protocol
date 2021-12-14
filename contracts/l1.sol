@@ -8,10 +8,9 @@ contract l1 is SignatureChecker {
 
     receive() external payable {}
 
-    function claimBatch(
-        RegisteredTicket[] calldata tickets,
-        Signature calldata signature
-    ) public {
+    function claimBatch(Ticket[] calldata tickets, Signature calldata signature)
+        public
+    {
         bytes32 message = keccak256(
             abi.encode(TicketsWithIndex(nextNonce, tickets))
         );
@@ -22,9 +21,9 @@ contract l1 is SignatureChecker {
         );
 
         for (uint256 i = 0; i < tickets.length; i++) {
-            (bool sent, ) = tickets[i].l1Recipient.call{value: tickets[i].value}(
-                ""
-            );
+            (bool sent, ) = tickets[i].l1Recipient.call{
+                value: tickets[i].value
+            }("");
             require(sent, "Failed to send Ether");
         }
 

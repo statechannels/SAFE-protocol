@@ -54,8 +54,8 @@ async function swap(trustedNonce: number, trustedAmount: number) {
   await waitForTx(customerL2.depositOnL2(deposit, { value: depositAmount }));
   await waitForTx(customer2L2.depositOnL2(deposit2, { value: depositAmount }));
 
-  const ticket = await lpL2.registeredTickets(trustedNonce);
-  const ticket2 = await lpL2.registeredTickets(trustedNonce + 1);
+  const ticket = await lpL2.tickets(trustedNonce);
+  const ticket2 = await lpL2.tickets(trustedNonce + 1);
 
   const ticketsWithIndex: TicketsWithIndex = {
     startIndex: trustedNonce,
