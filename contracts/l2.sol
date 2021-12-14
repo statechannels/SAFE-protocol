@@ -117,7 +117,7 @@ contract L2 is SignatureChecker {
         );
         require(
             block.timestamp > batch.authorizedAt + safetyDelay,
-            "SafetyDelay must have passed since authorization timestamp"
+            "safetyDelay must have passed since authorization timestamp"
         );
 
         batch.status = BatchStatus.Claimed;
