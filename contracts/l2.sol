@@ -116,7 +116,7 @@ contract L2 is SignatureChecker {
         );
         require(
             batch.timestamp + safetyDelay < block.timestamp,
-            "Must be before after safetyDelay"
+            "Must be after safetyDelay"
         );
 
         batch.status = BatchStatus.Claimed;
