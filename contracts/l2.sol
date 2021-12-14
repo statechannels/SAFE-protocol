@@ -15,11 +15,11 @@ struct L2Deposit {
     address l1Recipient;
 }
 
-// Pending: all tickets in this batch are authorized but not claimed
+// Authorized: all tickets in this batch are authorized but not claimed
 // Claimed: all tickets in this batch are claimed
 // Returned: all tickets in this batch have been returned, due to inactivity or provable fraud.
 enum BatchStatus {
-    Pending,
+    Authorized,
     Claimed,
     Returned
 }
@@ -104,7 +104,7 @@ contract L2 is SignatureChecker {
             numTickets: last - first + 1,
             total: total,
             authorizedAt: block.timestamp,
-            status: BatchStatus.Pending
+            status: BatchStatus.Authorized
         });
         nextNonceToAuthorize = last + 1;
     }
@@ -112,8 +112,8 @@ contract L2 is SignatureChecker {
     function claimL2Funds(uint256 first) public {
         Batch memory batch = batches[first];
         require(
-            batch.status == BatchStatus.Pending,
-            "Batch status must be pending"
+            batch.status == BatchStatus.Authorized,
+            "Batch status must be Authorized"
         );
         require(
             block.timestamp > batch.authorizedAt + safetyDelay,
