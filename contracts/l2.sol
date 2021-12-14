@@ -32,7 +32,7 @@ struct Batch {
 }
 
 // TODO: update these values after prototype phase
-uint256 constant authWindow = 60;
+uint256 constant maxAuthDelay = 60;
 uint256 constant safetyDelay = 60;
 
 contract L2 is SignatureChecker {
@@ -95,7 +95,7 @@ contract L2 is SignatureChecker {
             "Must be signed by liquidity provider"
         );
         require(
-            earliestTimestamp + authWindow > block.timestamp,
+            earliestTimestamp + maxAuthDelay > block.timestamp,
             "Must be within autorization window"
         );
 
