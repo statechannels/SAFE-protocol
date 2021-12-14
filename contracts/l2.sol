@@ -72,21 +72,16 @@ contract L2 is SignatureChecker {
         tickets.push(ticket);
     }
 
-    // TODO: validate that batches are non-overlapping.
     function authorizeWithdrawal(
         uint256 first,
         uint256 last,
         Signature calldata signature
     ) public {
-        Ticket[] memory ticketsToAuthorize = new Ticket[](last - first + 1);
-        uint256 total = 0;
-        for (uint256 i = first; i <= last; i++) {
-            ticketsToAuthorize[i - first] = tickets[i];
-            total += tickets[i].value;
-        }
-        bytes32 message = keccak256(
-            abi.encode(TicketsWithIndex(first, ticketsToAuthorize))
-        );
+        (
+            Batch memory batch,
+            TicketsWithIndex memory ticketsWithIndex
+        ) = createBatch(first, last);
+        bytes32 message = keccak256(abi.encode(ticketsWithIndex));
         uint256 earliestTimestamp = tickets[first].timestamp;
 
         require(nextNonceToAuthorize == first, "Batches must be gapless");
@@ -100,13 +95,30 @@ contract L2 is SignatureChecker {
             "Must be within autorization window"
         );
 
-        batches[first] = Batch({
-            numTickets: last - first + 1,
-            total: total,
-            authorizedAt: block.timestamp,
-            status: BatchStatus.Authorized
-        });
+        batches[first] = batch;
         nextNonceToAuthorize = last + 1;
+    }
+
+    function createBatch(uint256 first, uint256 last)
+        private
+        view
+        returns (Batch memory, TicketsWithIndex memory)
+    {
+        Ticket[] memory ticketsToAuthorize = new Ticket[](last - first + 1);
+        uint256 total = 0;
+        for (uint256 i = first; i <= last; i++) {
+            ticketsToAuthorize[i - first] = tickets[i];
+            total += tickets[i].value;
+        }
+        return (
+            Batch({
+                numTickets: last - first + 1,
+                total: total,
+                authorizedAt: block.timestamp,
+                status: BatchStatus.Authorized
+            }),
+            TicketsWithIndex(first, ticketsToAuthorize)
+        );
     }
 
     function claimL2Funds(uint256 first) public {
@@ -124,5 +136,74 @@ contract L2 is SignatureChecker {
         batches[first] = batch;
         (bool sent, ) = lpAddress.call{value: batch.total}("");
         require(sent, "Failed to send Ether");
+    }
+
+    function refundOnFraud(
+        uint256 startNonce,
+        uint256 fraudDelta,
+        Ticket[] calldata fraudTickets,
+        Signature calldata signature
+    ) public {
+        Batch memory batch = batches[startNonce];
+        uint256 lastNonce = startNonce + fraudDelta;
+
+        // If the ticket has never been authorized, it is not part of any batch
+        // Below checks whether "batch" is null (since there is never a batch with numTickets == 0)
+        if (batch.numTickets == 0) {
+            require(
+                lastNonce >= nextNonceToAuthorize,
+                "The nonce must not be authorized"
+            );
+            (batch, ) = createBatch(
+                nextNonceToAuthorize,
+                startNonce + fraudDelta
+            );
+            batches[nextNonceToAuthorize] = batch;
+            batch.status = BatchStatus.Authorized;
+            nextNonceToAuthorize = lastNonce + 1;
+        }
+        require(
+            batch.status == BatchStatus.Authorized,
+            "Batch status must be authorized"
+        );
+
+        require(
+            !isProvableFraud(startNonce, fraudDelta, fraudTickets, signature),
+            "Must contain provable fraud"
+        );
+        for (uint256 i = startNonce; i <= lastNonce; i++) {
+            (bool sent, ) = tickets[i].l1Recipient.call{
+                value: tickets[i].value
+            }("");
+            require(sent, "Failed to send Ether");
+        }
+
+        batches[startNonce].status = BatchStatus.Returned;
+    }
+
+    function isProvableFraud(
+        uint256 startNonce,
+        uint256 fraudDelta,
+        Ticket[] calldata fraudTickets,
+        Signature calldata signature
+    ) private view returns (bool) {
+        bytes32 message = keccak256(
+            abi.encode(TicketsWithIndex(startNonce, fraudTickets))
+        );
+        require(
+            recoverSigner(message, signature) == lpAddress,
+            "Must be signed by liquidity provider"
+        );
+
+        Ticket memory correctTicket = tickets[startNonce + fraudDelta];
+        Ticket memory fraudTicket = fraudTickets[fraudDelta];
+        if (
+            correctTicket.l1Recipient != fraudTicket.l1Recipient ||
+            correctTicket.value != fraudTicket.value ||
+            correctTicket.timestamp != fraudTicket.timestamp
+        ) {
+            return true;
+        }
+        return false;
     }
 }
