@@ -115,7 +115,7 @@ it("Unable to authorize overlapping batches", async () => {
   await expect(swap(1, 9)).to.be.rejectedWith("Batches must be gapless");
 });
 
-it("Able to prove fraud", async () => {
+it("Handles a fraud proofs", async () => {
   /**
    * Fraud instance 1. The liquidity provider signs a batch of tickets with the
    * second ticket's l1Recipient switched to LP's address
