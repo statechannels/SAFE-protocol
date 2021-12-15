@@ -189,4 +189,25 @@ contract L2 is SignatureChecker {
 
         batches[honestStartNonce].status = BatchStatus.Refunded;
     }
+
+    function refund(uint256 index) public {
+        require(
+            block.timestamp > tickets[index].timestamp + maxAuthDelay,
+            "maxAuthDelay must have passed since deposit"
+        );
+
+        require(
+            nextNonceToAuthorize <= index,
+            "The nonce must not be a part of a batch"
+        );
+        (Batch memory batch, ) = createBatch(nextNonceToAuthorize, index);
+        batches[nextNonceToAuthorize] = batch;
+        batch.status = BatchStatus.Refunded;
+        nextNonceToAuthorize = index + 1;
+
+        (bool sent, ) = tickets[index].l1Recipient.call{
+            value: tickets[index].value
+        }("");
+        require(sent, "Failed to send Ether");
+    }
 }

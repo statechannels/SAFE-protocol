@@ -192,3 +192,21 @@ it("Handles a fraud proofs", async () => {
     ),
   );
 });
+
+it("Able to get a ticket refunded", async () => {
+  await deposit(0, 10);
+  await expect(customerL2.refund(0, { gasLimit })).to.be.rejectedWith(
+    "maxAuthDelay must have passed since deposit",
+  );
+  await ethers.provider.send("evm_increaseTime", [61]);
+  await waitForTx(customerL2.refund(0, { gasLimit }));
+  await waitForTx(customerL2.refund(1, { gasLimit }));
+  await expect(customerL2.refund(1, { gasLimit })).to.be.rejectedWith(
+    "The nonce must not be a part of a batch",
+  );
+
+  await deposit(2, 8);
+  await ethers.provider.send("evm_increaseTime", [61]);
+  // Refund 3rd and 4th deposit
+  await waitForTx(customerL2.refund(2, { gasLimit }));
+});
