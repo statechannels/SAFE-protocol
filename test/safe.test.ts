@@ -117,14 +117,16 @@ it("Unable to authorize overlapping batches", async () => {
 
 it("Able to prove fraud", async () => {
   /**
-   * Fraud committed before a batch is authorized. The liquidity provider signs a batch
-   *  of tickets with the second ticket's l1Recipient switched to LP's address
+   * Fraud instance 1. The liquidity provider signs a batch of tickets with the
+   * second ticket's l1Recipient switched to LP's address
    */
   await deposit(0, 10);
 
   // Sign fraudulent batch
   const ticket = await lpL2.tickets(0);
   const ticket2 = await lpL2.tickets(1);
+  await authorizeWithdrawal(0);
+
   const fraudTicket = { ...ticket2, l1Recipient: lpWallet.address };
   const ticketsWithIndex: TicketsWithIndex = {
     startIndex: 0,
@@ -158,7 +160,7 @@ it("Able to prove fraud", async () => {
   ).to.be.rejectedWith("Batch status must be Authorized");
 
   /**
-   * Fraud committed after a batch is authorized. The setup is:
+   * Fraud instance 2. The setup is:
    * - There are 4 tickets. The first two tickets have been refunded above.
    * - The second two tickets are authorized by LP.
    * - LP signs a batch that includes a correct 2nd ticket and a fraudulent 3rd ticket.
