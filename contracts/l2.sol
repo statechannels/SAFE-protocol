@@ -170,9 +170,8 @@ contract L2 is SignatureChecker {
         Ticket memory correctTicket = tickets[honestStartNonce + honestDelta];
         Ticket memory fraudTicket = fraudTickets[fraudDelta];
         require(
-            correctTicket.l1Recipient != fraudTicket.l1Recipient ||
-                correctTicket.value != fraudTicket.value ||
-                correctTicket.timestamp != fraudTicket.timestamp,
+            keccak256(abi.encode(correctTicket)) !=
+                keccak256(abi.encode(fraudTicket)),
             "Honest and fraud tickets must differ"
         );
 
