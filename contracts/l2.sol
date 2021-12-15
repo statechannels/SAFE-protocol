@@ -35,7 +35,7 @@ uint256 constant safetyDelay = 60;
 
 contract L2 is SignatureChecker {
     Ticket[] public tickets;
-    // `batches` is used to record the fact that tickets with nonce between startingNonce and startingNonce + numTickets-1 are authorized, claimed or refunded.
+    // `batches` is used to record the fact that tickets with nonce between startingNonce and startingNonce + numTickets-1 are authorized or withdrawn.
     // Indexed by nonce
     mapping(uint256 => Batch) batches;
     uint256 nextBatchStart = 0;
