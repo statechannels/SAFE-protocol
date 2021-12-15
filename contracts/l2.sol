@@ -42,7 +42,6 @@ contract L2 is SignatureChecker {
     mapping(uint256 => Batch) batches;
     uint256 nextNonceToAuthorize = 0;
 
-    // TODO: check payment amount
     function depositOnL2(L2Deposit calldata deposit) public payable {
         uint256 amountAvailable = deposit.trustedAmount;
         uint256 trustedNonce = deposit.trustedNonce;
