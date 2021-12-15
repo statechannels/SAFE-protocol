@@ -7,10 +7,12 @@ import { ethers } from "hardhat";
 
 import { L1__factory } from "../contract-types/factories/L1__factory";
 import { L2__factory } from "../contract-types/factories/L2__factory";
-import { L1 } from "../contract-types/L1";
+import { L1, TicketStruct } from "../contract-types/L1";
 import { L2, L2DepositStruct } from "../contract-types/L2";
 import { TicketsWithIndex } from "../src/types";
 import { hashTickets, signData } from "../src/utils";
+
+const gasLimit = 30_000_000;
 
 // Address 0x2a47Cd5718D67Dc81eAfB24C99d4db159B0e7bCa
 const customerPK =
@@ -38,7 +40,7 @@ async function waitForTx(
   return (await txPromise).wait();
 }
 
-async function swap(trustedNonce: number, trustedAmount: number) {
+async function deposit(trustedNonce: number, trustedAmount: number) {
   const depositAmount = 1;
   const deposit: L2DepositStruct = {
     trustedNonce,
@@ -53,7 +55,11 @@ async function swap(trustedNonce: number, trustedAmount: number) {
 
   await waitForTx(customerL2.depositOnL2(deposit, { value: depositAmount }));
   await waitForTx(customer2L2.depositOnL2(deposit2, { value: depositAmount }));
+}
 
+async function authorizeWithdrawal(
+  trustedNonce: number,
+): Promise<[TicketStruct, TicketStruct, ethersTypes.Signature]> {
   const ticket = await lpL2.tickets(trustedNonce);
   const ticket2 = await lpL2.tickets(trustedNonce + 1);
 
@@ -65,9 +71,16 @@ async function swap(trustedNonce: number, trustedAmount: number) {
   await waitForTx(
     lpL2.authorizeWithdrawal(trustedNonce, trustedNonce + 1, signature, {
       // TODO: remove this after addressing https://github.com/statechannels/SAFE-protocol/issues/70
-      gasLimit: 30_000_000,
+      gasLimit,
     }),
   );
+  return [ticket, ticket2, signature];
+}
+
+async function swap(trustedNonce: number, trustedAmount: number) {
+  await deposit(trustedNonce, trustedAmount);
+  const [ticket, ticket2, signature] = await authorizeWithdrawal(trustedNonce);
+
   await waitForTx(lpL1.claimBatch([ticket, ticket2], signature));
 
   await ethers.provider.send("evm_increaseTime", [121]);
@@ -100,4 +113,76 @@ it("Successfull e2e swap", async () => {
 it("Unable to authorize overlapping batches", async () => {
   await swap(0, 10);
   await expect(swap(1, 9)).to.be.rejectedWith("Batches must be gapless");
+});
+
+it("Able to prove fraud", async () => {
+  /**
+   * Fraud committed before a batch is authorized. The liquidity provider signs a batch
+   *  of tickets with the second ticket's l1Recipient switched to LP's address
+   */
+  await deposit(0, 10);
+
+  // Sign fraudulent batch
+  const ticket = await lpL2.tickets(0);
+  const ticket2 = await lpL2.tickets(1);
+  const fraudTicket = { ...ticket2, l1Recipient: lpWallet.address };
+  const ticketsWithIndex: TicketsWithIndex = {
+    startIndex: 0,
+    tickets: [ticket, fraudTicket],
+  };
+  const fraudSignature = signData(hashTickets(ticketsWithIndex), lpPK);
+
+  // Successfully prove fraud
+  await customer2L2.refundOnFraud(
+    0,
+    1,
+    0,
+    1,
+    [ticket, fraudTicket],
+    fraudSignature,
+  );
+
+  // Unsuccessfully try to claim fraud again
+  expect(
+    customer2L2.refundOnFraud(
+      0,
+      1,
+      0,
+      1,
+      [ticket, fraudTicket],
+      fraudSignature,
+      {
+        gasLimit,
+      },
+    ),
+  ).to.be.rejectedWith("Batch status must be authorized");
+
+  /**
+   * Fraud committed after a batch is authorized. The setup is:
+   * - There are 4 tickets. The first two tickets have been refunded above.
+   * - The second two tickets are authorized by LP.
+   * - LP signs a batch that includes a correct 2nd ticket and a fraudulent 3rd ticket.
+   */
+  await deposit(2, 8);
+  await authorizeWithdrawal(2);
+
+  // Sign fraudulent batch again
+  const ticket3 = await lpL2.tickets(1);
+  const ticket4 = await lpL2.tickets(2);
+  const fraudTicket2 = { ...ticket4, l1Recipient: lpWallet.address };
+  const ticketsWithIndex2: TicketsWithIndex = {
+    startIndex: 1,
+    tickets: [ticket3, fraudTicket2],
+  };
+  const fraudSignature2 = signData(hashTickets(ticketsWithIndex2), lpPK);
+
+  await customer2L2.refundOnFraud(
+    2,
+    0,
+    1,
+    1,
+    [ticket3, fraudTicket2],
+    fraudSignature2,
+    { gasLimit },
+  );
 });
