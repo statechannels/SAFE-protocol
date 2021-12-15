@@ -135,17 +135,19 @@ it("Able to prove fraud", async () => {
   const fraudSignature = signData(hashTickets(ticketsWithIndex), lpPK);
 
   // Successfully prove fraud
-  await customer2L2.refundOnFraud(
-    0,
-    1,
-    0,
-    1,
-    [ticket, fraudTicket],
-    fraudSignature,
+  await waitForTx(
+    customer2L2.refundOnFraud(
+      0,
+      1,
+      0,
+      1,
+      [ticket, fraudTicket],
+      fraudSignature,
+    ),
   );
 
   // Unsuccessfully try to claim fraud again
-  expect(
+  await expect(
     customer2L2.refundOnFraud(
       0,
       1,
@@ -178,13 +180,15 @@ it("Able to prove fraud", async () => {
   };
   const fraudSignature2 = signData(hashTickets(ticketsWithIndex2), lpPK);
 
-  await customer2L2.refundOnFraud(
-    2,
-    0,
-    1,
-    1,
-    [ticket3, fraudTicket2],
-    fraudSignature2,
-    { gasLimit },
+  await waitForTx(
+    customer2L2.refundOnFraud(
+      2,
+      0,
+      1,
+      1,
+      [ticket3, fraudTicket2],
+      fraudSignature2,
+      { gasLimit },
+    ),
   );
 });
