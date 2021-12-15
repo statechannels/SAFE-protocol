@@ -16,12 +16,10 @@ struct L2Deposit {
 }
 
 // Authorized: all tickets in this batch are authorized but not claimed
-// Claimed: all tickets in this batch are claimed
-// Refunded: all tickets in this batch have been refunded, due to inactivity or provable fraud.
+// Withdrawn: all tickets in this batch are withdrawn (either claimed or refunded)
 enum BatchStatus {
     Authorized,
-    Claimed,
-    Refunded
+    Withdrawn
 }
 
 struct Batch {
@@ -131,7 +129,7 @@ contract L2 is SignatureChecker {
             "safetyDelay must have passed since authorization timestamp"
         );
 
-        batch.status = BatchStatus.Claimed;
+        batch.status = BatchStatus.Withdrawn;
         batches[first] = batch;
         (bool sent, ) = lpAddress.call{value: batch.total}("");
         require(sent, "Failed to send Ether");
@@ -187,7 +185,7 @@ contract L2 is SignatureChecker {
             require(sent, "Failed to send Ether");
         }
 
-        batches[honestStartNonce].status = BatchStatus.Refunded;
+        batches[honestStartNonce].status = BatchStatus.Withdrawn;
     }
 
     function refund(uint256 index) public {
@@ -202,7 +200,7 @@ contract L2 is SignatureChecker {
         );
         (Batch memory batch, ) = createBatch(nextNonceToAuthorize, index);
         batches[nextNonceToAuthorize] = batch;
-        batch.status = BatchStatus.Refunded;
+        batch.status = BatchStatus.Withdrawn;
         nextNonceToAuthorize = index + 1;
 
         (bool sent, ) = tickets[index].l1Recipient.call{
