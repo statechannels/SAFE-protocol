@@ -155,40 +155,6 @@ contract L2 is SignatureChecker {
         Ticket[] calldata fraudTickets,
         Signature calldata fraudSignature
     ) public {
-        isProvableFraud(
-            honestStartNonce,
-            honestDelta,
-            fraudStartNonce,
-            fraudDelta,
-            fraudTickets,
-            fraudSignature
-        );
-
-        Batch memory honestBatch = batches[honestStartNonce];
-
-        require(
-            honestBatch.status == BatchStatus.Authorized,
-            "Batch status must be Authorized"
-        );
-
-        for (uint256 i = honestStartNonce; i < honestBatch.numTickets; i++) {
-            (bool sent, ) = tickets[i].l1Recipient.call{
-                value: tickets[i].value
-            }("");
-            require(sent, "Failed to send Ether");
-        }
-
-        batches[honestStartNonce].status = BatchStatus.Refunded;
-    }
-
-    function isProvableFraud(
-        uint256 honestStartNonce,
-        uint256 honestDelta,
-        uint256 fraudStartNonce,
-        uint256 fraudDelta,
-        Ticket[] calldata fraudTickets,
-        Signature calldata fraudSignature
-    ) private view {
         bytes32 message = keccak256(
             abi.encode(TicketsWithIndex(fraudStartNonce, fraudTickets))
         );
@@ -209,5 +175,20 @@ contract L2 is SignatureChecker {
                 correctTicket.timestamp != fraudTicket.timestamp,
             "Honest and fraud tickets must differ"
         );
+
+        Batch memory honestBatch = batches[honestStartNonce];
+        require(
+            honestBatch.status == BatchStatus.Authorized,
+            "Batch status must be Authorized"
+        );
+
+        for (uint256 i = honestStartNonce; i < honestBatch.numTickets; i++) {
+            (bool sent, ) = tickets[i].l1Recipient.call{
+                value: tickets[i].value
+            }("");
+            require(sent, "Failed to send Ether");
+        }
+
+        batches[honestStartNonce].status = BatchStatus.Refunded;
     }
 }
