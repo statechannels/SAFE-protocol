@@ -138,6 +138,15 @@ contract L2 is SignatureChecker {
         require(sent, "Failed to send Ether");
     }
 
+    /**
+     * @notice Prove fraud and refund all tickets in the fraudulent batch
+     * @param honestStartNonce Index of the first ticket in the honest batch OR first unauthorized nonce
+     * @param honestDelta Offset from honestStartNonce to the honest ticket
+     * @param fraudStartNonce Index of the first ticket in the fraudulent batch
+     * @param fraudDelta Offset from fraudStartNonce to the fraudulent ticket
+     * @param fraudTickets All tickets in the fraudulent batch
+     * @param fraudSignature Signature on the fraudulent batch
+     */
     function refundOnFraud(
         uint256 honestStartNonce,
         uint256 honestDelta,
@@ -158,8 +167,9 @@ contract L2 is SignatureChecker {
         Batch memory batch = batches[honestStartNonce];
         uint256 lastNonce = honestStartNonce + fraudDelta;
 
-        // If the ticket has never been authorized, it is not part of any batch
         // Below checks whether "batch" is null (since there is never a batch with numTickets == 0)
+        // If the ticket has never been authorized, it is not part of any batch
+        // In this case, a new batch is created that includes the ticket
         if (batch.numTickets == 0) {
             require(
                 lastNonce >= nextNonceToAuthorize,
@@ -173,9 +183,10 @@ contract L2 is SignatureChecker {
             batch.status = BatchStatus.Authorized;
             nextNonceToAuthorize = lastNonce + 1;
         }
+
         require(
             batch.status == BatchStatus.Authorized,
-            "Batch status must be authorized"
+            "Batch status must be Authorized"
         );
 
         for (uint256 i = honestStartNonce; i <= lastNonce; i++) {
