@@ -144,7 +144,7 @@ contract L2 is SignatureChecker {
         uint256 fraudStartNonce,
         uint256 fraudDelta,
         Ticket[] calldata fraudTickets,
-        Signature calldata signature
+        Signature calldata fraudSignature
     ) public {
         isProvableFraud(
             honestStartNonce,
@@ -152,7 +152,7 @@ contract L2 is SignatureChecker {
             fraudStartNonce,
             fraudDelta,
             fraudTickets,
-            signature
+            fraudSignature
         );
 
         Batch memory batch = batches[honestStartNonce];
@@ -194,7 +194,7 @@ contract L2 is SignatureChecker {
         uint256 fraudStartNonce,
         uint256 fraudDelta,
         Ticket[] calldata fraudTickets,
-        Signature calldata signature
+        Signature calldata fraudSignature
     ) private view {
         bytes32 message = keccak256(
             abi.encode(TicketsWithIndex(fraudStartNonce, fraudTickets))
@@ -204,7 +204,7 @@ contract L2 is SignatureChecker {
             "Honest and fraud indices must match"
         );
         require(
-            recoverSigner(message, signature) == lpAddress,
+            recoverSigner(message, fraudSignature) == lpAddress,
             "Must be signed by liquidity provider"
         );
 
