@@ -155,7 +155,7 @@ it("Able to prove fraud", async () => {
         gasLimit,
       },
     ),
-  ).to.be.rejectedWith("Batch status must be authorized");
+  ).to.be.rejectedWith("Batch status must be Authorized");
 
   /**
    * Fraud committed after a batch is authorized. The setup is:
