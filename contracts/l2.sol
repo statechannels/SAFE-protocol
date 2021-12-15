@@ -140,7 +140,7 @@ contract L2 is SignatureChecker {
 
     /**
      * @notice Prove fraud and refund all tickets in the fraudulent batch
-     * @param honestStartNonce Index of the first ticket in the honest batch OR first unauthorized nonce
+     * @param honestStartNonce Index of the first ticket in the honest batch
      * @param honestDelta Offset from honestStartNonce to the honest ticket
      * @param fraudStartNonce Index of the first ticket in the fraudulent batch
      * @param fraudDelta Offset from fraudStartNonce to the fraudulent ticket
@@ -166,24 +166,6 @@ contract L2 is SignatureChecker {
 
         Batch memory batch = batches[honestStartNonce];
         uint256 lastNonce = honestStartNonce + fraudDelta;
-
-        // Below checks whether "batch" is null (since there is never a batch with numTickets == 0)
-        // If the ticket has never been authorized, it is not part of any batch
-        // In this case, a new batch is created that includes the ticket
-        if (batch.numTickets == 0) {
-            require(
-                lastNonce >= nextNonceToAuthorize,
-                "The nonce must not be authorized"
-            );
-            (batch, ) = createBatch(
-                nextNonceToAuthorize,
-                honestStartNonce + fraudDelta
-            );
-            batches[nextNonceToAuthorize] = batch;
-            batch.status = BatchStatus.Authorized;
-            nextNonceToAuthorize = lastNonce + 1;
-        }
-
         require(
             batch.status == BatchStatus.Authorized,
             "Batch status must be Authorized"
