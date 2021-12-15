@@ -17,11 +17,11 @@ struct L2Deposit {
 
 // Authorized: all tickets in this batch are authorized but not claimed
 // Claimed: all tickets in this batch are claimed
-// Returned: all tickets in this batch have been returned, due to inactivity or provable fraud.
+// Refunded: all tickets in this batch have been refunded, due to inactivity or provable fraud.
 enum BatchStatus {
     Authorized,
     Claimed,
-    Returned
+    Refunded
 }
 
 struct Batch {
@@ -37,7 +37,7 @@ uint256 constant safetyDelay = 60;
 
 contract L2 is SignatureChecker {
     Ticket[] public tickets;
-    // `batches` is used to record the fact that tickets with nonce between startingNonce and startingNonce + numTickets-1 are authorized, claimed or returned.
+    // `batches` is used to record the fact that tickets with nonce between startingNonce and startingNonce + numTickets-1 are authorized, claimed or refunded.
     // Indexed by nonce
     mapping(uint256 => Batch) batches;
     uint256 nextNonceToAuthorize = 0;
@@ -185,7 +185,7 @@ contract L2 is SignatureChecker {
             require(sent, "Failed to send Ether");
         }
 
-        batches[honestStartNonce].status = BatchStatus.Returned;
+        batches[honestStartNonce].status = BatchStatus.Refunded;
     }
 
     function isProvableFraud(
