@@ -164,13 +164,12 @@ contract L2 is SignatureChecker {
             fraudSignature
         );
 
-        Batch memory batch = batches[honestStartNonce];
-        uint256 lastNonce = honestStartNonce + fraudDelta;
         require(
-            batch.status == BatchStatus.Authorized,
+            batches[honestStartNonce].status == BatchStatus.Authorized,
             "Batch status must be Authorized"
         );
 
+        uint256 lastNonce = honestStartNonce + fraudDelta;
         for (uint256 i = honestStartNonce; i <= lastNonce; i++) {
             (bool sent, ) = tickets[i].l1Recipient.call{
                 value: tickets[i].value
