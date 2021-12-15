@@ -139,13 +139,24 @@ contract L2 is SignatureChecker {
     }
 
     function refundOnFraud(
-        uint256 startNonce,
+        uint256 honestStartNonce,
+        uint256 honestDelta,
+        uint256 fraudStartNonce,
         uint256 fraudDelta,
         Ticket[] calldata fraudTickets,
         Signature calldata signature
     ) public {
-        Batch memory batch = batches[startNonce];
-        uint256 lastNonce = startNonce + fraudDelta;
+        isProvableFraud(
+            honestStartNonce,
+            honestDelta,
+            fraudStartNonce,
+            fraudDelta,
+            fraudTickets,
+            signature
+        );
+
+        Batch memory batch = batches[honestStartNonce];
+        uint256 lastNonce = honestStartNonce + fraudDelta;
 
         // If the ticket has never been authorized, it is not part of any batch
         // Below checks whether "batch" is null (since there is never a batch with numTickets == 0)
@@ -156,7 +167,7 @@ contract L2 is SignatureChecker {
             );
             (batch, ) = createBatch(
                 nextNonceToAuthorize,
-                startNonce + fraudDelta
+                honestStartNonce + fraudDelta
             );
             batches[nextNonceToAuthorize] = batch;
             batch.status = BatchStatus.Authorized;
@@ -167,43 +178,43 @@ contract L2 is SignatureChecker {
             "Batch status must be authorized"
         );
 
-        require(
-            !isProvableFraud(startNonce, fraudDelta, fraudTickets, signature),
-            "Must contain provable fraud"
-        );
-        for (uint256 i = startNonce; i <= lastNonce; i++) {
+        for (uint256 i = honestStartNonce; i <= lastNonce; i++) {
             (bool sent, ) = tickets[i].l1Recipient.call{
                 value: tickets[i].value
             }("");
             require(sent, "Failed to send Ether");
         }
 
-        batches[startNonce].status = BatchStatus.Returned;
+        batches[honestStartNonce].status = BatchStatus.Returned;
     }
 
     function isProvableFraud(
-        uint256 startNonce,
+        uint256 honestStartNonce,
+        uint256 honestDelta,
+        uint256 fraudStartNonce,
         uint256 fraudDelta,
         Ticket[] calldata fraudTickets,
         Signature calldata signature
-    ) private view returns (bool) {
+    ) private view {
         bytes32 message = keccak256(
-            abi.encode(TicketsWithIndex(startNonce, fraudTickets))
+            abi.encode(TicketsWithIndex(fraudStartNonce, fraudTickets))
+        );
+        require(
+            honestStartNonce + honestDelta == fraudStartNonce + fraudDelta,
+            "Honest and fraud indices must match"
         );
         require(
             recoverSigner(message, signature) == lpAddress,
             "Must be signed by liquidity provider"
         );
 
-        Ticket memory correctTicket = tickets[startNonce + fraudDelta];
+        Ticket memory correctTicket = tickets[honestStartNonce + honestDelta];
         Ticket memory fraudTicket = fraudTickets[fraudDelta];
-        if (
+        require(
             correctTicket.l1Recipient != fraudTicket.l1Recipient ||
-            correctTicket.value != fraudTicket.value ||
-            correctTicket.timestamp != fraudTicket.timestamp
-        ) {
-            return true;
-        }
-        return false;
+                correctTicket.value != fraudTicket.value ||
+                correctTicket.timestamp != fraudTicket.timestamp,
+            "Honest and fraud tickets must differ"
+        );
     }
 }
