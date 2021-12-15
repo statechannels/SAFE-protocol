@@ -38,7 +38,7 @@ contract L2 is SignatureChecker {
     // `batches` is used to record the fact that tickets with nonce between startingNonce and startingNonce + numTickets-1 are authorized, claimed or refunded.
     // Indexed by nonce
     mapping(uint256 => Batch) batches;
-    uint256 nextNonceToAuthorize = 0;
+    uint256 nextBatchStart = 0;
 
     function depositOnL2(L2Deposit calldata deposit) public payable {
         uint256 amountAvailable = deposit.trustedAmount;
@@ -81,7 +81,7 @@ contract L2 is SignatureChecker {
         bytes32 message = keccak256(abi.encode(ticketsWithIndex));
         uint256 earliestTimestamp = tickets[first].timestamp;
 
-        require(nextNonceToAuthorize == first, "Batches must be gapless");
+        require(nextBatchStart == first, "Batches must be gapless");
         require(
             recoverSigner(message, signature) == lpAddress,
             "Must be signed by liquidity provider"
@@ -93,7 +93,7 @@ contract L2 is SignatureChecker {
         );
 
         batches[first] = batch;
-        nextNonceToAuthorize = last + 1;
+        nextBatchStart = last + 1;
     }
 
     function createBatch(uint256 first, uint256 last)
@@ -195,13 +195,13 @@ contract L2 is SignatureChecker {
         );
 
         require(
-            nextNonceToAuthorize <= index,
+            nextBatchStart <= index,
             "The nonce must not be a part of a batch"
         );
-        (Batch memory batch, ) = createBatch(nextNonceToAuthorize, index);
-        batches[nextNonceToAuthorize] = batch;
+        (Batch memory batch, ) = createBatch(nextBatchStart, index);
+        batches[nextBatchStart] = batch;
         batch.status = BatchStatus.Withdrawn;
-        nextNonceToAuthorize = index + 1;
+        nextBatchStart = index + 1;
 
         (bool sent, ) = tickets[index].l1Recipient.call{
             value: tickets[index].value
