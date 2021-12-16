@@ -11,6 +11,7 @@ import { L1, TicketStruct } from "../contract-types/L1";
 import { L2, L2DepositStruct } from "../contract-types/L2";
 import { TicketsWithNonce } from "../src/types";
 import { hashTickets, signData } from "../src/utils";
+import { printScenarioGasUsage, ScenarioGasUsage } from "./utils";
 
 const gasLimit = 30_000_000;
 
@@ -238,3 +239,27 @@ it("Able to get a ticket refunded", async () => {
   // Refund 3rd and 4th deposit
   await waitForTx(customerL2.refund(2, { gasLimit }));
 });
+
+const benchmarkResults: ScenarioGasUsage[] = []
+it("gas benchmarking", async () => {
+  const benchmarkScenarios = [
+    1,
+    2,
+    5,
+    // TODO: When I try to execute 20 swaps, I get
+    //      Error: VM Exception while processing transaction: reverted with reason string 'Failed to send Ether'
+    // 20,
+    // 50,
+    // 100,
+  ];
+
+  let nonce = 0
+  for (const batchSize of benchmarkScenarios) {
+    const { gasUsed } = await swap(nonce, 100_000, batchSize)
+    benchmarkResults.push({ totalGasUsed: gasUsed, batchSize })
+    nonce += batchSize
+  }
+
+});
+
+after(() => printScenarioGasUsage(benchmarkResults))
