@@ -12,7 +12,7 @@ contract l1 is SignatureChecker {
         public
     {
         bytes32 message = keccak256(
-            abi.encode(TicketsWithIndex(nextNonce, tickets))
+            abi.encode(TicketsWithNonce(nextNonce, tickets))
         );
 
         require(

@@ -14,8 +14,8 @@ struct Ticket {
     uint256 createdAt;
 }
 
-struct TicketsWithIndex {
-    uint256 startIndex;
+struct TicketsWithNonce {
+    uint256 startNonce;
     Ticket[] tickets;
 }
 

@@ -76,9 +76,9 @@ contract L2 is SignatureChecker {
     ) public {
         (
             Batch memory batch,
-            TicketsWithIndex memory ticketsWithIndex
+            TicketsWithNonce memory ticketsWithNonce
         ) = createBatch(first, last);
-        bytes32 message = keccak256(abi.encode(ticketsWithIndex));
+        bytes32 message = keccak256(abi.encode(ticketsWithNonce));
         uint256 earliestTimestamp = tickets[first].createdAt;
 
         require(nextBatchStart == first, "Batches must be gapless");
@@ -99,7 +99,7 @@ contract L2 is SignatureChecker {
     function createBatch(uint256 first, uint256 last)
         private
         view
-        returns (Batch memory, TicketsWithIndex memory)
+        returns (Batch memory, TicketsWithNonce memory)
     {
         Ticket[] memory ticketsToAuthorize = new Ticket[](last - first + 1);
         uint256 total = 0;
@@ -114,7 +114,7 @@ contract L2 is SignatureChecker {
                 authorizedAt: block.timestamp,
                 status: BatchStatus.Authorized
             }),
-            TicketsWithIndex(first, ticketsToAuthorize)
+            TicketsWithNonce(first, ticketsToAuthorize)
         );
     }
 
@@ -153,7 +153,7 @@ contract L2 is SignatureChecker {
         Signature calldata fraudSignature
     ) public {
         bytes32 message = keccak256(
-            abi.encode(TicketsWithIndex(fraudStartNonce, fraudTickets))
+            abi.encode(TicketsWithNonce(fraudStartNonce, fraudTickets))
         );
         require(
             honestStartNonce + honestDelta == fraudStartNonce + fraudDelta,

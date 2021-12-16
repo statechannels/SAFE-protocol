@@ -9,7 +9,7 @@ import { L1__factory } from "../contract-types/factories/L1__factory";
 import { L2__factory } from "../contract-types/factories/L2__factory";
 import { L1, TicketStruct } from "../contract-types/L1";
 import { L2, L2DepositStruct } from "../contract-types/L2";
-import { TicketsWithIndex } from "../src/types";
+import { TicketsWithNonce } from "../src/types";
 import { hashTickets, signData } from "../src/utils";
 
 const gasLimit = 30_000_000;
@@ -63,11 +63,11 @@ async function authorizeWithdrawal(
   const ticket = await lpL2.tickets(trustedNonce);
   const ticket2 = await lpL2.tickets(trustedNonce + 1);
 
-  const ticketsWithIndex: TicketsWithIndex = {
-    startIndex: trustedNonce,
+  const ticketsWithNonce: TicketsWithNonce = {
+    startNonce: trustedNonce,
     tickets: [ticket, ticket2],
   };
-  const signature = signData(hashTickets(ticketsWithIndex), lpPK);
+  const signature = signData(hashTickets(ticketsWithNonce), lpPK);
   await waitForTx(
     lpL2.authorizeWithdrawal(trustedNonce, trustedNonce + 1, signature, {
       // TODO: remove this after addressing https://github.com/statechannels/SAFE-protocol/issues/70
@@ -128,11 +128,11 @@ it("Handles a fraud proofs", async () => {
   await authorizeWithdrawal(0);
 
   const fraudTicket = { ...ticket2, l1Recipient: lpWallet.address };
-  const ticketsWithIndex: TicketsWithIndex = {
-    startIndex: 0,
+  const ticketsWithNonce: TicketsWithNonce = {
+    startNonce: 0,
     tickets: [ticket, fraudTicket],
   };
-  const fraudSignature = signData(hashTickets(ticketsWithIndex), lpPK);
+  const fraudSignature = signData(hashTickets(ticketsWithNonce), lpPK);
 
   // Successfully prove fraud
   await waitForTx(
@@ -174,11 +174,11 @@ it("Handles a fraud proofs", async () => {
   const ticket3 = await lpL2.tickets(1);
   const ticket4 = await lpL2.tickets(2);
   const fraudTicket2 = { ...ticket4, l1Recipient: lpWallet.address };
-  const ticketsWithIndex2: TicketsWithIndex = {
-    startIndex: 1,
+  const ticketsWithNonce2: TicketsWithNonce = {
+    startNonce: 1,
     tickets: [ticket3, fraudTicket2],
   };
-  const fraudSignature2 = signData(hashTickets(ticketsWithIndex2), lpPK);
+  const fraudSignature2 = signData(hashTickets(ticketsWithNonce2), lpPK);
 
   await waitForTx(
     customer2L2.refundOnFraud(
