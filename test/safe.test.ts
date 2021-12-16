@@ -9,6 +9,7 @@ import { L1__factory } from "../contract-types/factories/L1__factory";
 import { L2__factory } from "../contract-types/factories/L2__factory";
 import { L1, TicketStruct } from "../contract-types/L1";
 import { L2, L2DepositStruct } from "../contract-types/L2";
+import { MAX_AUTH_DELAY, SAFETY_DELAY } from "../src/constants";
 import { TicketsWithNonce } from "../src/types";
 import { hashTickets, signData } from "../src/utils";
 import { printScenarioGasUsage, ScenarioGasUsage } from "./utils";
@@ -104,7 +105,7 @@ async function swap(trustedNonce: number, trustedAmount: number, numTickets = 2)
 
   const l1TransactionReceipt = await waitForTx(lpL1.claimBatch(tickets, signature, { gasLimit }));
 
-  await ethers.provider.send("evm_increaseTime", [121]);
+  await ethers.provider.send("evm_increaseTime", [SAFETY_DELAY + 1]);
   await waitForTx(lpL2.claimL2Funds(trustedNonce));
 
   // TODO: This ought to estimate the total user cost. The cost of the L1 transaction
@@ -227,7 +228,14 @@ it("Able to get a ticket refunded", async () => {
   await expect(customerL2.refund(0, { gasLimit })).to.be.rejectedWith(
     "maxAuthDelay must have passed since deposit",
   );
-  await ethers.provider.send("evm_increaseTime", [61]);
+
+  const delta = 5
+  await ethers.provider.send("evm_increaseTime", [MAX_AUTH_DELAY - delta]);
+  await expect(customerL2.refund(1, { gasLimit })).to.be.rejectedWith(
+    "maxAuthDelay must have passed since deposit"
+  );
+  await ethers.provider.send("evm_increaseTime", [2 * delta]);
+
   await waitForTx(customerL2.refund(0, { gasLimit }));
   await waitForTx(customerL2.refund(1, { gasLimit }));
   await expect(customerL2.refund(1, { gasLimit })).to.be.rejectedWith(
@@ -235,7 +243,7 @@ it("Able to get a ticket refunded", async () => {
   );
 
   await deposit(2, 8);
-  await ethers.provider.send("evm_increaseTime", [61]);
+  await ethers.provider.send("evm_increaseTime", [MAX_AUTH_DELAY + delta]);
   // Refund 3rd and 4th deposit
   await waitForTx(customerL2.refund(2, { gasLimit }));
 });
