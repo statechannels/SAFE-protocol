@@ -124,7 +124,7 @@ beforeEach(async () => {
   await waitForTx(
     lpWallet.sendTransaction({
       to: l1.address,
-      value: ethers.utils.parseUnits("10", "wei"),
+      value: ethers.utils.parseUnits("1000000000", "wei"),
     }),
   );
 });
@@ -246,10 +246,10 @@ it("gas benchmarking", async () => {
     1,
     2,
     5,
-    // TODO: When I try to execute 20 swaps, I get
-    //      Error: VM Exception while processing transaction: reverted with reason string 'Failed to send Ether'
-    // 20,
-    // 50,
+    20,
+    50,
+    // TODO: When I run the following case, I get:
+    //      Error: VM Exception while processing transaction: reverted with reason string 'Must be within autorization window'
     // 100,
   ];
 
