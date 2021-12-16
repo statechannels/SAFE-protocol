@@ -4,26 +4,22 @@
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.2",
     "@nomiclabs/hardhat-waffle": "^2.0.1",
+    "@openzeppelin/contracts": "^4.3.3",
+    "@typechain/ethers-v5": "^8.0.3",
+    "@typechain/hardhat": "^3.0.0",
     "@types/chai-as-promised": "^7.1.4",
-    "@types/cli-table": "^0.3.0",
     "@types/mocha": "^9.0.0",
     "chai": "^4.3.4",
     "chai-as-promised": "^7.1.1",
     "eth-gas-reporter": "^0.2.22",
     "ethereum-waffle": "^3.4.0",
+    "ethers": "^5.0.0",
     "hardhat": "^2.6.7",
     "hardhat-gas-reporter": "^1.0.4",
     "mocha": "^9.1.2",
-    "typescript": "^4.5.4"
-  },
-  "dependencies": {
-    "@openzeppelin/contracts": "^4.3.3",
-    "@typechain/ethers-v5": "^8.0.3",
-    "@typechain/hardhat": "^3.0.0",
-    "cli-table": "^0.3.11",
-    "ethers": "^5.0.0",
     "ts-node": "^10.4.0",
-    "typechain": "^6.0.3"
+    "typechain": "^6.0.3",
+    "typescript": "^4.5.4"
   },
   "scripts": {
     "test": "yarn hardhat test",
