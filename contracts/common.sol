@@ -11,7 +11,7 @@ struct Ticket {
     /// The amount of funds to send.
     uint256 value;
     /// The timestamp when the ticket was registered
-    uint256 timestamp;
+    uint256 createdAt;
 }
 
 struct TicketsWithIndex {
