@@ -88,11 +88,13 @@ async function authorizeWithdrawal(
   return { tickets, signature };
 }
 
-async function swap(trustedNonce: number, trustedAmount: number) {
-  await deposit(trustedNonce, trustedAmount);
-  const {tickets, signature} = await authorizeWithdrawal(trustedNonce);
+async function swap(trustedNonce: number, trustedAmount: number, numTickets = 2) {
+  for (let i = 0; i < numTickets; i++) {
+    await depositOnce(trustedNonce, trustedAmount);
+  }
+  const { tickets, signature } = await authorizeWithdrawal(trustedNonce, numTickets);
 
-  await waitForTx(lpL1.claimBatch(tickets, signature));
+  await waitForTx(lpL1.claimBatch(tickets, signature, { gasLimit }));
 
   await ethers.provider.send("evm_increaseTime", [121]);
   await waitForTx(lpL2.claimL2Funds(trustedNonce));
