@@ -8,7 +8,7 @@ contract l1 is SignatureChecker {
 
     receive() external payable {}
 
-    function claimBatch(Ticket[] calldata tickets, Signature calldata signature)
+    function claimBatch(L1Ticket[] calldata tickets, Signature calldata signature)
         public
     {
         bytes32 message = keccak256(

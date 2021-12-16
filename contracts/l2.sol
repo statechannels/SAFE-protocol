@@ -69,6 +69,12 @@ contract L2 is SignatureChecker {
         tickets.push(ticket);
     }
 
+    // TODO: This public function is added to force hardhat to generate
+    // the TicketStruct type in its l2.ts output
+    function compareWithFirstTicket(Ticket calldata t) public view returns (bool) {
+        return tickets[0].value == t.value;
+    }
+
     function authorizeWithdrawal(
         uint256 first,
         uint256 last,
@@ -101,10 +107,11 @@ contract L2 is SignatureChecker {
         view
         returns (Batch memory, TicketsWithNonce memory)
     {
-        Ticket[] memory ticketsToAuthorize = new Ticket[](last - first + 1);
+        L1Ticket[] memory ticketsToAuthorize = new L1Ticket[](last - first + 1);
         uint256 total = 0;
         for (uint256 i = first; i <= last; i++) {
-            ticketsToAuthorize[i - first] = tickets[i];
+            Ticket memory t = tickets[i];
+            ticketsToAuthorize[i - first] = L1Ticket(t.l1Recipient, t.value);
             total += tickets[i].value;
         }
         return (
@@ -149,7 +156,7 @@ contract L2 is SignatureChecker {
         uint256 honestDelta,
         uint256 fraudStartNonce,
         uint256 fraudDelta,
-        Ticket[] calldata fraudTickets,
+        L1Ticket[] calldata fraudTickets,
         Signature calldata fraudSignature
     ) public {
         bytes32 message = keccak256(
@@ -164,11 +171,11 @@ contract L2 is SignatureChecker {
             "Must be signed by liquidity provider"
         );
 
-        Ticket memory correctTicket = tickets[honestStartNonce + honestDelta];
-        Ticket memory fraudTicket = fraudTickets[fraudDelta];
+        Ticket memory t = tickets[honestStartNonce + honestDelta];
+        L1Ticket memory correctTicket = L1Ticket(t.l1Recipient, t.value);
+        L1Ticket memory fraudTicket = fraudTickets[fraudDelta];
         require(
-            keccak256(abi.encode(correctTicket)) !=
-                keccak256(abi.encode(fraudTicket)),
+            !ticketsEqual(correctTicket, fraudTicket),
             "Honest and fraud tickets must differ"
         );
 
@@ -212,4 +219,5 @@ contract L2 is SignatureChecker {
         }("");
         require(sent, "Failed to send Ether");
     }
+
 }

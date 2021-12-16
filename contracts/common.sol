@@ -5,6 +5,13 @@ address constant lpAddress = address(
     0x9552ceB4e6FA8c356c1A76A8Bc8b1EFA7B9fb205
 );
 
+struct L1Ticket {
+    /// Who will get the funds if executed
+    address l1Recipient;
+    /// The amount of funds to send.
+    uint256 value;
+}
+
 struct Ticket {
     /// Who will get the funds if executed
     address l1Recipient;
@@ -16,7 +23,7 @@ struct Ticket {
 
 struct TicketsWithNonce {
     uint256 startNonce;
-    Ticket[] tickets;
+    L1Ticket[] tickets;
 }
 
 struct Signature {
@@ -35,5 +42,9 @@ abstract contract SignatureChecker {
             abi.encodePacked("\x19Ethereum Signed Message:\n32", hash)
         );
         return ecrecover(prefixedHash, signature.v, signature.r, signature.s);
+    }
+
+    function ticketsEqual(L1Ticket memory t1, L1Ticket memory t2) public pure returns (bool) {
+        return (t1.value == t2.value) && (t1.l1Recipient == t2.l1Recipient);
     }
 }
