@@ -56,6 +56,18 @@ async function deposit(trustedNonce: number, trustedAmount: number) {
   await waitForTx(customerL2.depositOnL2(deposit2, { value: depositAmount }));
 }
 
+async function depositOnce(trustedNonce: number, trustedAmount: number) {
+  const depositAmount = 1;
+  const deposit: L2DepositStruct = {
+    trustedNonce,
+    trustedAmount,
+    depositAmount,
+    l1Recipient: customerWallet.address,
+  };
+
+  await waitForTx(customerL2.depositOnL2(deposit, { value: depositAmount }));
+}
+
 async function authorizeWithdrawal(
   trustedNonce: number,
   numTickets = 2
