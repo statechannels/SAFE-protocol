@@ -242,6 +242,14 @@ it("Able to get a ticket refunded", async () => {
 
 const benchmarkResults: ScenarioGasUsage[] = []
 it("gas benchmarking", async () => {
+  let nonce = 0
+
+  // The FIRST batch that is claimed on L1 incurs a write-to-zero-storage cost, which makes
+  // for a counter-intuitive list of results. So, we trigger an initial swap before
+  // starting the benchmark
+  await swap(0, 100_000, 1)
+  nonce++
+
   const benchmarkScenarios = [
     1,
     2,
@@ -253,7 +261,6 @@ it("gas benchmarking", async () => {
     // 100,
   ];
 
-  let nonce = 0
   for (const batchSize of benchmarkScenarios) {
     const { gasUsed } = await swap(nonce, 100_000, batchSize)
     benchmarkResults.push({ totalGasUsed: gasUsed, batchSize })
