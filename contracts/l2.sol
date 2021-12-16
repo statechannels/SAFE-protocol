@@ -30,8 +30,8 @@ struct Batch {
 }
 
 // TODO: update these values after prototype phase
-uint256 constant maxAuthDelay = 60;
-uint256 constant safetyDelay = 60;
+uint256 constant maxAuthDelay = 600;
+uint256 constant safetyDelay = 600;
 
 contract L2 is SignatureChecker {
     Ticket[] public tickets;

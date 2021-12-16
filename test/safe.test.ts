@@ -264,9 +264,7 @@ it("gas benchmarking", async () => {
     5,
     20,
     50,
-    // TODO: When I run the following case, I get:
-    //      Error: VM Exception while processing transaction: reverted with reason string 'Must be within autorization window'
-    // 100,
+    86, // THE GAS COST IS ... UNDER 9000!!!
   ];
 
   for (const batchSize of benchmarkScenarios) {
@@ -275,6 +273,6 @@ it("gas benchmarking", async () => {
     nonce += batchSize
   }
 
-});
+})
 
 after(() => printScenarioGasUsage(benchmarkResults))
