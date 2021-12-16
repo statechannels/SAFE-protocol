@@ -117,7 +117,12 @@ beforeEach(async () => {
   );
 });
 
-it("Successfull e2e swap", async () => {
+it("One successfull e2e swaps", async () => {
+  await swap(0, 10);
+});
+
+
+it("Two successfull e2e swaps", async () => {
   await swap(0, 10);
   await swap(2, 8);
 });
