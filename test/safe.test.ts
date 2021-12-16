@@ -88,16 +88,27 @@ async function authorizeWithdrawal(
   return { tickets, signature };
 }
 
+/**
+ * 
+ * @param trustedNonce ???
+ * @param trustedAmount amount expected to be held on L1 contract
+ * @param numTickets number of tickets to include in the swap's batch
+ * @returns receipt of the L1 claimBatch transaction
+ */
 async function swap(trustedNonce: number, trustedAmount: number, numTickets = 2) {
   for (let i = 0; i < numTickets; i++) {
     await depositOnce(trustedNonce, trustedAmount);
   }
   const { tickets, signature } = await authorizeWithdrawal(trustedNonce, numTickets);
 
-  await waitForTx(lpL1.claimBatch(tickets, signature, { gasLimit }));
+  const l1TransactionReceipt = await waitForTx(lpL1.claimBatch(tickets, signature, { gasLimit }));
 
   await ethers.provider.send("evm_increaseTime", [121]);
   await waitForTx(lpL2.claimL2Funds(trustedNonce));
+
+  // TODO: This ought to estimate the total user cost. The cost of the L1 transaction
+  // is currently used as a rough estimate of the total user cost.
+  return l1TransactionReceipt
 }
 
 beforeEach(async () => {
