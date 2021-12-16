@@ -24,9 +24,7 @@
     "typechain": "^6.0.3"
   },
   "scripts": {
-    "test": "yarn test:eth && yarn test:token",
-    "test:eth": "yarn hardhat test",
-    "test:token": "USE_ERC20=true yarn hardhat test",
+    "test": "yarn hardhat test",
     "typechain": "yarn hardhat typechain",
     "postinstall": "yarn typechain"
   }
