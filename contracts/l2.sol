@@ -62,7 +62,7 @@ contract L2 is SignatureChecker {
         Ticket memory ticket = Ticket({
             l1Recipient: deposit.l1Recipient,
             value: deposit.depositAmount,
-            timestamp: block.timestamp
+            createdAt: block.timestamp
         });
 
         // ticket's nonce is now its index in `tickets`
@@ -79,7 +79,7 @@ contract L2 is SignatureChecker {
             TicketsWithIndex memory ticketsWithIndex
         ) = createBatch(first, last);
         bytes32 message = keccak256(abi.encode(ticketsWithIndex));
-        uint256 earliestTimestamp = tickets[first].timestamp;
+        uint256 earliestTimestamp = tickets[first].createdAt;
 
         require(nextBatchStart == first, "Batches must be gapless");
         require(
@@ -194,7 +194,7 @@ contract L2 is SignatureChecker {
      */
     function refund(uint256 lastNonce) public {
         require(
-            block.timestamp > tickets[lastNonce].timestamp + maxAuthDelay,
+            block.timestamp > tickets[lastNonce].createdAt + maxAuthDelay,
             "maxAuthDelay must have passed since deposit"
         );
 
