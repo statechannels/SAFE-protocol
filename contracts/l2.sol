@@ -188,23 +188,27 @@ contract L2 is SignatureChecker {
         batches[honestStartNonce].status = BatchStatus.Withdrawn;
     }
 
-    function refund(uint256 index) public {
+    /**
+     * @notice Refund all tickets with nonce >= nextBatchStart and nonce <= lastNonce
+     * @param lastNonce Nonce of the "expired" ticket aka a ticket that is past AuthorizationWindow
+     */
+    function refund(uint256 lastNonce) public {
         require(
-            block.timestamp > tickets[index].timestamp + maxAuthDelay,
+            block.timestamp > tickets[lastNonce].timestamp + maxAuthDelay,
             "maxAuthDelay must have passed since deposit"
         );
 
         require(
-            nextBatchStart <= index,
+            nextBatchStart <= lastNonce,
             "The nonce must not be a part of a batch"
         );
-        (Batch memory batch, ) = createBatch(nextBatchStart, index);
+        (Batch memory batch, ) = createBatch(nextBatchStart, lastNonce);
         batches[nextBatchStart] = batch;
         batch.status = BatchStatus.Withdrawn;
-        nextBatchStart = index + 1;
+        nextBatchStart = lastNonce + 1;
 
-        (bool sent, ) = tickets[index].l1Recipient.call{
-            value: tickets[index].value
+        (bool sent, ) = tickets[lastNonce].l1Recipient.call{
+            value: tickets[lastNonce].value
         }("");
         require(sent, "Failed to send Ether");
     }
