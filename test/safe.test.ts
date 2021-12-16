@@ -58,29 +58,29 @@ async function deposit(trustedNonce: number, trustedAmount: number) {
 
 async function authorizeWithdrawal(
   trustedNonce: number,
-): Promise<[TicketStruct, TicketStruct, ethersTypes.Signature]> {
-  const ticket = await lpL2.tickets(trustedNonce);
-  const ticket2 = await lpL2.tickets(trustedNonce + 1);
+  numTickets = 2
+): Promise<{ tickets: TicketStruct[], signature: ethersTypes.Signature }> {
+  let tickets: TicketStruct[] = []
+  for (let i = 0; i < numTickets; i++) {
+    tickets.push(await lpL2.tickets(trustedNonce + i))
+  }
 
-  const ticketsWithNonce: TicketsWithNonce = {
-    startNonce: trustedNonce,
-    tickets: [ticket, ticket2],
-  };
+  const ticketsWithNonce: TicketsWithNonce = { startNonce: trustedNonce, tickets };
   const signature = signData(hashTickets(ticketsWithNonce), lpPK);
   await waitForTx(
-    lpL2.authorizeWithdrawal(trustedNonce, trustedNonce + 1, signature, {
+    lpL2.authorizeWithdrawal(trustedNonce, trustedNonce + numTickets - 1, signature, {
       // TODO: remove this after addressing https://github.com/statechannels/SAFE-protocol/issues/70
       gasLimit,
     }),
   );
-  return [ticket, ticket2, signature];
+  return { tickets, signature };
 }
 
 async function swap(trustedNonce: number, trustedAmount: number) {
   await deposit(trustedNonce, trustedAmount);
-  const [ticket, ticket2, signature] = await authorizeWithdrawal(trustedNonce);
+  const {tickets, signature} = await authorizeWithdrawal(trustedNonce);
 
-  await waitForTx(lpL1.claimBatch([ticket, ticket2], signature));
+  await waitForTx(lpL1.claimBatch(tickets, signature));
 
   await ethers.provider.send("evm_increaseTime", [121]);
   await waitForTx(lpL2.claimL2Funds(trustedNonce));
