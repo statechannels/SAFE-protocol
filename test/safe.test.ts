@@ -7,8 +7,8 @@ import { ethers } from "hardhat";
 
 import { L1__factory } from "../contract-types/factories/L1__factory";
 import { L2__factory } from "../contract-types/factories/L2__factory";
-import { L1, TicketStruct } from "../contract-types/L1";
-import { L2, L2DepositStruct } from "../contract-types/L2";
+import { L1, L1TicketStruct } from "../contract-types/L1";
+import { L2, L2DepositStruct, TicketStruct } from "../contract-types/L2";
 import { MAX_AUTH_DELAY, SAFETY_DELAY } from "../src/constants";
 import { TicketsWithNonce } from "../src/types";
 import { hashTickets, signData } from "../src/utils";
@@ -73,10 +73,10 @@ async function depositOnce(trustedNonce: number, trustedAmount: number) {
 async function authorizeWithdrawal(
   trustedNonce: number,
   numTickets = 2
-): Promise<{ tickets: TicketStruct[]; signature: ethersTypes.Signature }> {
-  const tickets: TicketStruct[] = [];
+): Promise<{ tickets: L1TicketStruct[]; signature: ethersTypes.Signature }> {
+  let tickets: L1TicketStruct[] = [];
   for (let i = 0; i < numTickets; i++) {
-    tickets.push(await lpL2.tickets(trustedNonce + i));
+    tickets.push(ticketToL1Ticket(await lpL2.tickets(trustedNonce + i)));
   }
 
   const ticketsWithNonce: TicketsWithNonce = {
@@ -161,6 +161,13 @@ it("Unable to authorize overlapping batches", async () => {
   await expect(swap(1, 9)).to.be.rejectedWith("Batches must be gapless");
 });
 
+function ticketToL1Ticket(ticket: TicketStruct): L1TicketStruct {
+  return {
+    value: ticket.value,
+    l1Recipient: ticket.l1Recipient,
+  };
+}
+
 it("Handles a fraud proofs", async () => {
   /**
    * Fraud instance 1. The liquidity provider signs a batch of tickets with the
@@ -176,13 +183,21 @@ it("Handles a fraud proofs", async () => {
   const fraudTicket = { ...ticket2, l1Recipient: lpWallet.address };
   const ticketsWithNonce: TicketsWithNonce = {
     startNonce: 0,
-    tickets: [ticket, fraudTicket],
+    tickets: [ticket, fraudTicket].map(ticketToL1Ticket),
   };
   const fraudSignature = signData(hashTickets(ticketsWithNonce), lpPK);
 
   // Successfully prove fraud
   await waitForTx(
-    customerL2.refundOnFraud(0, 1, 0, 1, [ticket, fraudTicket], fraudSignature)
+    customerL2.refundOnFraud(
+      0,
+      1,
+      0,
+      1,
+      [ticket, fraudTicket],
+      fraudSignature,
+      { gasLimit }
+    )
   );
 
   // Unsuccessfully try to claim fraud again
@@ -215,7 +230,7 @@ it("Handles a fraud proofs", async () => {
   const fraudTicket2 = { ...ticket4, l1Recipient: lpWallet.address };
   const ticketsWithNonce2: TicketsWithNonce = {
     startNonce: 1,
-    tickets: [ticket3, fraudTicket2],
+    tickets: [ticket3, fraudTicket2].map(ticketToL1Ticket),
   };
   const fraudSignature2 = signData(hashTickets(ticketsWithNonce2), lpPK);
 
@@ -273,7 +288,7 @@ it("gas benchmarking", async () => {
     5,
     20,
     50,
-    86, // THE GAS COST IS ... UNDER 9000!!!
+    62, // THE GAS COST IS ... UNDER 9000!!!
   ];
 
   for (const batchSize of benchmarkScenarios) {

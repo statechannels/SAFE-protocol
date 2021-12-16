@@ -1,5 +1,5 @@
 export const SIGNED_SWAPS_ABI_TYPE = [
-  "tuple(uint256 startNonce, tuple(address l1Recipient, uint256 value, uint256 createdAt)[]) ",
+  "tuple(uint256 startNonce, tuple(address l1Recipient, uint256 value)[]) ",
 ];
 
 export const USE_ERC20 = process.env.USE_ERC20 === "true";
