@@ -110,7 +110,7 @@ async function swap(trustedNonce: number, trustedAmount: number, numTickets = 2)
 
   // TODO: This ought to estimate the total user cost. The cost of the L1 transaction
   // is currently used as a rough estimate of the total user cost.
-  return l1TransactionReceipt
+  return l1TransactionReceipt;
 }
 
 beforeEach(async () => {
