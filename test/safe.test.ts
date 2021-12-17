@@ -92,7 +92,7 @@ async function authorizeWithdrawal(
 
 /**
  * 
- * @param trustedNonce ???
+ * @param trustedNonce The sum of all tickets starting with trustedNonce + new deposit must be <= trustedAmount
  * @param trustedAmount amount expected to be held on L1 contract
  * @param numTickets number of tickets to include in the swap's batch
  * @returns receipt of the L1 claimBatch transaction
