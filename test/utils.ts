@@ -1,21 +1,30 @@
-import { BigNumber, Contract, Wallet } from "ethers";
-import { USE_ERC20 } from "../src/constants";
-import { IERC20 } from "../contract-types/IERC20";
+import Table from "cli-table";
+import { BigNumber } from "ethers";
 
-export type Balances = { alice: BigNumber; bob: BigNumber };
+export type ScenarioGasUsage =  {
+  batchSize: number;
+  totalGasUsed: BigNumber;
+};
 
-export async function getBalances(
-  aliceWallet: Wallet,
-  bobWallet: Wallet,
-  tokenContract: IERC20
-): Promise<Balances> {
-  if (!USE_ERC20) {
-    const alice = await aliceWallet.getBalance();
-    const bob = await bobWallet.getBalance();
-    return { alice, bob };
-  } else {
-    const alice = await tokenContract.balanceOf(aliceWallet.address);
-    const bob = await tokenContract.balanceOf(bobWallet.address);
-    return { alice, bob };
+export function printScenarioGasUsage(scenarios: ScenarioGasUsage[]) {
+  console.log("L1 claimBatch Gas Usage");
+  const table = new Table({
+    head: [
+      "Ticket Batch Size",
+      "Average Gas Per Ticket",
+      "Total Gas Used",
+    ],
+    colAligns: ["right", "right", "right"],
+  });
+  for (const scenario of scenarios) {
+    const averagePerClaim = scenario.totalGasUsed
+      .div(scenario.batchSize)
+      .toNumber();
+    table.push([
+      scenario.batchSize,
+      averagePerClaim,
+      scenario.totalGasUsed,
+    ]);
   }
+  console.log(table.toString());
 }
