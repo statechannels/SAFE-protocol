@@ -1,11 +1,8 @@
 import Table from "cli-table";
 import { BigNumber } from "ethers";
 
-export type ClaimTicketsScenario = {
+export type ScenarioGasUsage =  {
   batchSize: number;
-};
-
-export type ScenarioGasUsage = ClaimTicketsScenario & {
   totalGasUsed: BigNumber;
 };
 
