@@ -84,6 +84,7 @@ async function depositOnce(
     l1Recipient: customerWallet.address,
     token: useERC20 ? testToken.address : ETH_TOKEN_ADDRESS,
   };
+
   await waitForTx(customerL2.depositOnL2(deposit, { value: depositAmount }));
 }
 async function authorizeWithdrawal(
@@ -130,6 +131,7 @@ async function swap(
   for (let i = 0; i < numTickets; i++) {
     await depositOnce(trustedNonce, trustedAmount, useERC20);
   }
+
   const { tickets, signature } = await authorizeWithdrawal(
     trustedNonce,
     numTickets
@@ -155,6 +157,8 @@ beforeEach(async () => {
   await testToken.transfer(customerWallet.address, tokenBalance / 4);
   // Transfer 1/4 to the l1 contract for payouts
   await testToken.transfer(l1.address, tokenBalance / 4);
+  // Transfer 1/4 to the l2 contract for payouts
+  await testToken.transfer(l2.address, tokenBalance / 4);
   // Approve both contracts for both parties to transfer tokens
   await testToken.approve(l2.address, tokenBalance);
   await testToken.approve(l1.address, tokenBalance);
@@ -176,7 +180,25 @@ beforeEach(async () => {
 });
 
 it("One successful e2e swap with ERC20", async () => {
+  const initialBalances = await getTokenBalances();
+
   await swap(0, 10, 2, true);
+
+  const finalBalances = await getTokenBalances();
+  // TODO: We should probably create separate token contracts for L1 and L2
+  // This would make tracking balances easier
+
+  // Since both L1 and L2 contracts are sharing the same token contract we end up with no change
+  // The customer sends 2 coins to the L2 contract and then receives 2 coins from the L1 contract
+  expect(finalBalances.customer).to.eq(initialBalances.customer);
+
+  // The LP should received 2 coins for the two swaps
+  expect(finalBalances.lp).to.eq(initialBalances.lp + 2);
+  // The L1 contract should have paid out 2 coins to the customer
+  expect(finalBalances.l1Contract).to.eq(initialBalances.l1Contract - 2);
+
+  // The L2 contract receives a deposit of 2 and then pays out 2 coins resulting in no change
+  expect(finalBalances.l2Contract).to.eq(initialBalances.l2Contract);
 });
 
 it("One successfull e2e swaps", async () => {
@@ -344,3 +366,19 @@ it("gas benchmarking", async () => {
   nonce = await benchmark(benchmarkScenarios, nonce, true);
   await benchmark(benchmarkScenarios, nonce, false);
 });
+
+// Currently using numbers for convenience, as the amount of tokens is pretty small
+type TokenBalances = {
+  lp: number;
+  customer: number;
+  l1Contract: number;
+  l2Contract: number;
+};
+async function getTokenBalances(): Promise<TokenBalances> {
+  return {
+    lp: (await testToken.balanceOf(lpWallet.address)).toNumber(),
+    customer: (await testToken.balanceOf(customerWallet.address)).toNumber(),
+    l1Contract: (await testToken.balanceOf(lpL1.address)).toNumber(),
+    l2Contract: (await testToken.balanceOf(lpL2.address)).toNumber(),
+  };
+}
