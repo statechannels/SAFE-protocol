@@ -1,6 +1,6 @@
-/.yarn/*
-/artifacts
-/cache
+.yarn
+artifacts
+cache
 node_modules
-/contract-types
+contract-types
 .vscode
