@@ -60,13 +60,13 @@ abstract contract SignatureChecker {
 }
 
 abstract contract FundsSender {
-    // This is based on https://solidity-by-example.org/sending-ether/
-    function send(
+    function sendFunds(
         address receiver,
         uint256 value,
         address tokenAddress
     ) public {
         if (tokenAddress == address(0)) {
+            // This is based on https://solidity-by-example.org/sending-ether/
             (bool sent, ) = receiver.call{value: value}("");
             require(sent, "Failed to send Ether");
         } else {

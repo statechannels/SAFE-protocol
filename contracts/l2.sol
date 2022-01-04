@@ -163,7 +163,7 @@ contract L2 is SignatureChecker, FundsSender {
 
         for (uint256 i = first; i < first + batch.numTickets; i++) {
             Ticket memory ticket = tickets[i];
-            send(lpAddress, ticket.value, ticket.token);
+            sendFunds(lpAddress, ticket.value, ticket.token);
         }
     }
 
@@ -215,7 +215,11 @@ contract L2 is SignatureChecker, FundsSender {
         );
 
         for (uint256 i = honestStartNonce; i < honestBatch.numTickets; i++) {
-            send(tickets[i].l1Recipient, tickets[i].value, tickets[i].token);
+            sendFunds(
+                tickets[i].l1Recipient,
+                tickets[i].value,
+                tickets[i].token
+            );
         }
 
         batches[honestStartNonce].status = BatchStatus.Withdrawn;
@@ -240,7 +244,7 @@ contract L2 is SignatureChecker, FundsSender {
         batch.status = BatchStatus.Withdrawn;
         nextBatchStart = lastNonce + 1;
 
-        send(
+        sendFunds(
             tickets[lastNonce].l1Recipient,
             tickets[lastNonce].value,
             tickets[lastNonce].token

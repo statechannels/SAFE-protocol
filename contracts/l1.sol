@@ -21,7 +21,11 @@ contract l1 is SignatureChecker, FundsSender {
         );
 
         for (uint256 i = 0; i < tickets.length; i++) {
-            send(tickets[i].l1Recipient, tickets[i].value, tickets[i].token);
+            sendFunds(
+                tickets[i].l1Recipient,
+                tickets[i].value,
+                tickets[i].token
+            );
         }
 
         nextNonce = nextNonce + tickets.length;
