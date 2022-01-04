@@ -6,8 +6,11 @@ export type ScenarioGasUsage = {
   totalGasUsed: BigNumber;
 };
 
-export function printScenarioGasUsage(scenarios: ScenarioGasUsage[]) {
-  console.log("L1 claimBatch Gas Usage");
+export function printScenarioGasUsage(
+  scenarios: ScenarioGasUsage[],
+  description = "L1 claimBatch Gas Usage"
+) {
+  console.log(description);
   const table = new Table({
     head: ["Ticket Batch Size", "Average Gas Per Ticket", "Total Gas Used"],
     colAligns: ["right", "right", "right"],

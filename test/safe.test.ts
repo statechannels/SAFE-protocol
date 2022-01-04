@@ -84,7 +84,6 @@ async function depositOnce(
     l1Recipient: customerWallet.address,
     token: useERC20 ? testToken.address : ETH_TOKEN_ADDRESS,
   };
-
   await waitForTx(customerL2.depositOnL2(deposit, { value: depositAmount }));
 }
 async function authorizeWithdrawal(
@@ -306,7 +305,24 @@ it("Able to get a ticket refunded", async () => {
   await waitForTx(customerL2.refund(2, { gasLimit }));
 });
 
-const benchmarkResults: ScenarioGasUsage[] = [];
+async function benchmark(
+  scenarios: number[],
+  nonce: number,
+  useERC20 = false
+): Promise<number> {
+  const results: ScenarioGasUsage[] = [];
+  for (const batchSize of scenarios) {
+    const { gasUsed } = await swap(nonce, 100_000, batchSize, useERC20);
+    results.push({ totalGasUsed: gasUsed, batchSize });
+    nonce += batchSize;
+  }
+  printScenarioGasUsage(
+    results,
+    `L1 claimBatch (${useERC20 ? "ERC20" : "ETH"}) Gas Usage`
+  );
+  return nonce;
+}
+
 it("gas benchmarking", async () => {
   let nonce = 0;
 
@@ -325,11 +341,6 @@ it("gas benchmarking", async () => {
     62, // THE GAS COST IS ... UNDER 9000!!!
   ];
 
-  for (const batchSize of benchmarkScenarios) {
-    const { gasUsed } = await swap(nonce, 100_000, batchSize);
-    benchmarkResults.push({ totalGasUsed: gasUsed, batchSize });
-    nonce += batchSize;
-  }
+  nonce = await benchmark(benchmarkScenarios, nonce, true);
+  await benchmark(benchmarkScenarios, nonce, false);
 });
-
-after(() => printScenarioGasUsage(benchmarkResults));
