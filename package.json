@@ -34,7 +34,7 @@
     "postinstall": "yarn typechain",
     "lint:check": "yarn run eslint . --ext .js,.ts",
     "lint:write": "yarn run eslint . --ext .js,.ts --fix",
-    "pretty:check": "prettier --check .",
-    "pretty:write": "prettier --write ."
+    "prettier:check": "prettier --check .",
+    "prettier:write": "prettier --write ."
   }
 }
