@@ -6,7 +6,7 @@ export function hashTickets(ticketsWithNonce: TicketsWithNonce): string {
   return ethers.utils.keccak256(
     ethers.utils.defaultAbiCoder.encode(SIGNED_SWAPS_ABI_TYPE, [
       [ticketsWithNonce.startNonce, ticketsWithNonce.tickets],
-    ]),
+    ])
   );
 }
 
@@ -14,11 +14,11 @@ export function hashTickets(ticketsWithNonce: TicketsWithNonce): string {
 // Probably a cleaner way of signing it
 export function signData(
   hashedData: string,
-  privateKey: string,
+  privateKey: string
 ): ethers.Signature {
   const signingKey = new ethers.utils.SigningKey(privateKey);
   const hashedMessage = ethers.utils.hashMessage(
-    ethers.utils.arrayify(hashedData),
+    ethers.utils.arrayify(hashedData)
   );
   return ethers.utils.splitSignature(signingKey.signDigest(hashedMessage));
 }

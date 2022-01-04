@@ -24,7 +24,7 @@ const lpPK =
   "0x23ac17b9c3590a8e67a1d1231ebab87dd2d3389d2f1526f842fd1326a0990f42";
 
 // pk = 0x91f47a1911c0fd985b34c25962f661f0de606f7ad38ba156902dff48b4d05f97
-const customer2Address = "0xAAAB35381A38C4fF4967DC29470F0f2637295983"
+const customer2Address = "0xAAAB35381A38C4fF4967DC29470F0f2637295983";
 
 const customerWallet = new ethers.Wallet(customerPK, ethers.provider);
 const lpWallet = new ethers.Wallet(lpPK, ethers.provider);
@@ -36,7 +36,7 @@ let lpL1: L1;
 let customerL2: L2, lpL2: L2;
 
 async function waitForTx(
-  txPromise: Promise<ethersTypes.providers.TransactionResponse>,
+  txPromise: Promise<ethersTypes.providers.TransactionResponse>
 ) {
   return (await txPromise).wait();
 }
@@ -73,37 +73,54 @@ async function depositOnce(trustedNonce: number, trustedAmount: number) {
 async function authorizeWithdrawal(
   trustedNonce: number,
   numTickets = 2
-): Promise<{ tickets: TicketStruct[], signature: ethersTypes.Signature }> {
-  const tickets: TicketStruct[] = []
+): Promise<{ tickets: TicketStruct[]; signature: ethersTypes.Signature }> {
+  const tickets: TicketStruct[] = [];
   for (let i = 0; i < numTickets; i++) {
-    tickets.push(await lpL2.tickets(trustedNonce + i))
+    tickets.push(await lpL2.tickets(trustedNonce + i));
   }
 
-  const ticketsWithNonce: TicketsWithNonce = { startNonce: trustedNonce, tickets };
+  const ticketsWithNonce: TicketsWithNonce = {
+    startNonce: trustedNonce,
+    tickets,
+  };
   const signature = signData(hashTickets(ticketsWithNonce), lpPK);
   await waitForTx(
-    lpL2.authorizeWithdrawal(trustedNonce, trustedNonce + numTickets - 1, signature, {
-      // TODO: remove this after addressing https://github.com/statechannels/SAFE-protocol/issues/70
-      gasLimit,
-    }),
+    lpL2.authorizeWithdrawal(
+      trustedNonce,
+      trustedNonce + numTickets - 1,
+      signature,
+      {
+        // TODO: remove this after addressing https://github.com/statechannels/SAFE-protocol/issues/70
+        gasLimit,
+      }
+    )
   );
   return { tickets, signature };
 }
 
 /**
- * 
+ *
  * @param trustedNonce The sum of all tickets starting with trustedNonce + new deposit must be <= trustedAmount
  * @param trustedAmount amount expected to be held on L1 contract
  * @param numTickets number of tickets to include in the swap's batch
  * @returns receipt of the L1 claimBatch transaction
  */
-async function swap(trustedNonce: number, trustedAmount: number, numTickets = 2) {
+async function swap(
+  trustedNonce: number,
+  trustedAmount: number,
+  numTickets = 2
+) {
   for (let i = 0; i < numTickets; i++) {
     await depositOnce(trustedNonce, trustedAmount);
   }
-  const { tickets, signature } = await authorizeWithdrawal(trustedNonce, numTickets);
+  const { tickets, signature } = await authorizeWithdrawal(
+    trustedNonce,
+    numTickets
+  );
 
-  const l1TransactionReceipt = await waitForTx(lpL1.claimBatch(tickets, signature, { gasLimit }));
+  const l1TransactionReceipt = await waitForTx(
+    lpL1.claimBatch(tickets, signature, { gasLimit })
+  );
 
   await ethers.provider.send("evm_increaseTime", [SAFETY_DELAY + 1]);
   await waitForTx(lpL2.claimL2Funds(trustedNonce));
@@ -126,14 +143,13 @@ beforeEach(async () => {
     lpWallet.sendTransaction({
       to: l1.address,
       value: ethers.utils.parseUnits("1000000000", "wei"),
-    }),
+    })
   );
 });
 
 it("One successfull e2e swaps", async () => {
   await swap(0, 10);
 });
-
 
 it("Two successfull e2e swaps", async () => {
   await swap(0, 10);
@@ -166,14 +182,7 @@ it("Handles a fraud proofs", async () => {
 
   // Successfully prove fraud
   await waitForTx(
-    customerL2.refundOnFraud(
-      0,
-      1,
-      0,
-      1,
-      [ticket, fraudTicket],
-      fraudSignature,
-    ),
+    customerL2.refundOnFraud(0, 1, 0, 1, [ticket, fraudTicket], fraudSignature)
   );
 
   // Unsuccessfully try to claim fraud again
@@ -187,8 +196,8 @@ it("Handles a fraud proofs", async () => {
       fraudSignature,
       {
         gasLimit,
-      },
-    ),
+      }
+    )
   ).to.be.rejectedWith("Batch status must be Authorized");
 
   /**
@@ -218,18 +227,18 @@ it("Handles a fraud proofs", async () => {
       1,
       [ticket3, fraudTicket2],
       fraudSignature2,
-      { gasLimit },
-    ),
+      { gasLimit }
+    )
   );
 });
 
 it("Able to get a ticket refunded", async () => {
   await deposit(0, 10);
   await expect(customerL2.refund(0, { gasLimit })).to.be.rejectedWith(
-    "maxAuthDelay must have passed since deposit",
+    "maxAuthDelay must have passed since deposit"
   );
 
-  const delta = 5
+  const delta = 5;
   await ethers.provider.send("evm_increaseTime", [MAX_AUTH_DELAY - delta]);
   await expect(customerL2.refund(1, { gasLimit })).to.be.rejectedWith(
     "maxAuthDelay must have passed since deposit"
@@ -239,7 +248,7 @@ it("Able to get a ticket refunded", async () => {
   await waitForTx(customerL2.refund(0, { gasLimit }));
   await waitForTx(customerL2.refund(1, { gasLimit }));
   await expect(customerL2.refund(1, { gasLimit })).to.be.rejectedWith(
-    "The nonce must not be a part of a batch",
+    "The nonce must not be a part of a batch"
   );
 
   await deposit(2, 8);
@@ -248,15 +257,15 @@ it("Able to get a ticket refunded", async () => {
   await waitForTx(customerL2.refund(2, { gasLimit }));
 });
 
-const benchmarkResults: ScenarioGasUsage[] = []
+const benchmarkResults: ScenarioGasUsage[] = [];
 it("gas benchmarking", async () => {
-  let nonce = 0
+  let nonce = 0;
 
   // The FIRST batch that is claimed on L1 incurs a write-to-zero-storage cost, which makes
   // for a counter-intuitive list of results. So, we trigger an initial swap before
   // starting the benchmark
-  await swap(0, 100_000, 1)
-  nonce++
+  await swap(0, 100_000, 1);
+  nonce++;
 
   const benchmarkScenarios = [
     1,
@@ -268,11 +277,10 @@ it("gas benchmarking", async () => {
   ];
 
   for (const batchSize of benchmarkScenarios) {
-    const { gasUsed } = await swap(nonce, 100_000, batchSize)
-    benchmarkResults.push({ totalGasUsed: gasUsed, batchSize })
-    nonce += batchSize
+    const { gasUsed } = await swap(nonce, 100_000, batchSize);
+    benchmarkResults.push({ totalGasUsed: gasUsed, batchSize });
+    nonce += batchSize;
   }
+});
 
-})
-
-after(() => printScenarioGasUsage(benchmarkResults))
+after(() => printScenarioGasUsage(benchmarkResults));
