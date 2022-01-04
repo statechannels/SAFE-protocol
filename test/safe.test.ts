@@ -10,6 +10,9 @@ import { L2__factory } from "../contract-types/factories/L2__factory";
 import { L1, L1TicketStruct } from "../contract-types/L1";
 import { L2, L2DepositStruct, TicketStruct } from "../contract-types/L2";
 
+import { TestToken__factory } from "../contract-types/factories/TestToken__factory";
+import { TestToken } from "../contract-types/TestToken";
+
 import {
   ETH_TOKEN_ADDRESS,
   MAX_AUTH_DELAY,
@@ -20,7 +23,7 @@ import { hashTickets, signData } from "../src/utils";
 import { printScenarioGasUsage, ScenarioGasUsage } from "./utils";
 
 const gasLimit = 30_000_000;
-
+const tokenBalance = 10_000_000;
 // Address 0x2a47Cd5718D67Dc81eAfB24C99d4db159B0e7bCa
 const customerPK =
   "0xe1743f0184b85ac1412311be9d6e5d333df23e22efdf615d0135ca2b9ed67938";
@@ -36,24 +39,28 @@ const lpWallet = new ethers.Wallet(lpPK, ethers.provider);
 
 const l1Deployer = new L1__factory(lpWallet);
 const l2Deployer = new L2__factory(lpWallet);
-
+const tokenDeployer = new TestToken__factory(lpWallet);
 let lpL1: L1;
 let customerL2: L2, lpL2: L2;
-
+let testToken: TestToken;
 async function waitForTx(
   txPromise: Promise<ethersTypes.providers.TransactionResponse>
 ) {
   return (await txPromise).wait();
 }
 
-async function deposit(trustedNonce: number, trustedAmount: number) {
+async function deposit(
+  trustedNonce: number,
+  trustedAmount: number,
+  useERC20 = false
+) {
   const depositAmount = 1;
   const deposit: L2DepositStruct = {
     trustedNonce,
     trustedAmount,
     depositAmount,
     l1Recipient: customerWallet.address,
-    token: ETH_TOKEN_ADDRESS,
+    token: useERC20 ? testToken.address : ETH_TOKEN_ADDRESS,
   };
   const deposit2: L2DepositStruct = {
     ...deposit,
@@ -64,14 +71,18 @@ async function deposit(trustedNonce: number, trustedAmount: number) {
   await waitForTx(customerL2.depositOnL2(deposit2, { value: depositAmount }));
 }
 
-async function depositOnce(trustedNonce: number, trustedAmount: number) {
+async function depositOnce(
+  trustedNonce: number,
+  trustedAmount: number,
+  useERC20 = false
+) {
   const depositAmount = 1;
   const deposit: L2DepositStruct = {
     trustedNonce,
     trustedAmount,
     depositAmount,
     l1Recipient: customerWallet.address,
-    token: ETH_TOKEN_ADDRESS,
+    token: useERC20 ? testToken.address : ETH_TOKEN_ADDRESS,
   };
 
   await waitForTx(customerL2.depositOnL2(deposit, { value: depositAmount }));
@@ -114,10 +125,11 @@ async function authorizeWithdrawal(
 async function swap(
   trustedNonce: number,
   trustedAmount: number,
-  numTickets = 2
+  numTickets = 2,
+  useERC20 = false
 ) {
   for (let i = 0; i < numTickets; i++) {
-    await depositOnce(trustedNonce, trustedAmount);
+    await depositOnce(trustedNonce, trustedAmount, useERC20);
   }
   const { tickets, signature } = await authorizeWithdrawal(
     trustedNonce,
@@ -139,6 +151,15 @@ async function swap(
 beforeEach(async () => {
   const l1 = await l1Deployer.deploy();
   const l2 = await l2Deployer.deploy();
+  testToken = await tokenDeployer.deploy(tokenBalance);
+  // Transfer half of the tokens to the customer account so both have funds to play with
+  await testToken.transfer(customerWallet.address, tokenBalance / 2);
+  // Approve both contracts for both parties to transfer tokens
+  await testToken.approve(l2.address, tokenBalance);
+  await testToken.approve(l1.address, tokenBalance);
+  const customerTestToken = testToken.connect(customerWallet);
+  await customerTestToken.approve(l1.address, tokenBalance);
+  await customerTestToken.approve(l2.address, tokenBalance);
 
   customerL2 = l2.connect(customerWallet);
 
@@ -151,6 +172,10 @@ beforeEach(async () => {
       value: ethers.utils.parseUnits("1000000000", "wei"),
     })
   );
+});
+
+it("One successful e2e swap with ERC20", async () => {
+  await swap(0, 10, 2, true);
 });
 
 it("One successfull e2e swaps", async () => {
@@ -171,6 +196,7 @@ function ticketToL1Ticket(ticket: TicketStruct): L1TicketStruct {
   return {
     value: ticket.value,
     l1Recipient: ticket.l1Recipient,
+    token: ticket.token,
   };
 }
 
