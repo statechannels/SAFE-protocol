@@ -85,7 +85,11 @@ contract L2 is SignatureChecker, FundsSender {
 
     // TODO: This public function is added to force hardhat to generate
     // the TicketStruct type in its l2.ts output
-    function compareWithFirstTicket(Ticket calldata t) public view returns (bool) {
+    function compareWithFirstTicket(Ticket calldata t)
+        public
+        view
+        returns (bool)
+    {
         return tickets[0].value == t.value;
     }
 
@@ -125,7 +129,11 @@ contract L2 is SignatureChecker, FundsSender {
         uint256 total = 0;
         for (uint256 i = first; i <= last; i++) {
             Ticket memory t = tickets[i];
-            ticketsToAuthorize[i - first] = L1Ticket(t.l1Recipient, t.value);
+            ticketsToAuthorize[i - first] = L1Ticket(
+                t.l1Recipient,
+                t.value,
+                t.token
+            );
             total += tickets[i].value;
         }
         return (
@@ -189,7 +197,11 @@ contract L2 is SignatureChecker, FundsSender {
         );
 
         Ticket memory t = tickets[honestStartNonce + honestDelta];
-        L1Ticket memory correctTicket = L1Ticket(t.l1Recipient, t.value);
+        L1Ticket memory correctTicket = L1Ticket(
+            t.l1Recipient,
+            t.value,
+            t.token
+        );
         L1Ticket memory fraudTicket = fraudTickets[fraudDelta];
         require(
             !ticketsEqual(correctTicket, fraudTicket),
@@ -234,5 +246,4 @@ contract L2 is SignatureChecker, FundsSender {
             tickets[lastNonce].token
         );
     }
-
 }

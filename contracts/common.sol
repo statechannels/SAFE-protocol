@@ -12,6 +12,8 @@ struct L1Ticket {
     address l1Recipient;
     /// The amount of funds to send.
     uint256 value;
+    /// The address of the ERC20 token to use. If set to 0, then ETH is used.
+    address token;
 }
 
 struct Ticket {
@@ -48,7 +50,11 @@ abstract contract SignatureChecker {
         return ecrecover(prefixedHash, signature.v, signature.r, signature.s);
     }
 
-    function ticketsEqual(L1Ticket memory t1, L1Ticket memory t2) public pure returns (bool) {
+    function ticketsEqual(L1Ticket memory t1, L1Ticket memory t2)
+        public
+        pure
+        returns (bool)
+    {
         return (t1.value == t2.value) && (t1.l1Recipient == t2.l1Recipient);
     }
 }

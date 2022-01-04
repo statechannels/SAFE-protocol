@@ -9,7 +9,12 @@ import { L1__factory } from "../contract-types/factories/L1__factory";
 import { L2__factory } from "../contract-types/factories/L2__factory";
 import { L1, L1TicketStruct } from "../contract-types/L1";
 import { L2, L2DepositStruct, TicketStruct } from "../contract-types/L2";
-import { MAX_AUTH_DELAY, SAFETY_DELAY } from "../src/constants";
+
+import {
+  ETH_TOKEN_ADDRESS,
+  MAX_AUTH_DELAY,
+  SAFETY_DELAY,
+} from "../src/constants";
 import { TicketsWithNonce } from "../src/types";
 import { hashTickets, signData } from "../src/utils";
 import { printScenarioGasUsage, ScenarioGasUsage } from "./utils";
@@ -48,6 +53,7 @@ async function deposit(trustedNonce: number, trustedAmount: number) {
     trustedAmount,
     depositAmount,
     l1Recipient: customerWallet.address,
+    token: ETH_TOKEN_ADDRESS,
   };
   const deposit2: L2DepositStruct = {
     ...deposit,
@@ -65,11 +71,11 @@ async function depositOnce(trustedNonce: number, trustedAmount: number) {
     trustedAmount,
     depositAmount,
     l1Recipient: customerWallet.address,
+    token: ETH_TOKEN_ADDRESS,
   };
 
   await waitForTx(customerL2.depositOnL2(deposit, { value: depositAmount }));
 }
-
 async function authorizeWithdrawal(
   trustedNonce: number,
   numTickets = 2
