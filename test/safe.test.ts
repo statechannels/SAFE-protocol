@@ -23,7 +23,7 @@ import { hashTickets, signData } from "../src/utils";
 import { printScenarioGasUsage, ScenarioGasUsage } from "./utils";
 
 const gasLimit = 30_000_000;
-const tokenBalance = 10_000_000;
+const tokenBalance = 1_000_000;
 // Address 0x2a47Cd5718D67Dc81eAfB24C99d4db159B0e7bCa
 const customerPK =
   "0xe1743f0184b85ac1412311be9d6e5d333df23e22efdf615d0135ca2b9ed67938";
@@ -152,8 +152,10 @@ beforeEach(async () => {
   const l1 = await l1Deployer.deploy();
   const l2 = await l2Deployer.deploy();
   testToken = await tokenDeployer.deploy(tokenBalance);
-  // Transfer half of the tokens to the customer account so both have funds to play with
-  await testToken.transfer(customerWallet.address, tokenBalance / 2);
+  // Transfer 1/4 to the customer account
+  await testToken.transfer(customerWallet.address, tokenBalance / 4);
+  // Transfer 1/4 to the l1 contract for payouts
+  await testToken.transfer(l1.address, tokenBalance / 4);
   // Approve both contracts for both parties to transfer tokens
   await testToken.approve(l2.address, tokenBalance);
   await testToken.approve(l1.address, tokenBalance);
