@@ -76,7 +76,7 @@ contract L2 is SignatureChecker, FundsSender {
             l1Recipient: deposit.l1Recipient,
             value: deposit.depositAmount,
             createdAt: block.timestamp,
-            token: address(0)
+            token: deposit.token
         });
 
         // ticket's nonce is now its index in `tickets`
