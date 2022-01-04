@@ -13,6 +13,8 @@ struct L2Deposit {
     uint256 depositAmount;
     // Alice's address on L1
     address l1Recipient;
+    /// The address of the ERC20 token, or address(0) to indicate ETH.
+    address token;
 }
 
 // Authorized: all tickets in this batch are authorized but not claimed
@@ -33,7 +35,7 @@ struct Batch {
 uint256 constant maxAuthDelay = 600;
 uint256 constant safetyDelay = 600;
 
-contract L2 is SignatureChecker {
+contract L2 is SignatureChecker, FundsSender {
     Ticket[] public tickets;
     // `batches` is used to record the fact that tickets with nonce between startingNonce and startingNonce + numTickets-1 are authorized or withdrawn.
     // Indexed by nonce
@@ -55,14 +57,26 @@ contract L2 is SignatureChecker {
             amountAvailable >= amountReserved + deposit.depositAmount,
             "Must have enough funds for ticket"
         );
-        require(
-            msg.value == deposit.depositAmount,
-            "Value sent must match depositAmount"
-        );
+
+        if (deposit.token == address(0)) {
+            require(
+                msg.value == deposit.depositAmount,
+                "Value sent must match depositAmount"
+            );
+        } else {
+            IERC20 tokenContract = IERC20(deposit.token);
+            tokenContract.transferFrom(
+                msg.sender,
+                address(this),
+                deposit.depositAmount
+            );
+        }
+
         Ticket memory ticket = Ticket({
             l1Recipient: deposit.l1Recipient,
             value: deposit.depositAmount,
-            createdAt: block.timestamp
+            createdAt: block.timestamp,
+            token: address(0)
         });
 
         // ticket's nonce is now its index in `tickets`
@@ -138,8 +152,11 @@ contract L2 is SignatureChecker {
 
         batch.status = BatchStatus.Withdrawn;
         batches[first] = batch;
-        (bool sent, ) = lpAddress.call{value: batch.total}("");
-        require(sent, "Failed to send Ether");
+
+        for (uint256 i = first; i < first + batch.numTickets; i++) {
+            Ticket memory ticket = tickets[i];
+            send(lpAddress, ticket.value, ticket.token);
+        }
     }
 
     /**
@@ -186,10 +203,7 @@ contract L2 is SignatureChecker {
         );
 
         for (uint256 i = honestStartNonce; i < honestBatch.numTickets; i++) {
-            (bool sent, ) = tickets[i].l1Recipient.call{
-                value: tickets[i].value
-            }("");
-            require(sent, "Failed to send Ether");
+            send(tickets[i].l1Recipient, tickets[i].value, tickets[i].token);
         }
 
         batches[honestStartNonce].status = BatchStatus.Withdrawn;
@@ -214,10 +228,11 @@ contract L2 is SignatureChecker {
         batch.status = BatchStatus.Withdrawn;
         nextBatchStart = lastNonce + 1;
 
-        (bool sent, ) = tickets[lastNonce].l1Recipient.call{
-            value: tickets[lastNonce].value
-        }("");
-        require(sent, "Failed to send Ether");
+        send(
+            tickets[lastNonce].l1Recipient,
+            tickets[lastNonce].value,
+            tickets[lastNonce].token
+        );
     }
 
 }

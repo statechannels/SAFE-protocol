@@ -3,7 +3,7 @@ pragma solidity ^0.8.10;
 
 import "./common.sol";
 
-contract l1 is SignatureChecker {
+contract l1 is SignatureChecker, FundsSender {
     uint256 nextNonce = 0;
 
     receive() external payable {}
@@ -21,10 +21,7 @@ contract l1 is SignatureChecker {
         );
 
         for (uint256 i = 0; i < tickets.length; i++) {
-            (bool sent, ) = tickets[i].l1Recipient.call{
-                value: tickets[i].value
-            }("");
-            require(sent, "Failed to send Ether");
+            send(tickets[i].l1Recipient, tickets[i].value, tickets[i].token);
         }
 
         nextNonce = nextNonce + tickets.length;
