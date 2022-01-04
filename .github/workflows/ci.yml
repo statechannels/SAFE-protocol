@@ -15,4 +15,6 @@ jobs:
         with:
           node-version: "16"
       - run: yarn --immutable
+      - run: yarn lint:check
+      - run: yarn prettier:check
       - run: yarn test
