@@ -360,9 +360,9 @@ it("gas benchmarking", async () => {
     62, // THE GAS COST IS ... UNDER 9000!!!
   ];
 
-  const ethRun = await benchmark(benchmarkScenarios, nonce, true);
+  const ethRun = await benchmark(benchmarkScenarios, nonce, false);
   ethResults = ethRun.results;
-  const erc20run = await benchmark(benchmarkScenarios, ethRun.nonce, false);
+  const erc20run = await benchmark(benchmarkScenarios, ethRun.nonce, true);
   erc20Results = erc20run.results;
 }).timeout(60_000); // TODO: We should probably split gas benchmarking into it's own test command so unit tests can run faster
 
