@@ -331,20 +331,19 @@ async function benchmark(
   scenarios: number[],
   nonce: number,
   useERC20 = false
-): Promise<number> {
+): Promise<{ nonce: number; results: ScenarioGasUsage[] }> {
   const results: ScenarioGasUsage[] = [];
   for (const batchSize of scenarios) {
     const { gasUsed } = await swap(nonce, 100_000, batchSize, useERC20);
     results.push({ totalGasUsed: gasUsed, batchSize });
     nonce += batchSize;
   }
-  printScenarioGasUsage(
-    results,
-    `L1 claimBatch (${useERC20 ? "ERC20" : "ETH"}) Gas Usage`
-  );
-  return nonce;
+
+  return { nonce, results };
 }
 
+let ethResults: ScenarioGasUsage[];
+let erc20Results: ScenarioGasUsage[];
 it("gas benchmarking", async () => {
   let nonce = 0;
 
@@ -363,8 +362,10 @@ it("gas benchmarking", async () => {
     62, // THE GAS COST IS ... UNDER 9000!!!
   ];
 
-  nonce = await benchmark(benchmarkScenarios, nonce, true);
-  await benchmark(benchmarkScenarios, nonce, false);
+  const ethRun = await benchmark(benchmarkScenarios, nonce, true);
+  ethResults = ethRun.results;
+  const erc20run = await benchmark(benchmarkScenarios, ethRun.nonce, false);
+  erc20Results = erc20run.results;
 });
 
 // Currently using numbers for convenience, as the amount of tokens is pretty small
@@ -382,3 +383,9 @@ async function getTokenBalances(): Promise<TokenBalances> {
     l2Contract: (await testToken.balanceOf(lpL2.address)).toNumber(),
   };
 }
+
+after(() => {
+  printScenarioGasUsage(ethResults, `L1 claimBatch (ETH) Gas Usage`);
+
+  printScenarioGasUsage(erc20Results, `L1 claimBatch (ERC20) Gas Usage`);
+});
