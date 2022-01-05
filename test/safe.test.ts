@@ -366,7 +366,7 @@ it("gas benchmarking", async () => {
   ethResults = ethRun.results;
   const erc20run = await benchmark(benchmarkScenarios, ethRun.nonce, false);
   erc20Results = erc20run.results;
-});
+}).timeout(60_000); // TODO: We should probably split gas benchmarking into it's own test command so unit tests can run faster
 
 // Currently using numbers for convenience, as the amount of tokens is pretty small
 type TokenBalances = {
