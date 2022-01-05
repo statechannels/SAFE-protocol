@@ -356,8 +356,6 @@ it("gas benchmarking", async () => {
   const benchmarkScenarios = [
     1,
     2,
-    5,
-    20,
     50,
     62, // THE GAS COST IS ... UNDER 9000!!!
   ];
