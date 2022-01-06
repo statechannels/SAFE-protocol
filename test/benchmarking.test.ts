@@ -18,22 +18,6 @@ import {
   waitForTx,
 } from "./utils";
 
-/**
- * Generates a random pk/address and then sends a small amount of ETH to the address
- * This ensures that the address is present in the state trie when we go to call claimBatch avoiding additional gas fees.
- * In a real life scenario it is a reasonable assumption to assume the account already exists in the state trie.
- */
-async function createCustomer(): Promise<string> {
-  const lpWallet = new ethers.Wallet(lpPK, ethers.provider);
-  const { address } = Wallet.createRandom({}).connect(ethers.provider);
-
-  // Send a small amount of ETH to the address to ensure it is present in the state trie.
-  await lpWallet.sendTransaction({
-    to: address,
-    value: ethers.utils.parseUnits("1", "wei"),
-  });
-  return address;
-}
 async function generateTickets(
   startNonce = 0,
   numTickets = 2,
@@ -43,14 +27,14 @@ async function generateTickets(
   const tickets: TicketStruct[] = [];
   const customers: string[] = [];
   for (let i = 0; i < numCustomers; i++) {
-    customers.push(await createCustomer());
+    customers.push(Wallet.createRandom({}).address);
   }
 
   for (let i = 0; i < numTickets; i++) {
     let customer: string;
     // Generate a new untouched address for
     if (numCustomers === "Unique") {
-      customer = await createCustomer();
+      customer = Wallet.createRandom({}).address;
     } else {
       customer = customers[Math.floor(Math.random() * customers.length)];
     }
