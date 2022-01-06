@@ -13,11 +13,7 @@ import { L2, L2DepositStruct, TicketStruct } from "../contract-types/L2";
 import { TestToken__factory } from "../contract-types/factories/TestToken__factory";
 import { TestToken } from "../contract-types/TestToken";
 
-import {
-  ETH_TOKEN_ADDRESS,
-  MAX_AUTH_DELAY,
-  SAFETY_DELAY,
-} from "../src/constants";
+import { MAX_AUTH_DELAY, SAFETY_DELAY } from "../src/constants";
 import { TicketsWithNonce } from "../src/types";
 import { hashTickets, signData } from "../src/utils";
 import { printScenarioGasUsage, ScenarioGasUsage } from "./utils";
@@ -40,6 +36,7 @@ const lpWallet = new ethers.Wallet(lpPK, ethers.provider);
 const l1Deployer = new L1__factory(lpWallet);
 const l2Deployer = new L2__factory(lpWallet);
 const tokenDeployer = new TestToken__factory(lpWallet);
+
 let lpL1: L1;
 let customerL2: L2, lpL2: L2;
 let testToken: TestToken;
@@ -49,18 +46,14 @@ async function waitForTx(
   return (await txPromise).wait();
 }
 
-async function deposit(
-  trustedNonce: number,
-  trustedAmount: number,
-  useERC20 = false
-) {
+async function deposit(trustedNonce: number, trustedAmount: number) {
   const depositAmount = 1;
   const deposit: L2DepositStruct = {
     trustedNonce,
     trustedAmount,
     depositAmount,
     l1Recipient: customerWallet.address,
-    token: useERC20 ? testToken.address : ETH_TOKEN_ADDRESS,
+    token: testToken.address,
   };
   const deposit2: L2DepositStruct = {
     ...deposit,
@@ -71,18 +64,14 @@ async function deposit(
   await waitForTx(customerL2.depositOnL2(deposit2, { value: depositAmount }));
 }
 
-async function depositOnce(
-  trustedNonce: number,
-  trustedAmount: number,
-  useERC20 = false
-) {
+async function depositOnce(trustedNonce: number, trustedAmount: number) {
   const depositAmount = 1;
   const deposit: L2DepositStruct = {
     trustedNonce,
     trustedAmount,
     depositAmount,
     l1Recipient: customerWallet.address,
-    token: useERC20 ? testToken.address : ETH_TOKEN_ADDRESS,
+    token: testToken.address,
   };
 
   await waitForTx(customerL2.depositOnL2(deposit, { value: depositAmount }));
@@ -125,13 +114,11 @@ async function authorizeWithdrawal(
 async function swap(
   trustedNonce: number,
   trustedAmount: number,
-  numTickets = 2,
-  useERC20 = false
+  numTickets = 2
 ) {
   for (let i = 0; i < numTickets; i++) {
-    await depositOnce(trustedNonce, trustedAmount, useERC20);
+    await depositOnce(trustedNonce, trustedAmount);
   }
-
   const { tickets, signature } = await authorizeWithdrawal(
     trustedNonce,
     numTickets
@@ -152,6 +139,12 @@ async function swap(
 beforeEach(async () => {
   const l1 = await l1Deployer.deploy();
   const l2 = await l2Deployer.deploy();
+
+  customerL2 = l2.connect(customerWallet);
+
+  lpL2 = l2.connect(lpWallet);
+  lpL1 = l1.connect(lpWallet);
+
   testToken = await tokenDeployer.deploy(tokenBalance);
   // Transfer 1/4 to the customer account
   await testToken.transfer(customerWallet.address, tokenBalance / 4);
@@ -159,46 +152,12 @@ beforeEach(async () => {
   await testToken.transfer(l1.address, tokenBalance / 4);
   // Transfer 1/4 to the l2 contract for payouts
   await testToken.transfer(l2.address, tokenBalance / 4);
-  // Approve both contracts for both parties to transfer tokens
+  // Approve transfers for the L1 and L2 contract for the LP
   await testToken.approve(l2.address, tokenBalance);
   await testToken.approve(l1.address, tokenBalance);
-  const customerTestToken = testToken.connect(customerWallet);
-  await customerTestToken.approve(l1.address, tokenBalance);
-  await customerTestToken.approve(l2.address, tokenBalance);
-
-  customerL2 = l2.connect(customerWallet);
-
-  lpL2 = l2.connect(lpWallet);
-  lpL1 = l1.connect(lpWallet);
-
-  await waitForTx(
-    lpWallet.sendTransaction({
-      to: l1.address,
-      value: ethers.utils.parseUnits("1000000000", "wei"),
-    })
-  );
-});
-
-it("One successful e2e swap with ERC20", async () => {
-  const initialBalances = await getTokenBalances();
-
-  await swap(0, 10, 2, true);
-
-  const finalBalances = await getTokenBalances();
-  // TODO: We should probably create separate token contracts for L1 and L2
-  // This would make tracking balances easier
-
-  // Since both L1 and L2 contracts are sharing the same token contract we end up with no change
-  // The customer sends 2 coins to the L2 contract and then receives 2 coins from the L1 contract
-  expect(finalBalances.customer).to.eq(initialBalances.customer);
-
-  // The LP should received 2 coins for the two swaps
-  expect(finalBalances.lp).to.eq(initialBalances.lp + 2);
-  // The L1 contract should have paid out 2 coins to the customer
-  expect(finalBalances.l1Contract).to.eq(initialBalances.l1Contract - 2);
-
-  // The L2 contract receives a deposit of 2 and then pays out 2 coins resulting in no change
-  expect(finalBalances.l2Contract).to.eq(initialBalances.l2Contract);
+  // Approve transfers for the L1 and L2 contract for the customer
+  await testToken.connect(customerWallet).approve(l1.address, tokenBalance);
+  await testToken.connect(customerWallet).approve(l2.address, tokenBalance);
 });
 
 it("One successfull e2e swaps", async () => {
@@ -327,23 +286,7 @@ it("Able to get a ticket refunded", async () => {
   await waitForTx(customerL2.refund(2, { gasLimit }));
 });
 
-async function benchmark(
-  scenarios: number[],
-  nonce: number,
-  useERC20 = false
-): Promise<{ nonce: number; results: ScenarioGasUsage[] }> {
-  const results: ScenarioGasUsage[] = [];
-  for (const batchSize of scenarios) {
-    const { gasUsed } = await swap(nonce, 100_000, batchSize, useERC20);
-    results.push({ totalGasUsed: gasUsed, batchSize });
-    nonce += batchSize;
-  }
-
-  return { nonce, results };
-}
-
-let ethResults: ScenarioGasUsage[];
-let erc20Results: ScenarioGasUsage[];
+const benchmarkResults: ScenarioGasUsage[] = [];
 it("gas benchmarking", async () => {
   let nonce = 0;
 
@@ -356,34 +299,17 @@ it("gas benchmarking", async () => {
   const benchmarkScenarios = [
     1,
     2,
+    5,
+    20,
     50,
     62, // THE GAS COST IS ... UNDER 9000!!!
   ];
 
-  const ethRun = await benchmark(benchmarkScenarios, nonce, false);
-  ethResults = ethRun.results;
-  const erc20run = await benchmark(benchmarkScenarios, ethRun.nonce, true);
-  erc20Results = erc20run.results;
-}).timeout(60_000); // TODO: We should probably split gas benchmarking into it's own test command so unit tests can run faster
-
-// Currently using numbers for convenience, as the amount of tokens is pretty small
-type TokenBalances = {
-  lp: number;
-  customer: number;
-  l1Contract: number;
-  l2Contract: number;
-};
-async function getTokenBalances(): Promise<TokenBalances> {
-  return {
-    lp: (await testToken.balanceOf(lpWallet.address)).toNumber(),
-    customer: (await testToken.balanceOf(customerWallet.address)).toNumber(),
-    l1Contract: (await testToken.balanceOf(lpL1.address)).toNumber(),
-    l2Contract: (await testToken.balanceOf(lpL2.address)).toNumber(),
-  };
-}
-
-after(() => {
-  printScenarioGasUsage(ethResults, `L1 claimBatch (ETH) Gas Usage`);
-
-  printScenarioGasUsage(erc20Results, `L1 claimBatch (ERC20) Gas Usage`);
+  for (const batchSize of benchmarkScenarios) {
+    const { gasUsed } = await swap(nonce, 100_000, batchSize);
+    benchmarkResults.push({ totalGasUsed: gasUsed, batchSize });
+    nonce += batchSize;
+  }
 });
+
+after(() => printScenarioGasUsage(benchmarkResults));

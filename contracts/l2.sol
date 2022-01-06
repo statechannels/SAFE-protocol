@@ -13,7 +13,7 @@ struct L2Deposit {
     uint256 depositAmount;
     // Alice's address on L1
     address l1Recipient;
-    /// The address of the ERC20 token, or address(0) to indicate ETH.
+    /// The address of the ERC20 token.
     address token;
 }
 
@@ -35,7 +35,7 @@ struct Batch {
 uint256 constant maxAuthDelay = 600;
 uint256 constant safetyDelay = 600;
 
-contract L2 is SignatureChecker, FundsSender {
+contract L2 is SignatureChecker {
     Ticket[] public tickets;
     // `batches` is used to record the fact that tickets with nonce between startingNonce and startingNonce + numTickets-1 are authorized or withdrawn.
     // Indexed by nonce
@@ -58,19 +58,12 @@ contract L2 is SignatureChecker, FundsSender {
             "Must have enough funds for ticket"
         );
 
-        if (deposit.token == address(0)) {
-            require(
-                msg.value == deposit.depositAmount,
-                "Value sent must match depositAmount"
-            );
-        } else {
-            IERC20 tokenContract = IERC20(deposit.token);
-            tokenContract.transferFrom(
-                msg.sender,
-                address(this),
-                deposit.depositAmount
-            );
-        }
+        IERC20 tokenContract = IERC20(deposit.token);
+        tokenContract.transferFrom(
+            msg.sender,
+            address(this),
+            deposit.depositAmount
+        );
 
         Ticket memory ticket = Ticket({
             l1Recipient: deposit.l1Recipient,
@@ -163,7 +156,8 @@ contract L2 is SignatureChecker, FundsSender {
 
         for (uint256 i = first; i < first + batch.numTickets; i++) {
             Ticket memory ticket = tickets[i];
-            sendFunds(lpAddress, ticket.value, ticket.token);
+            IERC20 tokenContract = IERC20(ticket.token);
+            tokenContract.transfer(lpAddress, ticket.value);
         }
     }
 
@@ -215,11 +209,8 @@ contract L2 is SignatureChecker, FundsSender {
         );
 
         for (uint256 i = honestStartNonce; i < honestBatch.numTickets; i++) {
-            sendFunds(
-                tickets[i].l1Recipient,
-                tickets[i].value,
-                tickets[i].token
-            );
+            IERC20 tokenContract = IERC20(tickets[i].token);
+            tokenContract.transfer(tickets[i].l1Recipient, tickets[i].value);
         }
 
         batches[honestStartNonce].status = BatchStatus.Withdrawn;
@@ -244,10 +235,10 @@ contract L2 is SignatureChecker, FundsSender {
         batch.status = BatchStatus.Withdrawn;
         nextBatchStart = lastNonce + 1;
 
-        sendFunds(
+        IERC20 tokenContract = IERC20(tickets[lastNonce].token);
+        tokenContract.transfer(
             tickets[lastNonce].l1Recipient,
-            tickets[lastNonce].value,
-            tickets[lastNonce].token
+            tickets[lastNonce].value
         );
     }
 }

@@ -23,7 +23,7 @@ struct Ticket {
     uint256 value;
     /// The timestamp when the ticket was registered
     uint256 createdAt;
-    /// The address of the ERC20 token to use. If set to 0, then ETH is used.
+    /// The address of the ERC20 token to use.
     address token;
 }
 
@@ -56,22 +56,5 @@ abstract contract SignatureChecker {
         returns (bool)
     {
         return (t1.value == t2.value) && (t1.l1Recipient == t2.l1Recipient);
-    }
-}
-
-abstract contract FundsSender {
-    function sendFunds(
-        address receiver,
-        uint256 value,
-        address tokenAddress
-    ) public {
-        if (tokenAddress == address(0)) {
-            // This is based on https://solidity-by-example.org/sending-ether/
-            (bool sent, ) = receiver.call{value: value}("");
-            require(sent, "Failed to send Ether");
-        } else {
-            IERC20 tokenContract = IERC20(tokenAddress);
-            tokenContract.transfer(receiver, value);
-        }
     }
 }

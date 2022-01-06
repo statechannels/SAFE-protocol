@@ -3,7 +3,7 @@ pragma solidity ^0.8.10;
 
 import "./common.sol";
 
-contract l1 is SignatureChecker, FundsSender {
+contract l1 is SignatureChecker {
     uint256 nextNonce = 0;
 
     receive() external payable {}
@@ -21,11 +21,8 @@ contract l1 is SignatureChecker, FundsSender {
         );
 
         for (uint256 i = 0; i < tickets.length; i++) {
-            sendFunds(
-                tickets[i].l1Recipient,
-                tickets[i].value,
-                tickets[i].token
-            );
+            IERC20 tokenContract = IERC20(tickets[i].token);
+            tokenContract.transfer(tickets[i].l1Recipient, tickets[i].value);
         }
 
         nextNonce = nextNonce + tickets.length;
