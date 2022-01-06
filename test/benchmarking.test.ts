@@ -31,22 +31,16 @@ async function createCustomer(): Promise<string> {
 async function generateTickets(
   startNonce = 0,
   numTickets = 2,
-  numCustomers: number | "Unique" = 1,
+  customerMode: "Unique" | "Same" = "Unique",
   amountOfTokens = 1
 ): Promise<{ tickets: TicketStruct[]; signature: ethersTypes.Signature }> {
   const tickets: TicketStruct[] = [];
-  const customers: string[] = [];
-  for (let i = 0; i < numCustomers; i++) {
-    customers.push(await createCustomer());
-  }
 
+  let customer = await createCustomer();
   for (let i = 0; i < numTickets; i++) {
-    let customer: string;
     // Generate a new untouched address for
-    if (numCustomers === "Unique") {
+    if (customerMode === "Unique") {
       customer = await createCustomer();
-    } else {
-      customer = customers[Math.floor(Math.random() * customers.length)];
     }
     tickets.push({
       l1Recipient: customer,
@@ -88,15 +82,13 @@ beforeEach(async () => {
 });
 
 const benchmarkResults: ScenarioGasUsage[] = [];
-it.only("gas benchmarking", async () => {
+it("gas benchmarking", async () => {
   let nonce = 0;
-  const initial = await generateTickets(0, 1, 1, 1);
+
   // The FIRST batch that is claimed on L1 incurs a write-to-zero-storage cost, which makes
   // for a counter-intuitive list of results. So, we trigger an initial swap before
   // starting the benchmark
-
-  await waitForTx(l1Contract.claimBatch(initial.tickets, initial.signature));
-
+  await runScenario(nonce, 1, "Unique");
   nonce++;
 
   const benchmarkScenarios = [
@@ -109,9 +101,8 @@ it.only("gas benchmarking", async () => {
   ];
 
   for (const batchSize of benchmarkScenarios) {
-    benchmarkResults.push(await runScenario(nonce, batchSize, "Same"));
-    nonce += batchSize;
     benchmarkResults.push(await runScenario(nonce, batchSize, "Unique"));
+
     nonce += batchSize;
   }
 });
@@ -124,12 +115,12 @@ async function runScenario(
   const { tickets, signature } = await generateTickets(
     nonce,
     batchSize,
-    customerMode === "Unique" ? "Unique" : 1
+    customerMode
   );
   const { gasUsed } = await waitForTx(
     l1Contract.claimBatch(tickets, signature)
   );
-  return { totalGasUsed: gasUsed, batchSize, customer: customerMode };
+  return { totalGasUsed: gasUsed, batchSize };
 }
 
 after(() => printScenarioGasUsage(benchmarkResults));
