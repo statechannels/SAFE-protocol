@@ -37,7 +37,6 @@ async function generateTickets(
 
   let customer = await createCustomer();
   for (let i = 0; i < numTickets; i++) {
-    // Generate a new untouched address for
     if (customerMode === "Unique") {
       customer = await createCustomer();
     }
