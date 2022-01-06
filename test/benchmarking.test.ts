@@ -18,6 +18,16 @@ import {
   waitForTx,
 } from "./utils";
 
+async function createCustomer(): Promise<string> {
+  const { address } = Wallet.createRandom({}).connect(ethers.provider);
+  // We assume that the customer has interacted with the token contract before
+  // To simulate this we transfer a small amount, triggering the write to zero storage.
+  // This prevents the gas cost of claimBatch including a write to zero storage.
+  // TODO: Is it realistic to just do this for all customers?
+  await testToken.transfer(address, 1);
+
+  return address;
+}
 async function generateTickets(
   startNonce = 0,
   numTickets = 2,
@@ -27,14 +37,14 @@ async function generateTickets(
   const tickets: TicketStruct[] = [];
   const customers: string[] = [];
   for (let i = 0; i < numCustomers; i++) {
-    customers.push(Wallet.createRandom({}).address);
+    customers.push(await createCustomer());
   }
 
   for (let i = 0; i < numTickets; i++) {
     let customer: string;
     // Generate a new untouched address for
     if (numCustomers === "Unique") {
-      customer = Wallet.createRandom({}).address;
+      customer = await createCustomer();
     } else {
       customer = customers[Math.floor(Math.random() * customers.length)];
     }
