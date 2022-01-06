@@ -115,17 +115,27 @@ it.only("gas benchmarking", async () => {
   ];
 
   for (const batchSize of benchmarkScenarios) {
-    const { tickets, signature } = await generateTickets(
-      nonce,
-      batchSize,
-      "Unique"
-    );
-    const { gasUsed } = await waitForTx(
-      l1Contract.claimBatch(tickets, signature)
-    );
-    benchmarkResults.push({ totalGasUsed: gasUsed, batchSize });
+    benchmarkResults.push(await runScenario(nonce, batchSize, "Same"));
+    nonce += batchSize;
+    benchmarkResults.push(await runScenario(nonce, batchSize, "Unique"));
     nonce += batchSize;
   }
 });
+
+async function runScenario(
+  nonce: number,
+  batchSize: number,
+  customerMode: "Unique" | "Same"
+): Promise<ScenarioGasUsage> {
+  const { tickets, signature } = await generateTickets(
+    nonce,
+    batchSize,
+    customerMode === "Unique" ? "Unique" : 1
+  );
+  const { gasUsed } = await waitForTx(
+    l1Contract.claimBatch(tickets, signature)
+  );
+  return { totalGasUsed: gasUsed, batchSize, customer: customerMode };
+}
 
 after(() => printScenarioGasUsage(benchmarkResults));

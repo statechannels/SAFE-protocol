@@ -5,19 +5,31 @@ import { ethers as ethersTypes } from "ethers";
 export type ScenarioGasUsage = {
   batchSize: number;
   totalGasUsed: BigNumber;
+  customer: "Unique" | "Same";
 };
 
 export function printScenarioGasUsage(scenarios: ScenarioGasUsage[]) {
   console.log("L1 claimBatch Gas Usage");
   const table = new Table({
-    head: ["Ticket Batch Size", "Average Gas Per Ticket", "Total Gas Used"],
+    head: [
+      "Ticket Batch Size",
+      "Recipients",
+
+      "Average Gas Per Ticket",
+      "Total Gas Used",
+    ],
     colAligns: ["right", "right", "right"],
   });
   for (const scenario of scenarios) {
     const averagePerClaim = scenario.totalGasUsed
       .div(scenario.batchSize)
       .toNumber();
-    table.push([scenario.batchSize, averagePerClaim, scenario.totalGasUsed]);
+    table.push([
+      scenario.batchSize,
+      scenario.customer === "Unique" ? "Unique recipients" : "Same recipient",
+      averagePerClaim,
+      scenario.totalGasUsed,
+    ]);
   }
   console.log(table.toString());
 }
