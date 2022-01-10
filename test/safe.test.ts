@@ -249,7 +249,7 @@ it("Handles a fraud proofs", async () => {
       1,
       0,
       1,
-      [ticket, fraudTicket],
+      [ticket, fraudTicket].map(ticketToL1Ticket),
       fraudSignature,
       { gasLimit }
     )
@@ -262,7 +262,7 @@ it("Handles a fraud proofs", async () => {
       1,
       0,
       1,
-      [ticket, fraudTicket],
+      [ticket, fraudTicket].map(ticketToL1Ticket),
       fraudSignature,
       {
         gasLimit,
@@ -295,7 +295,7 @@ it("Handles a fraud proofs", async () => {
       0,
       1,
       1,
-      [ticket3, fraudTicket2],
+      [ticket3, fraudTicket2].map(ticketToL1Ticket),
       fraudSignature2,
       { gasLimit }
     )
