@@ -74,7 +74,7 @@ async function authorizeWithdrawal(
   trustedNonce: number,
   numTickets = 2
 ): Promise<{ tickets: L1TicketStruct[]; signature: ethersTypes.Signature }> {
-  let tickets: L1TicketStruct[] = [];
+  const tickets: L1TicketStruct[] = [];
   for (let i = 0; i < numTickets; i++) {
     tickets.push(ticketToL1Ticket(await lpL2.tickets(trustedNonce + i)));
   }
