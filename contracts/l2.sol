@@ -138,7 +138,7 @@ contract L2 is SignatureChecker {
 
         require(nextBatchStart == first, "Batches must be gapless");
         require(
-            recoverSigner(message, signature) == lpAddress,
+            recoverSigner(message, signature) == owner,
             "Must be signed by liquidity provider"
         );
         uint256 maxAuthTime = earliestTimestamp + maxAuthDelay;
@@ -196,7 +196,7 @@ contract L2 is SignatureChecker {
             Ticket memory ticket = tickets[i];
             // Since the ticket token is validated when it is registered, we can be sure that l1TokenMap[ticket.token])!= address(0)
             IERC20 tokenContract = IERC20(l1TokenMap[ticket.token]);
-            tokenContract.transfer(lpAddress, ticket.value);
+            tokenContract.transfer(owner, ticket.value);
         }
     }
 
@@ -225,7 +225,7 @@ contract L2 is SignatureChecker {
             "Honest and fraud indices must match"
         );
         require(
-            recoverSigner(message, fraudSignature) == lpAddress,
+            recoverSigner(message, fraudSignature) == owner,
             "Must be signed by liquidity provider"
         );
 
