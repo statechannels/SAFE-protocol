@@ -145,7 +145,9 @@ beforeEach(async () => {
   l1TestToken = await tokenDeployer.deploy(tokenBalance);
   l2TestToken = await tokenDeployer.deploy(tokenBalance);
   const l1 = await l1Deployer.deploy();
-  const l2 = await l2Deployer.deploy([
+  const l2 = await l2Deployer.deploy();
+
+  await l2.registerTokenPairs([
     { l1Token: l1TestToken.address, l2Token: l2TestToken.address },
   ]);
 

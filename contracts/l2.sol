@@ -52,8 +52,24 @@ contract L2 is SignatureChecker {
     mapping(address => address) public l2TokenMap;
     uint256 nextBatchStart = 0;
 
-    constructor(TokenPair[] memory pairs) {
+    // TODO: Eventually this should probably use a well-tested ownership library.
+    address owner;
+
+    constructor() {
+        owner = msg.sender;
+    }
+
+    function registerTokenPairs(TokenPair[] memory pairs) public {
+        require(msg.sender == owner, "Only the owner can add token pairs");
         for (uint256 i = 0; i < pairs.length; i++) {
+            require(
+                l2TokenMap[pairs[i].l2Token] == address(0),
+                "A mapping exists for the L2 token"
+            );
+            require(
+                l1TokenMap[pairs[i].l1Token] == address(0),
+                "A mapping exists for the L1 token"
+            );
             l2TokenMap[pairs[i].l2Token] = pairs[i].l1Token;
             l1TokenMap[pairs[i].l1Token] = pairs[i].l2Token;
         }
