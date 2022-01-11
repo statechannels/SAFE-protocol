@@ -75,7 +75,7 @@ beforeEach(async () => {
   // Transfer 1/4 to the l1 contract for payouts
   await testToken.transfer(l1Contract.address, tokenBalance / 4);
 
-  await testToken.approve(l1Contract.address, tokenBalance);
+  //   await testToken.approve(l1Contract.address, tokenBalance);
 });
 
 const benchmarkResults: ScenarioGasUsage[] = [];
