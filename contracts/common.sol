@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.10;
 
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
 address constant lpAddress = address(
     0x9552ceB4e6FA8c356c1A76A8Bc8b1EFA7B9fb205
 );
@@ -10,6 +12,8 @@ struct L1Ticket {
     address l1Recipient;
     /// The amount of funds to send.
     uint256 value;
+    /// The address of the ERC20 token to use.
+    address token;
 }
 
 struct Ticket {
@@ -19,6 +23,8 @@ struct Ticket {
     uint256 value;
     /// The timestamp when the ticket was registered
     uint256 createdAt;
+    /// The address of the ERC20 token to use.
+    address token;
 }
 
 struct TicketsWithNonce {
@@ -44,7 +50,11 @@ abstract contract SignatureChecker {
         return ecrecover(prefixedHash, signature.v, signature.r, signature.s);
     }
 
-    function ticketsEqual(L1Ticket memory t1, L1Ticket memory t2) public pure returns (bool) {
+    function ticketsEqual(L1Ticket memory t1, L1Ticket memory t2)
+        public
+        pure
+        returns (bool)
+    {
         return (t1.value == t2.value) && (t1.l1Recipient == t2.l1Recipient);
     }
 }

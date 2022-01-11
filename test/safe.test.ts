@@ -9,13 +9,17 @@ import { L1__factory } from "../contract-types/factories/L1__factory";
 import { L2__factory } from "../contract-types/factories/L2__factory";
 import { L1, L1TicketStruct } from "../contract-types/L1";
 import { L2, L2DepositStruct, TicketStruct } from "../contract-types/L2";
+
+import { TestToken__factory } from "../contract-types/factories/TestToken__factory";
+import { TestToken } from "../contract-types/TestToken";
+
 import { MAX_AUTH_DELAY, SAFETY_DELAY } from "../src/constants";
 import { TicketsWithNonce } from "../src/types";
 import { hashTickets, signData } from "../src/utils";
 import { printScenarioGasUsage, ScenarioGasUsage } from "./utils";
 
 const gasLimit = 30_000_000;
-
+const tokenBalance = 1_000_000;
 // Address 0x2a47Cd5718D67Dc81eAfB24C99d4db159B0e7bCa
 const customerPK =
   "0xe1743f0184b85ac1412311be9d6e5d333df23e22efdf615d0135ca2b9ed67938";
@@ -31,10 +35,11 @@ const lpWallet = new ethers.Wallet(lpPK, ethers.provider);
 
 const l1Deployer = new L1__factory(lpWallet);
 const l2Deployer = new L2__factory(lpWallet);
+const tokenDeployer = new TestToken__factory(lpWallet);
 
 let lpL1: L1;
 let customerL2: L2, lpL2: L2;
-
+let testToken: TestToken;
 async function waitForTx(
   txPromise: Promise<ethersTypes.providers.TransactionResponse>
 ) {
@@ -48,6 +53,7 @@ async function deposit(trustedNonce: number, trustedAmount: number) {
     trustedAmount,
     depositAmount,
     l1Recipient: customerWallet.address,
+    token: testToken.address,
   };
   const deposit2: L2DepositStruct = {
     ...deposit,
@@ -65,11 +71,11 @@ async function depositOnce(trustedNonce: number, trustedAmount: number) {
     trustedAmount,
     depositAmount,
     l1Recipient: customerWallet.address,
+    token: testToken.address,
   };
 
   await waitForTx(customerL2.depositOnL2(deposit, { value: depositAmount }));
 }
-
 async function authorizeWithdrawal(
   trustedNonce: number,
   numTickets = 2
@@ -139,12 +145,19 @@ beforeEach(async () => {
   lpL2 = l2.connect(lpWallet);
   lpL1 = l1.connect(lpWallet);
 
-  await waitForTx(
-    lpWallet.sendTransaction({
-      to: l1.address,
-      value: ethers.utils.parseUnits("1000000000", "wei"),
-    })
-  );
+  testToken = await tokenDeployer.deploy(tokenBalance);
+  // Transfer 1/4 to the customer account
+  await testToken.transfer(customerWallet.address, tokenBalance / 4);
+  // Transfer 1/4 to the l1 contract for payouts
+  await testToken.transfer(l1.address, tokenBalance / 4);
+  // Transfer 1/4 to the l2 contract for payouts
+  await testToken.transfer(l2.address, tokenBalance / 4);
+  // Approve transfers for the L1 and L2 contract for the LP
+  await testToken.approve(l2.address, tokenBalance);
+  await testToken.approve(l1.address, tokenBalance);
+  // Approve transfers for the L1 and L2 contract for the customer
+  await testToken.connect(customerWallet).approve(l1.address, tokenBalance);
+  await testToken.connect(customerWallet).approve(l2.address, tokenBalance);
 });
 
 it("One successfull e2e swaps", async () => {
@@ -165,6 +178,7 @@ function ticketToL1Ticket(ticket: TicketStruct): L1TicketStruct {
   return {
     value: ticket.value,
     l1Recipient: ticket.l1Recipient,
+    token: ticket.token,
   };
 }
 
@@ -194,7 +208,7 @@ it("Handles a fraud proofs", async () => {
       1,
       0,
       1,
-      [ticket, fraudTicket],
+      [ticket, fraudTicket].map(ticketToL1Ticket),
       fraudSignature,
       { gasLimit }
     )
@@ -207,7 +221,7 @@ it("Handles a fraud proofs", async () => {
       1,
       0,
       1,
-      [ticket, fraudTicket],
+      [ticket, fraudTicket].map(ticketToL1Ticket),
       fraudSignature,
       {
         gasLimit,
@@ -240,7 +254,7 @@ it("Handles a fraud proofs", async () => {
       0,
       1,
       1,
-      [ticket3, fraudTicket2],
+      [ticket3, fraudTicket2].map(ticketToL1Ticket),
       fraudSignature2,
       { gasLimit }
     )

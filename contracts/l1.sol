@@ -21,10 +21,8 @@ contract l1 is SignatureChecker {
         );
 
         for (uint256 i = 0; i < tickets.length; i++) {
-            (bool sent, ) = tickets[i].l1Recipient.call{
-                value: tickets[i].value
-            }("");
-            require(sent, "Failed to send Ether");
+            IERC20 tokenContract = IERC20(tickets[i].token);
+            tokenContract.transfer(tickets[i].l1Recipient, tickets[i].value);
         }
 
         nextNonce = nextNonce + tickets.length;

@@ -13,6 +13,8 @@ struct L2Deposit {
     uint256 depositAmount;
     // Alice's address on L1
     address l1Recipient;
+    /// The address of the ERC20 token.
+    address token;
 }
 
 // Authorized: all tickets in this batch are authorized but not claimed
@@ -55,14 +57,19 @@ contract L2 is SignatureChecker {
             amountAvailable >= amountReserved + deposit.depositAmount,
             "Must have enough funds for ticket"
         );
-        require(
-            msg.value == deposit.depositAmount,
-            "Value sent must match depositAmount"
+
+        IERC20 tokenContract = IERC20(deposit.token);
+        tokenContract.transferFrom(
+            msg.sender,
+            address(this),
+            deposit.depositAmount
         );
+
         Ticket memory ticket = Ticket({
             l1Recipient: deposit.l1Recipient,
             value: deposit.depositAmount,
-            createdAt: block.timestamp
+            createdAt: block.timestamp,
+            token: deposit.token
         });
 
         // ticket's nonce is now its index in `tickets`
@@ -71,7 +78,11 @@ contract L2 is SignatureChecker {
 
     // TODO: This public function is added to force hardhat to generate
     // the TicketStruct type in its l2.ts output
-    function compareWithFirstTicket(Ticket calldata t) public view returns (bool) {
+    function compareWithFirstTicket(Ticket calldata t)
+        public
+        view
+        returns (bool)
+    {
         return tickets[0].value == t.value;
     }
 
@@ -111,7 +122,11 @@ contract L2 is SignatureChecker {
         uint256 total = 0;
         for (uint256 i = first; i <= last; i++) {
             Ticket memory t = tickets[i];
-            ticketsToAuthorize[i - first] = L1Ticket(t.l1Recipient, t.value);
+            ticketsToAuthorize[i - first] = L1Ticket(
+                t.l1Recipient,
+                t.value,
+                t.token
+            );
             total += tickets[i].value;
         }
         return (
@@ -138,8 +153,12 @@ contract L2 is SignatureChecker {
 
         batch.status = BatchStatus.Withdrawn;
         batches[first] = batch;
-        (bool sent, ) = lpAddress.call{value: batch.total}("");
-        require(sent, "Failed to send Ether");
+
+        for (uint256 i = first; i < first + batch.numTickets; i++) {
+            Ticket memory ticket = tickets[i];
+            IERC20 tokenContract = IERC20(ticket.token);
+            tokenContract.transfer(lpAddress, ticket.value);
+        }
     }
 
     /**
@@ -172,7 +191,11 @@ contract L2 is SignatureChecker {
         );
 
         Ticket memory t = tickets[honestStartNonce + honestDelta];
-        L1Ticket memory correctTicket = L1Ticket(t.l1Recipient, t.value);
+        L1Ticket memory correctTicket = L1Ticket(
+            t.l1Recipient,
+            t.value,
+            t.token
+        );
         L1Ticket memory fraudTicket = fraudTickets[fraudDelta];
         require(
             !ticketsEqual(correctTicket, fraudTicket),
@@ -186,10 +209,8 @@ contract L2 is SignatureChecker {
         );
 
         for (uint256 i = honestStartNonce; i < honestBatch.numTickets; i++) {
-            (bool sent, ) = tickets[i].l1Recipient.call{
-                value: tickets[i].value
-            }("");
-            require(sent, "Failed to send Ether");
+            IERC20 tokenContract = IERC20(tickets[i].token);
+            tokenContract.transfer(tickets[i].l1Recipient, tickets[i].value);
         }
 
         batches[honestStartNonce].status = BatchStatus.Withdrawn;
@@ -214,10 +235,10 @@ contract L2 is SignatureChecker {
         batch.status = BatchStatus.Withdrawn;
         nextBatchStart = lastNonce + 1;
 
-        (bool sent, ) = tickets[lastNonce].l1Recipient.call{
-            value: tickets[lastNonce].value
-        }("");
-        require(sent, "Failed to send Ether");
+        IERC20 tokenContract = IERC20(tickets[lastNonce].token);
+        tokenContract.transfer(
+            tickets[lastNonce].l1Recipient,
+            tickets[lastNonce].value
+        );
     }
-
 }
