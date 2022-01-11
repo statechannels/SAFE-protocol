@@ -16,19 +16,10 @@ import { TestToken } from "../contract-types/TestToken";
 import { MAX_AUTH_DELAY, SAFETY_DELAY } from "../src/constants";
 import { TicketsWithNonce } from "../src/types";
 import { hashTickets, signData } from "../src/utils";
-import { printScenarioGasUsage, ScenarioGasUsage } from "./utils";
+import { customer2Address, customerPK, lpPK, waitForTx } from "./utils";
 
 const gasLimit = 30_000_000;
 const tokenBalance = 1_000_000;
-// Address 0x2a47Cd5718D67Dc81eAfB24C99d4db159B0e7bCa
-const customerPK =
-  "0xe1743f0184b85ac1412311be9d6e5d333df23e22efdf615d0135ca2b9ed67938";
-// Address 0x9552ceB4e6FA8c356c1A76A8Bc8b1EFA7B9fb205
-const lpPK =
-  "0x23ac17b9c3590a8e67a1d1231ebab87dd2d3389d2f1526f842fd1326a0990f42";
-
-// pk = 0x91f47a1911c0fd985b34c25962f661f0de606f7ad38ba156902dff48b4d05f97
-const customer2Address = "0xAAAB35381A38C4fF4967DC29470F0f2637295983";
 
 const customerWallet = new ethers.Wallet(customerPK, ethers.provider);
 const lpWallet = new ethers.Wallet(lpPK, ethers.provider);
@@ -40,11 +31,6 @@ const tokenDeployer = new TestToken__factory(lpWallet);
 let lpL1: L1;
 let customerL2: L2, lpL2: L2;
 let testToken: TestToken;
-async function waitForTx(
-  txPromise: Promise<ethersTypes.providers.TransactionResponse>
-) {
-  return (await txPromise).wait();
-}
 
 async function deposit(trustedNonce: number, trustedAmount: number) {
   const depositAmount = 1;
@@ -285,31 +271,3 @@ it("Able to get a ticket refunded", async () => {
   // Refund 3rd and 4th deposit
   await waitForTx(customerL2.refund(2, { gasLimit }));
 });
-
-const benchmarkResults: ScenarioGasUsage[] = [];
-it("gas benchmarking", async () => {
-  let nonce = 0;
-
-  // The FIRST batch that is claimed on L1 incurs a write-to-zero-storage cost, which makes
-  // for a counter-intuitive list of results. So, we trigger an initial swap before
-  // starting the benchmark
-  await swap(0, 100_000, 1);
-  nonce++;
-
-  const benchmarkScenarios = [
-    1,
-    2,
-    5,
-    20,
-    50,
-    62, // THE GAS COST IS ... UNDER 9000!!!
-  ];
-
-  for (const batchSize of benchmarkScenarios) {
-    const { gasUsed } = await swap(nonce, 100_000, batchSize);
-    benchmarkResults.push({ totalGasUsed: gasUsed, batchSize });
-    nonce += batchSize;
-  }
-});
-
-after(() => printScenarioGasUsage(benchmarkResults));
