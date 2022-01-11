@@ -27,6 +27,22 @@ async function createCustomer(): Promise<string> {
 
   return address;
 }
+async function runScenario(
+  nonce: number,
+  batchSize: number,
+  customerMode: "Unique" | "Same"
+): Promise<ScenarioGasUsage> {
+  const { tickets, signature } = await generateTickets(
+    nonce,
+    batchSize,
+    customerMode
+  );
+  const { gasUsed } = await waitForTx(
+    l1Contract.claimBatch(tickets, signature)
+  );
+  return { totalGasUsed: gasUsed, batchSize };
+}
+
 async function generateTickets(
   startNonce = 0,
   numTickets = 2,
@@ -103,21 +119,5 @@ it("gas benchmarking", async () => {
     nonce += batchSize;
   }
 });
-
-async function runScenario(
-  nonce: number,
-  batchSize: number,
-  customerMode: "Unique" | "Same"
-): Promise<ScenarioGasUsage> {
-  const { tickets, signature } = await generateTickets(
-    nonce,
-    batchSize,
-    customerMode
-  );
-  const { gasUsed } = await waitForTx(
-    l1Contract.claimBatch(tickets, signature)
-  );
-  return { totalGasUsed: gasUsed, batchSize };
-}
 
 after(() => printScenarioGasUsage(benchmarkResults));
