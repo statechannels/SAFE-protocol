@@ -31,6 +31,11 @@ struct Batch {
     BatchStatus status;
 }
 
+struct TokenPair {
+    address l1Token;
+    address l2Token;
+}
+
 // TODO: update these values after prototype phase
 uint256 constant maxAuthDelay = 600;
 uint256 constant safetyDelay = 600;
@@ -40,7 +45,19 @@ contract L2 is SignatureChecker {
     // `batches` is used to record the fact that tickets with nonce between startingNonce and startingNonce + numTickets-1 are authorized or withdrawn.
     // Indexed by nonce
     mapping(uint256 => Batch) batches;
+
+    /// Maps a L1 token address to the L2 token address.
+    mapping(address => address) public l1TokenMap;
+    /// Maps a L2 token address to the L1 token address.
+    mapping(address => address) public l2TokenMap;
     uint256 nextBatchStart = 0;
+
+    constructor(TokenPair[] memory pairs) {
+        for (uint256 i = 0; i < pairs.length; i++) {
+            l2TokenMap[pairs[i].l2Token] = pairs[i].l1Token;
+            l1TokenMap[pairs[i].l1Token] = pairs[i].l2Token;
+        }
+    }
 
     function depositOnL2(L2Deposit calldata deposit) public payable {
         uint256 amountAvailable = deposit.trustedAmount;
@@ -58,6 +75,11 @@ contract L2 is SignatureChecker {
             "Must have enough funds for ticket"
         );
 
+        require(
+            l2TokenMap[deposit.token] != address(0),
+            "There is no L2 token for this L1 token"
+        );
+
         IERC20 tokenContract = IERC20(deposit.token);
         tokenContract.transferFrom(
             msg.sender,
@@ -69,7 +91,7 @@ contract L2 is SignatureChecker {
             l1Recipient: deposit.l1Recipient,
             value: deposit.depositAmount,
             createdAt: block.timestamp,
-            token: deposit.token
+            token: l2TokenMap[deposit.token]
         });
 
         // ticket's nonce is now its index in `tickets`
@@ -156,7 +178,8 @@ contract L2 is SignatureChecker {
 
         for (uint256 i = first; i < first + batch.numTickets; i++) {
             Ticket memory ticket = tickets[i];
-            IERC20 tokenContract = IERC20(ticket.token);
+            // Since the ticket token is validated when it is registered, we can be sure that l1TokenMap[ticket.token])!= address(0)
+            IERC20 tokenContract = IERC20(l1TokenMap[ticket.token]);
             tokenContract.transfer(lpAddress, ticket.value);
         }
     }
@@ -209,7 +232,8 @@ contract L2 is SignatureChecker {
         );
 
         for (uint256 i = honestStartNonce; i < honestBatch.numTickets; i++) {
-            IERC20 tokenContract = IERC20(tickets[i].token);
+            // Since the ticket token is validated when it is registered, we can be sure that l1TokenMap[ticket.token])!= address(0)
+            IERC20 tokenContract = IERC20(l1TokenMap[tickets[i].token]);
             tokenContract.transfer(tickets[i].l1Recipient, tickets[i].value);
         }
 
@@ -234,8 +258,8 @@ contract L2 is SignatureChecker {
         batches[nextBatchStart] = batch;
         batch.status = BatchStatus.Withdrawn;
         nextBatchStart = lastNonce + 1;
-
-        IERC20 tokenContract = IERC20(tickets[lastNonce].token);
+        // Since the ticket token is validated when it is registered, we can be sure that l1TokenMap[ticket.token])!= address(0)
+        IERC20 tokenContract = IERC20(l1TokenMap[tickets[lastNonce].token]);
         tokenContract.transfer(
             tickets[lastNonce].l1Recipient,
             tickets[lastNonce].value
