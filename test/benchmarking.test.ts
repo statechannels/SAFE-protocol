@@ -8,7 +8,7 @@ import { ethers } from "hardhat";
 import { L1__factory } from "../contract-types/factories/L1__factory";
 import { TestToken__factory } from "../contract-types/factories/TestToken__factory";
 import { TestToken } from "../contract-types/TestToken";
-import { L1, TicketStruct } from "../contract-types/L1";
+import { L1, L1TicketStruct } from "../contract-types/L1";
 import { TicketsWithNonce } from "../src/types";
 import { hashTickets, signData } from "../src/utils";
 import {
@@ -32,8 +32,8 @@ async function generateTickets(
   numTickets = 2,
   customerMode: "Unique" | "Same" = "Unique",
   amountOfTokens = 1
-): Promise<{ tickets: TicketStruct[]; signature: ethersTypes.Signature }> {
-  const tickets: TicketStruct[] = [];
+): Promise<{ tickets: L1TicketStruct[]; signature: ethersTypes.Signature }> {
+  const tickets: L1TicketStruct[] = [];
 
   let customer = await createCustomer();
   for (let i = 0; i < numTickets; i++) {
@@ -44,7 +44,6 @@ async function generateTickets(
       l1Recipient: customer,
       value: amountOfTokens,
       token: testToken.address,
-      createdAt: Math.round(Date.now() / 1000),
     });
   }
   const ticketsWithNonce: TicketsWithNonce = {
