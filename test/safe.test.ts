@@ -18,7 +18,6 @@ import { TicketsWithNonce } from "../src/types";
 import { hashTickets, signData } from "../src/utils";
 import { customer2Address, customerPK, lpPK, waitForTx } from "./utils";
 
-const gasLimit = 30_000_000;
 const tokenBalance = 1_000_000;
 
 const customerWallet = new ethers.Wallet(customerPK, ethers.provider);
@@ -80,11 +79,7 @@ async function authorizeWithdrawal(
     lpL2.authorizeWithdrawal(
       trustedNonce,
       trustedNonce + numTickets - 1,
-      signature,
-      {
-        // TODO: remove this after addressing https://github.com/statechannels/SAFE-protocol/issues/70
-        gasLimit,
-      }
+      signature
     )
   );
   return { tickets, signature };
@@ -111,7 +106,7 @@ async function swap(
   );
 
   const l1TransactionReceipt = await waitForTx(
-    lpL1.claimBatch(tickets, signature, { gasLimit })
+    lpL1.claimBatch(tickets, signature)
   );
 
   await ethers.provider.send("evm_increaseTime", [SAFETY_DELAY + 1]);
@@ -195,8 +190,7 @@ it("Handles a fraud proofs", async () => {
       0,
       1,
       [ticket, fraudTicket].map(ticketToL1Ticket),
-      fraudSignature,
-      { gasLimit }
+      fraudSignature
     )
   );
 
@@ -208,10 +202,7 @@ it("Handles a fraud proofs", async () => {
       0,
       1,
       [ticket, fraudTicket].map(ticketToL1Ticket),
-      fraudSignature,
-      {
-        gasLimit,
-      }
+      fraudSignature
     )
   ).to.be.rejectedWith("Batch status must be Authorized");
 
@@ -241,33 +232,32 @@ it("Handles a fraud proofs", async () => {
       1,
       1,
       [ticket3, fraudTicket2].map(ticketToL1Ticket),
-      fraudSignature2,
-      { gasLimit }
+      fraudSignature2
     )
   );
 });
 
 it("Able to get a ticket refunded", async () => {
   await deposit(0, 10);
-  await expect(customerL2.refund(0, { gasLimit })).to.be.rejectedWith(
+  await expect(customerL2.refund(0)).to.be.rejectedWith(
     "maxAuthDelay must have passed since deposit"
   );
 
   const delta = 5;
   await ethers.provider.send("evm_increaseTime", [MAX_AUTH_DELAY - delta]);
-  await expect(customerL2.refund(1, { gasLimit })).to.be.rejectedWith(
+  await expect(customerL2.refund(1)).to.be.rejectedWith(
     "maxAuthDelay must have passed since deposit"
   );
   await ethers.provider.send("evm_increaseTime", [2 * delta]);
 
-  await waitForTx(customerL2.refund(0, { gasLimit }));
-  await waitForTx(customerL2.refund(1, { gasLimit }));
-  await expect(customerL2.refund(1, { gasLimit })).to.be.rejectedWith(
+  await waitForTx(customerL2.refund(0));
+  await waitForTx(customerL2.refund(1));
+  await expect(customerL2.refund(1)).to.be.rejectedWith(
     "The nonce must not be a part of a batch"
   );
 
   await deposit(2, 8);
   await ethers.provider.send("evm_increaseTime", [MAX_AUTH_DELAY + delta]);
   // Refund 3rd and 4th deposit
-  await waitForTx(customerL2.refund(2, { gasLimit }));
+  await waitForTx(customerL2.refund(2));
 });
