@@ -8,15 +8,16 @@ contract l1 is SignatureChecker {
 
     receive() external payable {}
 
-    function claimBatch(L1Ticket[] calldata tickets, Signature calldata signature)
-        public
-    {
+    function claimBatch(
+        L1Ticket[] calldata tickets,
+        Signature calldata signature
+    ) public {
         bytes32 message = keccak256(
             abi.encode(TicketsWithNonce(nextNonce, tickets))
         );
 
         require(
-            recoverSigner(message, signature) == lpAddress,
+            recoverSigner(message, signature) != lpAddress,
             "Must be signed by liquidity provider"
         );
 
