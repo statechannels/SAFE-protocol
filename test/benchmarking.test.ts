@@ -8,7 +8,7 @@ import { ethers } from "hardhat";
 import { L1__factory } from "../contract-types/factories/L1__factory";
 import { TestToken__factory } from "../contract-types/factories/TestToken__factory";
 import { TestToken } from "../contract-types/TestToken";
-import { L1, L1TicketStruct } from "../contract-types/L1";
+import { L1, L1TicketStruct, TokenPairStruct } from "../contract-types/L1";
 import { TicketsWithNonce } from "../src/types";
 import { hashTickets, signData } from "../src/utils";
 import {
@@ -18,7 +18,7 @@ import {
   waitForTx,
 } from "./utils";
 
-async function createCustomer(): Promise<string> {
+async function createCustomer(testToken: TestToken): Promise<string> {
   const { address } = Wallet.createRandom({}).connect(ethers.provider);
   // We assume the customer currently holds, or has previously held, some of the ERC20 tokens on L1.
   // To simulate this we transfer a small amount of tokens to the customer's address, triggering the initial storage write.
@@ -37,9 +37,11 @@ async function runScenario(
     batchSize,
     customerMode
   );
+
   const { gasUsed } = await waitForTx(
     l1Contract.claimBatch(tickets, signature)
   );
+
   return { totalGasUsed: gasUsed, batchSize };
 }
 
@@ -51,16 +53,21 @@ async function generateTickets(
 ): Promise<{ tickets: L1TicketStruct[]; signature: ethersTypes.Signature }> {
   const tickets: L1TicketStruct[] = [];
 
-  let customer = await createCustomer();
+  let customer = ethers.Wallet.createRandom().address;
   for (let i = 0; i < numTickets; i++) {
+    const tokenPair = tokenPairs[Math.floor(Math.random() * tokenPairs.length)];
+    await tokenPair.testToken.transfer(customer, 1);
     if (customerMode === "Unique") {
-      customer = await createCustomer();
+      customer = ethers.Wallet.createRandom().address;
     }
+
     tickets.push({
       l1Recipient: customer,
       value: amountOfTokens,
-      token: testToken.address,
+      token: tokenPair.l2Token,
     });
+
+    console.log(tickets);
   }
   const ticketsWithNonce: TicketsWithNonce = {
     startNonce,
@@ -72,10 +79,9 @@ async function generateTickets(
   return { tickets, signature };
 }
 
+type TokenPair = TokenPairStruct & { testToken: TestToken };
 let l1Contract: L1;
-
-let testToken: TestToken;
-
+const tokenPairs: Array<TokenPair> = [];
 beforeEach(async () => {
   const lpWallet = new ethers.Wallet(lpPK, ethers.provider);
 
@@ -86,17 +92,25 @@ beforeEach(async () => {
 
   const tokenBalance = 1_000_000;
 
-  testToken = await tokenDeployer.deploy(tokenBalance);
+  for (let i = 0; i < 100; i++) {
+    const testToken = await tokenDeployer.deploy(tokenBalance);
+    const l2Token = ethers.Wallet.createRandom().address;
 
-  // Transfer 1/4 to the l1 contract for payouts
-  await testToken.transfer(l1Contract.address, tokenBalance / 4);
-  await l1Contract.registerTokenPairs([
-    { l1Token: testToken.address, l2Token: testToken.address },
-  ]);
+    await testToken.transfer(l1Contract.address, tokenBalance / 4);
+
+    tokenPairs.push({ l1Token: testToken.address, l2Token, testToken });
+  }
+
+  await l1Contract.registerTokenPairs(
+    tokenPairs.map(({ l1Token, l2Token }) => ({
+      l2Token,
+      l1Token,
+    }))
+  );
 });
 
 const benchmarkResults: ScenarioGasUsage[] = [];
-it("gas benchmarking", async () => {
+it.only("gas benchmarking", async () => {
   let nonce = 0;
 
   // The FIRST batch that is claimed on L1 incurs a write-to-zero-storage cost, which makes
