@@ -2,21 +2,28 @@ import chai, { expect } from "chai";
 import chaiAsPromised from "chai-as-promised";
 chai.use(chaiAsPromised);
 
-import { ethers as ethersTypes } from "ethers";
 import { ethers } from "hardhat";
 
 import { L1__factory } from "../contract-types/factories/L1__factory";
 import { L2__factory } from "../contract-types/factories/L2__factory";
-import { L1, L1TicketStruct } from "../contract-types/L1";
-import { L2, L2DepositStruct, TicketStruct } from "../contract-types/L2";
 
 import { TestToken__factory } from "../contract-types/factories/TestToken__factory";
-import { TestToken } from "../contract-types/TestToken";
 
-import { MAX_AUTH_DELAY, SAFETY_DELAY } from "../src/constants";
+import { MAX_AUTH_DELAY } from "../src/constants";
 import { TicketsWithNonce } from "../src/types";
 import { hashTickets, signData } from "../src/utils";
-import { customer2Address, customerPK, lpPK, waitForTx } from "./utils";
+import {
+  authorizeWithdrawal,
+  customerPK,
+  deposit,
+  distributeL1Tokens,
+  distributeL2Tokens,
+  lpPK,
+  swap,
+  TestSetup,
+  ticketToL1Ticket,
+  waitForTx,
+} from "./utils";
 
 const gasLimit = 30_000_000;
 const tokenBalance = 1_000_000;
@@ -27,171 +34,64 @@ const lpWallet = new ethers.Wallet(lpPK, ethers.provider);
 const l1Deployer = new L1__factory(lpWallet);
 const l2Deployer = new L2__factory(lpWallet);
 const tokenDeployer = new TestToken__factory(lpWallet);
-
-let lpL1: L1;
-let customerL2: L2, lpL2: L2;
-let l1TestToken: TestToken, l2TestToken: TestToken;
-
-async function approveAndDistributeTokens(
-  testToken: TestToken,
-  contractAddress: string
-): Promise<void> {
-  // Transfer 1/4 to the customer account
-  await testToken.transfer(customerWallet.address, tokenBalance / 4);
-  // Transfer 1/4 to the  contract for payouts
-  await testToken.transfer(contractAddress, tokenBalance / 4);
-
-  // Approve transfers for the contract
-  await testToken.approve(contractAddress, tokenBalance);
-
-  // Approve transfers for the contract for the customer
-  await testToken
-    .connect(customerWallet)
-    .approve(contractAddress, tokenBalance);
-}
-
-async function deposit(trustedNonce: number, trustedAmount: number) {
-  const depositAmount = 1;
-  const deposit: L2DepositStruct = {
-    trustedNonce,
-    trustedAmount,
-    depositAmount,
-    l1Recipient: customerWallet.address,
-    token: l2TestToken.address,
-  };
-  const deposit2: L2DepositStruct = {
-    ...deposit,
-    l1Recipient: customer2Address,
-  };
-
-  await waitForTx(customerL2.depositOnL2(deposit, { value: depositAmount }));
-  await waitForTx(customerL2.depositOnL2(deposit2, { value: depositAmount }));
-}
-
-async function depositOnce(trustedNonce: number, trustedAmount: number) {
-  const depositAmount = 1;
-  const deposit: L2DepositStruct = {
-    trustedNonce,
-    trustedAmount,
-    depositAmount,
-    l1Recipient: customerWallet.address,
-    token: l2TestToken.address,
-  };
-
-  await waitForTx(customerL2.depositOnL2(deposit, { value: depositAmount }));
-}
-async function authorizeWithdrawal(
-  trustedNonce: number,
-  numTickets = 2
-): Promise<{ tickets: L1TicketStruct[]; signature: ethersTypes.Signature }> {
-  const tickets: L1TicketStruct[] = [];
-  for (let i = 0; i < numTickets; i++) {
-    tickets.push(ticketToL1Ticket(await lpL2.tickets(trustedNonce + i)));
-  }
-
-  const ticketsWithNonce: TicketsWithNonce = {
-    startNonce: trustedNonce,
-    tickets,
-  };
-  const signature = signData(hashTickets(ticketsWithNonce), lpPK);
-  await waitForTx(
-    lpL2.authorizeWithdrawal(
-      trustedNonce,
-      trustedNonce + numTickets - 1,
-      signature,
-      {
-        // TODO: remove this after addressing https://github.com/statechannels/SAFE-protocol/issues/70
-        gasLimit,
-      }
-    )
-  );
-  return { tickets, signature };
-}
-
-/**
- *
- * @param trustedNonce The sum of all tickets starting with trustedNonce + new deposit must be <= trustedAmount
- * @param trustedAmount amount expected to be held on L1 contract
- * @param numTickets number of tickets to include in the swap's batch
- * @returns receipt of the L1 claimBatch transaction
- */
-async function swap(
-  trustedNonce: number,
-  trustedAmount: number,
-  numTickets = 2
-) {
-  for (let i = 0; i < numTickets; i++) {
-    await depositOnce(trustedNonce, trustedAmount);
-  }
-  const { tickets, signature } = await authorizeWithdrawal(
-    trustedNonce,
-    numTickets
-  );
-
-  const l1TransactionReceipt = await waitForTx(
-    lpL1.claimBatch(tickets, signature, { gasLimit })
-  );
-
-  await ethers.provider.send("evm_increaseTime", [SAFETY_DELAY + 1]);
-  await waitForTx(lpL2.claimL2Funds(trustedNonce));
-
-  // TODO: This ought to estimate the total user cost. The cost of the L1 transaction
-  // is currently used as a rough estimate of the total user cost.
-  return l1TransactionReceipt;
-}
+let testSetup: TestSetup;
 
 beforeEach(async () => {
-  l1TestToken = await tokenDeployer.deploy(tokenBalance);
-  l2TestToken = await tokenDeployer.deploy(tokenBalance);
+  const l1Token = await tokenDeployer.deploy(tokenBalance);
+  const l2Token = await tokenDeployer.deploy(tokenBalance);
   const l1 = await l1Deployer.deploy();
   const l2 = await l2Deployer.deploy();
 
   await l2.registerTokenPairs([
-    { l1Token: l1TestToken.address, l2Token: l2TestToken.address },
+    { l1Token: l1Token.address, l2Token: l2Token.address },
   ]);
+  const customerL2 = l2.connect(customerWallet);
 
-  await approveAndDistributeTokens(l1TestToken, l1.address);
-  await approveAndDistributeTokens(l2TestToken, l2.address);
+  const lpL2 = l2.connect(lpWallet);
+  const lpL1 = l1.connect(lpWallet);
 
-  customerL2 = l2.connect(customerWallet);
-
-  lpL2 = l2.connect(lpWallet);
-  lpL1 = l1.connect(lpWallet);
+  testSetup = {
+    lpL1,
+    lpL2,
+    lpWallet,
+    gasLimit,
+    customerL2,
+    l1Token,
+    l2Token,
+    customerWallet,
+    tokenBalance,
+  };
+  await distributeL1Tokens(testSetup);
+  await distributeL2Tokens(testSetup);
 });
 
 it("One successfull e2e swaps", async () => {
-  await swap(0, 10);
+  await swap(testSetup, 0, 10);
 });
 
 it("Two successfull e2e swaps", async () => {
-  await swap(0, 10);
-  await swap(2, 8);
+  await swap(testSetup, 0, 10);
+  await swap(testSetup, 2, 8);
 });
 
 it("Unable to authorize overlapping batches", async () => {
-  await swap(0, 10);
-  await expect(swap(1, 9)).to.be.rejectedWith("Batches must be gapless");
+  await swap(testSetup, 0, 10);
+  await expect(swap(testSetup, 1, 9)).to.be.rejectedWith(
+    "Batches must be gapless"
+  );
 });
-
-function ticketToL1Ticket(ticket: TicketStruct): L1TicketStruct {
-  return {
-    value: ticket.value,
-    l1Recipient: ticket.l1Recipient,
-    token: ticket.token,
-  };
-}
 
 it("Handles a fraud proofs", async () => {
   /**
    * Fraud instance 1. The liquidity provider signs a batch of tickets with the
    * second ticket's l1Recipient switched to LP's address
    */
-  await deposit(0, 10);
-
+  await deposit(testSetup, 0, 10);
+  const { lpL2, customerL2 } = testSetup;
   // Sign fraudulent batch
   const ticket = await lpL2.tickets(0);
   const ticket2 = await lpL2.tickets(1);
-  await authorizeWithdrawal(0);
+  await authorizeWithdrawal(testSetup, 0);
 
   const fraudTicket = { ...ticket2, l1Recipient: lpWallet.address };
   const ticketsWithNonce: TicketsWithNonce = {
@@ -234,8 +134,8 @@ it("Handles a fraud proofs", async () => {
    * - The second two tickets are authorized by LP.
    * - LP signs a batch that includes a correct 2nd ticket and a fraudulent 3rd ticket.
    */
-  await deposit(2, 8);
-  await authorizeWithdrawal(2);
+  await deposit(testSetup, 2, 8);
+  await authorizeWithdrawal(testSetup, 2);
 
   // Sign fraudulent batch again
   const ticket3 = await lpL2.tickets(1);
@@ -261,7 +161,8 @@ it("Handles a fraud proofs", async () => {
 });
 
 it("Able to get a ticket refunded", async () => {
-  await deposit(0, 10);
+  const { customerL2 } = testSetup;
+  await deposit(testSetup, 0, 10);
   await expect(customerL2.refund(0, { gasLimit })).to.be.rejectedWith(
     "maxAuthDelay must have passed since deposit"
   );
@@ -279,7 +180,7 @@ it("Able to get a ticket refunded", async () => {
     "The nonce must not be a part of a batch"
   );
 
-  await deposit(2, 8);
+  await deposit(testSetup, 2, 8);
   await ethers.provider.send("evm_increaseTime", [MAX_AUTH_DELAY + delta]);
   // Refund 3rd and 4th deposit
   await waitForTx(customerL2.refund(2, { gasLimit }));
