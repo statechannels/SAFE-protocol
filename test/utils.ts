@@ -106,7 +106,8 @@ async function approveAndDistribute(
 export async function deposit(
   setup: L2TestSetup,
   trustedNonce: number,
-  trustedAmount: number
+  trustedAmount: number,
+  l1Recipient?: string
 ) {
   const { customerWallet, l2Token, customerL2 } = setup;
   const depositAmount = 1;
@@ -114,35 +115,13 @@ export async function deposit(
     trustedNonce,
     trustedAmount,
     depositAmount,
-    l1Recipient: customerWallet.address,
-    token: l2Token.address,
-  };
-  const deposit2: L2DepositStruct = {
-    ...deposit,
-    l1Recipient: customer2Address,
-  };
-
-  await waitForTx(customerL2.depositOnL2(deposit, { value: depositAmount }));
-  await waitForTx(customerL2.depositOnL2(deposit2, { value: depositAmount }));
-}
-
-async function depositOnce(
-  setup: L2TestSetup,
-  trustedNonce: number,
-  trustedAmount: number
-) {
-  const { customerWallet, l2Token, customerL2 } = setup;
-  const depositAmount = 1;
-  const deposit: L2DepositStruct = {
-    trustedNonce,
-    trustedAmount,
-    depositAmount,
-    l1Recipient: customerWallet.address,
+    l1Recipient: l1Recipient || customerWallet.address,
     token: l2Token.address,
   };
 
   await waitForTx(customerL2.depositOnL2(deposit, { value: depositAmount }));
 }
+
 export async function authorizeWithdrawal(
   setup: L2TestSetup,
   trustedNonce: number,
@@ -197,7 +176,7 @@ export async function swap(
   numTickets = 2
 ) {
   for (let i = 0; i < numTickets; i++) {
-    await depositOnce(setup, trustedNonce, trustedAmount);
+    await deposit(setup, trustedNonce, trustedAmount);
   }
   const { tickets, signature } = await authorizeWithdrawal(
     setup,
