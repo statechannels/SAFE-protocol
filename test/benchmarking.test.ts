@@ -66,8 +66,6 @@ async function generateTickets(
       value: amountOfTokens,
       token: tokenPair.l2Token,
     });
-
-    console.log(tickets);
   }
   const ticketsWithNonce: TicketsWithNonce = {
     startNonce,
@@ -78,7 +76,7 @@ async function generateTickets(
 
   return { tickets, signature };
 }
-
+const numberOfTokenContracts = 5;
 type TokenPair = TokenPairStruct & { testToken: TestToken };
 let l1Contract: L1;
 const tokenPairs: Array<TokenPair> = [];
@@ -92,8 +90,9 @@ beforeEach(async () => {
 
   const tokenBalance = 1_000_000;
 
-  for (let i = 0; i < 100; i++) {
+  for (let i = 0; i < numberOfTokenContracts; i++) {
     const testToken = await tokenDeployer.deploy(tokenBalance);
+
     const l2Token = ethers.Wallet.createRandom().address;
 
     await testToken.transfer(l1Contract.address, tokenBalance / 4);
@@ -118,7 +117,7 @@ it.only("gas benchmarking", async () => {
   // starting the benchmark
   await runScenario(nonce, 1, "Unique");
   nonce++;
-
+  console.log(`With ${numberOfTokenContracts} ERC Tokens`);
   const benchmarkScenarios = [
     1,
     2,
