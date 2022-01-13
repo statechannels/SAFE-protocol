@@ -26,7 +26,7 @@ async function createCustomer(): Promise<string> {
   // We assume the customer currently holds, or has previously held, some of the ERC20 tokens on L1.
   // To simulate this we transfer a small amount of tokens to the customer's address, triggering the initial storage write.
   // This prevents the gas cost of claimBatch including a write to zero storage cost for the first time the customer receives tokens.
-  await l1Token.transfer(address, 1);
+  await waitForTx(l1Token.transfer(address, 1));
 
   return address;
 }
