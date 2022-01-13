@@ -34,21 +34,20 @@ let l1TestToken: TestToken, l2TestToken: TestToken;
 
 async function approveAndDistributeTokens(
   testToken: TestToken,
-  l1Address: string,
-  l2Address: string
+  contractAddress: string
 ): Promise<void> {
   // Transfer 1/4 to the customer account
   await testToken.transfer(customerWallet.address, tokenBalance / 4);
-  // Transfer 1/4 to the l1 contract for payouts
-  await testToken.transfer(l1Address, tokenBalance / 4);
-  // Transfer 1/4 to the l2 contract for payouts
-  await testToken.transfer(l2Address, tokenBalance / 4);
-  // Approve transfers for the L1 and L2 contract for the LP
-  await testToken.approve(l2Address, tokenBalance);
-  await testToken.approve(l1Address, tokenBalance);
-  // Approve transfers for the L1 and L2 contract for the customer
-  await testToken.connect(customerWallet).approve(l1Address, tokenBalance);
-  await testToken.connect(customerWallet).approve(l2Address, tokenBalance);
+  // Transfer 1/4 to the  contract for payouts
+  await testToken.transfer(contractAddress, tokenBalance / 4);
+
+  // Approve transfers for the contract
+  await testToken.approve(contractAddress, tokenBalance);
+
+  // Approve transfers for the contract for the customer
+  await testToken
+    .connect(customerWallet)
+    .approve(contractAddress, tokenBalance);
 }
 
 async function deposit(trustedNonce: number, trustedAmount: number) {
@@ -151,8 +150,8 @@ beforeEach(async () => {
     { l1Token: l1TestToken.address, l2Token: l2TestToken.address },
   ]);
 
-  await approveAndDistributeTokens(l1TestToken, l1.address, l2.address);
-  await approveAndDistributeTokens(l2TestToken, l1.address, l2.address);
+  await approveAndDistributeTokens(l1TestToken, l1.address);
+  await approveAndDistributeTokens(l2TestToken, l2.address);
 
   customerL2 = l2.connect(customerWallet);
 
