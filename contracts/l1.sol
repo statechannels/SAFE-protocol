@@ -25,11 +25,11 @@ contract l1 is SignatureChecker {
         require(msg.sender == owner, "Only the owner can add token pairs");
         for (uint256 i = 0; i < pairs.length; i++) {
             require(
-                l1TokenMap[pairs[i].l1Token] == address(0),
+                l1TokenMap[pairs[i].l2Token] == address(0),
                 "A mapping exists for the L1 token"
             );
 
-            l1TokenMap[pairs[i].l1Token] = pairs[i].l2Token;
+            l1TokenMap[pairs[i].l2Token] = pairs[i].l1Token;
         }
     }
 
