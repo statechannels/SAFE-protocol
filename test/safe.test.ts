@@ -14,6 +14,7 @@ import { TicketsWithNonce } from "../src/types";
 import { hashTickets, signData } from "../src/utils";
 import {
   authorizeWithdrawal,
+  customer2Address,
   customerPK,
   deposit,
   distributeL1Tokens,
@@ -40,6 +41,7 @@ beforeEach(async () => {
   const l1Token = await tokenDeployer.deploy(tokenBalance);
   const l2Token = await tokenDeployer.deploy(tokenBalance);
   const l1 = await l1Deployer.deploy();
+
   const l2 = await l2Deployer.deploy();
 
   await l2.registerTokenPairs([
@@ -87,10 +89,14 @@ it("Handles a fraud proofs", async () => {
    * second ticket's l1Recipient switched to LP's address
    */
   await deposit(testSetup, 0, 10);
+  await deposit(testSetup, 0, 10, customer2Address);
+
   const { lpL2, customerL2 } = testSetup;
+
   // Sign fraudulent batch
   const ticket = await lpL2.tickets(0);
   const ticket2 = await lpL2.tickets(1);
+
   await authorizeWithdrawal(testSetup, 0);
 
   const fraudTicket = { ...ticket2, l1Recipient: lpWallet.address };
@@ -135,6 +141,7 @@ it("Handles a fraud proofs", async () => {
    * - LP signs a batch that includes a correct 2nd ticket and a fraudulent 3rd ticket.
    */
   await deposit(testSetup, 2, 8);
+  await deposit(testSetup, 0, 10, customer2Address);
   await authorizeWithdrawal(testSetup, 2);
 
   // Sign fraudulent batch again
@@ -163,6 +170,7 @@ it("Handles a fraud proofs", async () => {
 it("Able to get a ticket refunded", async () => {
   const { customerL2 } = testSetup;
   await deposit(testSetup, 0, 10);
+  await deposit(testSetup, 0, 10, customer2Address);
   await expect(customerL2.refund(0, { gasLimit })).to.be.rejectedWith(
     "maxAuthDelay must have passed since deposit"
   );
