@@ -56,9 +56,10 @@ async function generateTickets(
   let customer = ethers.Wallet.createRandom().address;
   for (let i = 0; i < numTickets; i++) {
     const tokenPair = tokenPairs[Math.floor(Math.random() * tokenPairs.length)];
-    await tokenPair.testToken.transfer(customer, 1);
+
     if (customerMode === "Unique") {
       customer = ethers.Wallet.createRandom().address;
+      await tokenPair.testToken.transfer(customer, 1);
     }
 
     tickets.push({
