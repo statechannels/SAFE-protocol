@@ -30,7 +30,25 @@ const tokenDeployer = new TestToken__factory(lpWallet);
 
 let lpL1: L1;
 let customerL2: L2, lpL2: L2;
-let testToken: TestToken;
+let l1TestToken: TestToken, l2TestToken: TestToken;
+
+async function approveAndDistributeTokens(
+  testToken: TestToken,
+  contractAddress: string
+): Promise<void> {
+  // Transfer 1/4 to the customer account
+  await testToken.transfer(customerWallet.address, tokenBalance / 4);
+  // Transfer 1/4 to the  contract for payouts
+  await testToken.transfer(contractAddress, tokenBalance / 4);
+
+  // Approve transfers for the contract
+  await testToken.approve(contractAddress, tokenBalance);
+
+  // Approve transfers for the contract for the customer
+  await testToken
+    .connect(customerWallet)
+    .approve(contractAddress, tokenBalance);
+}
 
 async function deposit(trustedNonce: number, trustedAmount: number) {
   const depositAmount = 1;
@@ -39,7 +57,7 @@ async function deposit(trustedNonce: number, trustedAmount: number) {
     trustedAmount,
     depositAmount,
     l1Recipient: customerWallet.address,
-    token: testToken.address,
+    token: l2TestToken.address,
   };
   const deposit2: L2DepositStruct = {
     ...deposit,
@@ -57,7 +75,7 @@ async function depositOnce(trustedNonce: number, trustedAmount: number) {
     trustedAmount,
     depositAmount,
     l1Recipient: customerWallet.address,
-    token: testToken.address,
+    token: l2TestToken.address,
   };
 
   await waitForTx(customerL2.depositOnL2(deposit, { value: depositAmount }));
@@ -123,27 +141,22 @@ async function swap(
 }
 
 beforeEach(async () => {
+  l1TestToken = await tokenDeployer.deploy(tokenBalance);
+  l2TestToken = await tokenDeployer.deploy(tokenBalance);
   const l1 = await l1Deployer.deploy();
   const l2 = await l2Deployer.deploy();
+
+  await l2.registerTokenPairs([
+    { l1Token: l1TestToken.address, l2Token: l2TestToken.address },
+  ]);
+
+  await approveAndDistributeTokens(l1TestToken, l1.address);
+  await approveAndDistributeTokens(l2TestToken, l2.address);
 
   customerL2 = l2.connect(customerWallet);
 
   lpL2 = l2.connect(lpWallet);
   lpL1 = l1.connect(lpWallet);
-
-  testToken = await tokenDeployer.deploy(tokenBalance);
-  // Transfer 1/4 to the customer account
-  await testToken.transfer(customerWallet.address, tokenBalance / 4);
-  // Transfer 1/4 to the l1 contract for payouts
-  await testToken.transfer(l1.address, tokenBalance / 4);
-  // Transfer 1/4 to the l2 contract for payouts
-  await testToken.transfer(l2.address, tokenBalance / 4);
-  // Approve transfers for the L1 and L2 contract for the LP
-  await testToken.approve(l2.address, tokenBalance);
-  await testToken.approve(l1.address, tokenBalance);
-  // Approve transfers for the L1 and L2 contract for the customer
-  await testToken.connect(customerWallet).approve(l1.address, tokenBalance);
-  await testToken.connect(customerWallet).approve(l2.address, tokenBalance);
 });
 
 it("One successfull e2e swaps", async () => {

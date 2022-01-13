@@ -5,18 +5,25 @@ import "./common.sol";
 
 contract l1 is SignatureChecker {
     uint256 nextNonce = 0;
+    // TODO: Eventually this should probably use a well-tested ownership library.
+    address owner;
 
     receive() external payable {}
 
-    function claimBatch(L1Ticket[] calldata tickets, Signature calldata signature)
-        public
-    {
+    constructor() {
+        owner = msg.sender;
+    }
+
+    function claimBatch(
+        L1Ticket[] calldata tickets,
+        Signature calldata signature
+    ) public {
         bytes32 message = keccak256(
             abi.encode(TicketsWithNonce(nextNonce, tickets))
         );
 
         require(
-            recoverSigner(message, signature) == lpAddress,
+            recoverSigner(message, signature) == owner,
             "Must be signed by liquidity provider"
         );
 
