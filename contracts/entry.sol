@@ -3,7 +3,7 @@ pragma solidity ^0.8.10;
 
 import "./common.sol";
 
-contract entry is SignatureChecker {
+contract Entry is SignatureChecker {
     uint256 nextNonce = 0;
     // TODO: Eventually this should probably use a well-tested ownership library.
     address owner;
