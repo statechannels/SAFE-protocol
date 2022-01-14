@@ -1,8 +1,8 @@
 import Table from "cli-table";
 import { BigNumber, Wallet } from "ethers";
 import { ethers as ethersTypes } from "ethers";
-import { L1, L1TicketStruct } from "../contract-types/L1";
-import { L2, L2DepositStruct, TicketStruct } from "../contract-types/L2";
+import { Entry, EntryTicketStruct } from "../contract-types/Entry";
+import { Exit, ExitDepositStruct, TicketStruct } from "../contract-types/Exit";
 import { TestToken } from "../contract-types/TestToken";
 import { TicketsWithNonce } from "../src/types";
 import { hashTickets, signData } from "../src/utils";
@@ -15,7 +15,7 @@ export type ScenarioGasUsage = {
 };
 
 export function printScenarioGasUsage(scenarios: ScenarioGasUsage[]) {
-  console.log("L1 claimBatch Gas Usage");
+  console.log("Entry claimBatch Gas Usage");
   const table = new Table({
     head: ["Ticket Batch Size", "Average Gas Per Ticket", "Total Gas Used"],
     colAligns: ["right", "right", "right"],
@@ -49,34 +49,34 @@ export type CommonTestSetup = {
   tokenBalance: number;
   gasLimit: number;
 };
-export type L1TestSetup = {
-  l1Token: TestToken;
-  lpL1: L1;
+export type EntryTestSetup = {
+  entryToken: TestToken;
+  lpEntry: Entry;
 } & CommonTestSetup;
 
-export type L2TestSetup = {
-  l2Token: TestToken;
-  lpL2: L2;
-  customerL2: L2;
+export type ExitTestSetup = {
+  exitToken: TestToken;
+  lpExit: Exit;
+  customerExit: Exit;
 } & CommonTestSetup;
 
-export type TestSetup = L1TestSetup & L2TestSetup;
+export type TestSetup = EntryTestSetup & ExitTestSetup;
 
-export async function distributeL1Tokens(setup: L1TestSetup) {
-  const { l1Token, lpL1, customerWallet, tokenBalance } = setup;
+export async function distributeEntryTokens(setup: EntryTestSetup) {
+  const { entryToken, lpEntry, customerWallet, tokenBalance } = setup;
 
   await approveAndDistribute(
-    l1Token,
-    lpL1.address,
+    entryToken,
+    lpEntry.address,
     customerWallet,
     tokenBalance
   );
 }
-export async function distributeL2Tokens(setup: L2TestSetup) {
-  const { l2Token, lpL2, customerWallet, tokenBalance } = setup;
+export async function distributeExitTokens(setup: ExitTestSetup) {
+  const { exitToken, lpExit, customerWallet, tokenBalance } = setup;
   await approveAndDistribute(
-    l2Token,
-    lpL2.address,
+    exitToken,
+    lpExit.address,
     customerWallet,
     tokenBalance
   );
@@ -104,34 +104,36 @@ async function approveAndDistribute(
 }
 
 export async function deposit(
-  setup: L2TestSetup,
+  setup: ExitTestSetup,
   trustedNonce: number,
   trustedAmount: number,
-  l1Recipient?: string
+  entryRecipient?: string
 ) {
-  const { customerWallet, l2Token, customerL2 } = setup;
+  const { customerWallet, exitToken, customerExit } = setup;
   const depositAmount = 1;
-  const deposit: L2DepositStruct = {
+  const deposit: ExitDepositStruct = {
     trustedNonce,
     trustedAmount,
     depositAmount,
-    l1Recipient: l1Recipient || customerWallet.address,
-    token: l2Token.address,
+    entryRecipient: entryRecipient || customerWallet.address,
+    token: exitToken.address,
   };
 
-  await waitForTx(customerL2.depositOnL2(deposit, { value: depositAmount }));
+  await waitForTx(
+    customerExit.depositOnExit(deposit, { value: depositAmount })
+  );
 }
 
 export async function authorizeWithdrawal(
-  setup: L2TestSetup,
+  setup: ExitTestSetup,
   trustedNonce: number,
   numTickets = 2
-): Promise<{ tickets: L1TicketStruct[]; signature: ethersTypes.Signature }> {
-  const { lpL2, gasLimit } = setup;
+): Promise<{ tickets: EntryTicketStruct[]; signature: ethersTypes.Signature }> {
+  const { lpExit, gasLimit } = setup;
 
-  const tickets: L1TicketStruct[] = [];
+  const tickets: EntryTicketStruct[] = [];
   for (let i = 0; i < numTickets; i++) {
-    tickets.push(ticketToL1Ticket(await lpL2.tickets(trustedNonce + i)));
+    tickets.push(ticketToEntryTicket(await lpExit.tickets(trustedNonce + i)));
   }
 
   const ticketsWithNonce: TicketsWithNonce = {
@@ -140,7 +142,7 @@ export async function authorizeWithdrawal(
   };
   const signature = signData(hashTickets(ticketsWithNonce), lpPK);
   await waitForTx(
-    lpL2.authorizeWithdrawal(
+    lpExit.authorizeWithdrawal(
       trustedNonce,
       trustedNonce + numTickets - 1,
       signature,
@@ -153,10 +155,10 @@ export async function authorizeWithdrawal(
   return { tickets, signature };
 }
 
-export function ticketToL1Ticket(ticket: TicketStruct): L1TicketStruct {
+export function ticketToEntryTicket(ticket: TicketStruct): EntryTicketStruct {
   return {
     value: ticket.value,
-    l1Recipient: ticket.l1Recipient,
+    entryRecipient: ticket.entryRecipient,
     token: ticket.token,
   };
 }
@@ -164,9 +166,9 @@ export function ticketToL1Ticket(ticket: TicketStruct): L1TicketStruct {
  *
  * @param testSetup A TestSetup object that contains various contracts and wallets
  * @param trustedNonce The sum of all tickets starting with trustedNonce + new deposit must be <= trustedAmount
- * @param trustedAmount amount expected to be held on L1 contract
+ * @param trustedAmount amount expected to be held on Entry contract
  * @param numTickets number of tickets to include in the swap's batch
- * @returns receipt of the L1 claimBatch transaction
+ * @returns receipt of the Entry claimBatch transaction
  */
 export async function swap(
   setup: TestSetup,
@@ -183,15 +185,15 @@ export async function swap(
     trustedNonce,
     numTickets
   );
-  const { lpL1, gasLimit, lpL2 } = setup;
-  const l1TransactionReceipt = await waitForTx(
-    lpL1.claimBatch(tickets, signature, { gasLimit })
+  const { lpEntry, gasLimit, lpExit } = setup;
+  const entryTransactionReceipt = await waitForTx(
+    lpEntry.claimBatch(tickets, signature, { gasLimit })
   );
 
   await ethers.provider.send("evm_increaseTime", [SAFETY_DELAY + 1]);
-  await waitForTx(lpL2.claimL2Funds(trustedNonce));
+  await waitForTx(lpExit.claimExitFunds(trustedNonce));
 
-  // TODO: This ought to estimate the total user cost. The cost of the L1 transaction
+  // TODO: This ought to estimate the total user cost. The cost of the Entry transaction
   // is currently used as a rough estimate of the total user cost.
-  return l1TransactionReceipt;
+  return entryTransactionReceipt;
 }

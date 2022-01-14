@@ -3,16 +3,16 @@ pragma solidity ^0.8.10;
 
 import "./common.sol";
 
-struct L2Deposit {
-    // the nonce of the most recent "L1AmountAssertion" that Alice trusts
+struct ExitDeposit {
+    // the nonce of the most recent "EntryAmountAssertion" that Alice trusts
     uint256 trustedNonce;
-    // the amount that Alice believes to be available on L1 for tickets with
+    // the amount that Alice believes to be available on Entry for tickets with
     // nonce *greater than trustedNonce*
     uint256 trustedAmount;
-    // the amount Alice wishes to claim on L1
+    // the amount Alice wishes to claim on Entry
     uint256 depositAmount;
-    // Alice's address on L1
-    address l1Recipient;
+    // Alice's address on Entry
+    address entryRecipient;
     /// The address of the ERC20 token.
     address token;
 }
@@ -32,24 +32,24 @@ struct Batch {
 }
 
 struct TokenPair {
-    address l1Token;
-    address l2Token;
+    address entryToken;
+    address exitToken;
 }
 
 // TODO: update these values after prototype phase
 uint256 constant maxAuthDelay = 600;
 uint256 constant safetyDelay = 600;
 
-contract L2 is SignatureChecker {
+contract Exit is SignatureChecker {
     Ticket[] public tickets;
     // `batches` is used to record the fact that tickets with nonce between startingNonce and startingNonce + numTickets-1 are authorized or withdrawn.
     // Indexed by nonce
     mapping(uint256 => Batch) batches;
 
-    /// Maps a L1 token address to the L2 token address.
-    mapping(address => address) public l1TokenMap;
-    /// Maps a L2 token address to the L1 token address.
-    mapping(address => address) public l2TokenMap;
+    /// Maps a Entry token address to the Exit token address.
+    mapping(address => address) public entryTokenMap;
+    /// Maps a Exit token address to the Entry token address.
+    mapping(address => address) public exitTokenMap;
     uint256 nextBatchStart = 0;
 
     // TODO: Eventually this should probably use a well-tested ownership library.
@@ -63,19 +63,19 @@ contract L2 is SignatureChecker {
         require(msg.sender == owner, "Only the owner can add token pairs");
         for (uint256 i = 0; i < pairs.length; i++) {
             require(
-                l2TokenMap[pairs[i].l2Token] == address(0),
-                "A mapping exists for the L2 token"
+                exitTokenMap[pairs[i].exitToken] == address(0),
+                "A mapping exists for the Exit token"
             );
             require(
-                l1TokenMap[pairs[i].l1Token] == address(0),
-                "A mapping exists for the L1 token"
+                entryTokenMap[pairs[i].entryToken] == address(0),
+                "A mapping exists for the Entry token"
             );
-            l2TokenMap[pairs[i].l2Token] = pairs[i].l1Token;
-            l1TokenMap[pairs[i].l1Token] = pairs[i].l2Token;
+            exitTokenMap[pairs[i].exitToken] = pairs[i].entryToken;
+            entryTokenMap[pairs[i].entryToken] = pairs[i].exitToken;
         }
     }
 
-    function depositOnL2(L2Deposit calldata deposit) public payable {
+    function depositOnExit(ExitDeposit calldata deposit) public payable {
         uint256 amountAvailable = deposit.trustedAmount;
         uint256 trustedNonce = deposit.trustedNonce;
 
@@ -85,15 +85,15 @@ contract L2 is SignatureChecker {
         }
 
         // We don't allow tickets to be registered if there are not enough funds
-        // remaining on L1 after accounting for already registered tickets.
+        // remaining on Entry after accounting for already registered tickets.
         require(
             amountAvailable >= amountReserved + deposit.depositAmount,
             "Must have enough funds for ticket"
         );
 
         require(
-            l2TokenMap[deposit.token] != address(0),
-            "There is no L2 token for this L1 token"
+            exitTokenMap[deposit.token] != address(0),
+            "There is no Exit token for this Entry token"
         );
 
         IERC20 tokenContract = IERC20(deposit.token);
@@ -104,10 +104,10 @@ contract L2 is SignatureChecker {
         );
 
         Ticket memory ticket = Ticket({
-            l1Recipient: deposit.l1Recipient,
+            entryRecipient: deposit.entryRecipient,
             value: deposit.depositAmount,
             createdAt: block.timestamp,
-            token: l2TokenMap[deposit.token]
+            token: exitTokenMap[deposit.token]
         });
 
         // ticket's nonce is now its index in `tickets`
@@ -115,7 +115,7 @@ contract L2 is SignatureChecker {
     }
 
     // TODO: This public function is added to force hardhat to generate
-    // the TicketStruct type in its l2.ts output
+    // the TicketStruct type in its exit.ts output
     function compareWithFirstTicket(Ticket calldata t)
         public
         view
@@ -156,12 +156,14 @@ contract L2 is SignatureChecker {
         view
         returns (Batch memory, TicketsWithNonce memory)
     {
-        L1Ticket[] memory ticketsToAuthorize = new L1Ticket[](last - first + 1);
+        EntryTicket[] memory ticketsToAuthorize = new EntryTicket[](
+            last - first + 1
+        );
         uint256 total = 0;
         for (uint256 i = first; i <= last; i++) {
             Ticket memory t = tickets[i];
-            ticketsToAuthorize[i - first] = L1Ticket(
-                t.l1Recipient,
+            ticketsToAuthorize[i - first] = EntryTicket(
+                t.entryRecipient,
                 t.value,
                 t.token
             );
@@ -178,7 +180,7 @@ contract L2 is SignatureChecker {
         );
     }
 
-    function claimL2Funds(uint256 first) public {
+    function claimExitFunds(uint256 first) public {
         Batch memory batch = batches[first];
         require(
             batch.status == BatchStatus.Authorized,
@@ -194,8 +196,8 @@ contract L2 is SignatureChecker {
 
         for (uint256 i = first; i < first + batch.numTickets; i++) {
             Ticket memory ticket = tickets[i];
-            // Since the ticket token is validated when it is registered, we can be sure that l1TokenMap[ticket.token])!= address(0)
-            IERC20 tokenContract = IERC20(l1TokenMap[ticket.token]);
+            // Since the ticket token is validated when it is registered, we can be sure that entryTokenMap[ticket.token])!= address(0)
+            IERC20 tokenContract = IERC20(entryTokenMap[ticket.token]);
             tokenContract.transfer(owner, ticket.value);
         }
     }
@@ -214,7 +216,7 @@ contract L2 is SignatureChecker {
         uint256 honestDelta,
         uint256 fraudStartNonce,
         uint256 fraudDelta,
-        L1Ticket[] calldata fraudTickets,
+        EntryTicket[] calldata fraudTickets,
         Signature calldata fraudSignature
     ) public {
         bytes32 message = keccak256(
@@ -230,12 +232,12 @@ contract L2 is SignatureChecker {
         );
 
         Ticket memory t = tickets[honestStartNonce + honestDelta];
-        L1Ticket memory correctTicket = L1Ticket(
-            t.l1Recipient,
+        EntryTicket memory correctTicket = EntryTicket(
+            t.entryRecipient,
             t.value,
             t.token
         );
-        L1Ticket memory fraudTicket = fraudTickets[fraudDelta];
+        EntryTicket memory fraudTicket = fraudTickets[fraudDelta];
         require(
             !ticketsEqual(correctTicket, fraudTicket),
             "Honest and fraud tickets must differ"
@@ -248,9 +250,9 @@ contract L2 is SignatureChecker {
         );
 
         for (uint256 i = honestStartNonce; i < honestBatch.numTickets; i++) {
-            // Since the ticket token is validated when it is registered, we can be sure that l1TokenMap[ticket.token])!= address(0)
-            IERC20 tokenContract = IERC20(l1TokenMap[tickets[i].token]);
-            tokenContract.transfer(tickets[i].l1Recipient, tickets[i].value);
+            // Since the ticket token is validated when it is registered, we can be sure that entryTokenMap[ticket.token])!= address(0)
+            IERC20 tokenContract = IERC20(entryTokenMap[tickets[i].token]);
+            tokenContract.transfer(tickets[i].entryRecipient, tickets[i].value);
         }
 
         batches[honestStartNonce].status = BatchStatus.Withdrawn;
@@ -274,10 +276,10 @@ contract L2 is SignatureChecker {
         batches[nextBatchStart] = batch;
         batch.status = BatchStatus.Withdrawn;
         nextBatchStart = lastNonce + 1;
-        // Since the ticket token is validated when it is registered, we can be sure that l1TokenMap[ticket.token])!= address(0)
-        IERC20 tokenContract = IERC20(l1TokenMap[tickets[lastNonce].token]);
+        // Since the ticket token is validated when it is registered, we can be sure that entryTokenMap[ticket.token])!= address(0)
+        IERC20 tokenContract = IERC20(entryTokenMap[tickets[lastNonce].token]);
         tokenContract.transfer(
-            tickets[lastNonce].l1Recipient,
+            tickets[lastNonce].entryRecipient,
             tickets[lastNonce].value
         );
     }

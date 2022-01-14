@@ -1,4 +1,4 @@
-import { TicketStruct } from "../contract-types/L1";
+import { TicketStruct } from "../contract-types/Entry";
 
 export type TicketsWithNonce = {
   startNonce: number;
