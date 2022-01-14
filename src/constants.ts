@@ -1,5 +1,5 @@
 export const SIGNED_SWAPS_ABI_TYPE = [
-  "tuple(uint256 startNonce, tuple(address l1Recipient, uint256 value, address token)[]) ",
+  "tuple(uint256 startNonce, tuple(address entryChainRecipient, uint256 value, address token)[]) ",
 ];
 
 export const USE_ERC20 = process.env.USE_ERC20 === "true";
@@ -7,6 +7,6 @@ export const USE_ERC20 = process.env.USE_ERC20 === "true";
 export const ETH_TOKEN_ADDRESS = "0x0000000000000000000000000000000000000000";
 
 // It is VERY important that these values match the values in
-// l2.sol
+// exitChain.sol
 export const MAX_AUTH_DELAY = 600;
 export const SAFETY_DELAY = 600;

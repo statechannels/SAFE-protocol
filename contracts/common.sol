@@ -3,10 +3,9 @@ pragma solidity ^0.8.10;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-
-struct L1Ticket {
+struct EntryChainTicket {
     /// Who will get the funds if executed
-    address l1Recipient;
+    address entryChainRecipient;
     /// The amount of funds to send.
     uint256 value;
     /// The address of the ERC20 token to use.
@@ -15,7 +14,7 @@ struct L1Ticket {
 
 struct Ticket {
     /// Who will get the funds if executed
-    address l1Recipient;
+    address entryChainRecipient;
     /// The amount of funds to send.
     uint256 value;
     /// The timestamp when the ticket was registered
@@ -26,7 +25,7 @@ struct Ticket {
 
 struct TicketsWithNonce {
     uint256 startNonce;
-    L1Ticket[] tickets;
+    EntryChainTicket[] tickets;
 }
 
 struct Signature {
@@ -47,11 +46,12 @@ abstract contract SignatureChecker {
         return ecrecover(prefixedHash, signature.v, signature.r, signature.s);
     }
 
-    function ticketsEqual(L1Ticket memory t1, L1Ticket memory t2)
-        public
-        pure
-        returns (bool)
-    {
-        return (t1.value == t2.value) && (t1.l1Recipient == t2.l1Recipient);
+    function ticketsEqual(
+        EntryChainTicket memory t1,
+        EntryChainTicket memory t2
+    ) public pure returns (bool) {
+        return
+            (t1.value == t2.value) &&
+            (t1.entryChainRecipient == t2.entryChainRecipient);
     }
 }
