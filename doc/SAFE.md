@@ -2,7 +2,7 @@
 
 # Abstract
 
-In this paper, we introduce the Stingy Asymmetric Fast Exit (SAFE) protocol for withdrawing funds from a layer 2 system (such as an optimistic roll-up) to a layer 1 system (such as Ethereum mainnet). SAFE drastically reduces cost compared to existing solutions while maintaining trustlessness and security. We demonstrate transfers with a marginal L1 overhead of under 1500 mainnet Ethereum gas per transfer, based on a preliminary Solidity prototype.
+In this paper, we introduce the Secure Asymmetric Frugal Exchange (SAFE) protocol for withdrawing funds from a layer 2 system (such as an optimistic roll-up) to a layer 1 system (such as Ethereum mainnet). SAFE drastically reduces cost compared to existing solutions while maintaining trustlessness and security. We demonstrate transfers with a marginal L1 overhead of under 1500 mainnet Ethereum gas per transfer, based on a preliminary Solidity prototype.
 
 # Overview
 
