@@ -35,6 +35,7 @@
     "lint:check": "yarn run eslint . --ext .js,.ts",
     "lint:write": "yarn run eslint . --ext .js,.ts --fix",
     "prettier:check": "prettier --check .",
-    "prettier:write": "prettier --write ."
+    "prettier:write": "prettier --write .",
+    "deploy:optimism-kovan":"yarn hardhat run ./deploy/exit-chain.ts --network optimismKovan"
   }
 }

@@ -4,6 +4,12 @@ import "@typechain/hardhat";
 import "hardhat-gas-reporter";
 import { HardhatUserConfig } from "hardhat/types";
 
+const OPTIMISM_ALCHEMY_API_URL =
+  "See https://www.notion.so/statechannels/Optimism-Deployment-Accounts-b861223417374b3b929824df2be3dab6";
+
+const OPTIMISM_KOVAN_TEST_ACCOUNT =
+  "See https://www.notion.so/statechannels/Optimism-Deployment-Accounts-b861223417374b3b929824df2be3dab6";
+
 const config: HardhatUserConfig = {
   typechain: {
     outDir: "contract-types",
@@ -19,6 +25,12 @@ const config: HardhatUserConfig = {
     },
   },
   networks: {
+    optimismKovan: {
+      hardfork: "london",
+      url: OPTIMISM_ALCHEMY_API_URL,
+      accounts: [`${OPTIMISM_KOVAN_TEST_ACCOUNT}`],
+    },
+
     hardhat: {
       hardfork: "london",
 
