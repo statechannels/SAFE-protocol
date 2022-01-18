@@ -1,5 +1,5 @@
 {
-  "include": ["src", "test", "deploy"],
+  "include": ["src", "test", "deploy", "scripts"],
   "files": ["./hardhat.config.ts"],
   "exclude": [],
   "compilerOptions": {
