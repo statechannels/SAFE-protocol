@@ -148,6 +148,6 @@ it("gas benchmarking", async () => {
 
     nonce += batchSize;
   }
-}).timeout(120_000);
+}).timeout(360_000);
 
 after(() => printScenarioGasUsage(benchmarkResults));
