@@ -2,7 +2,7 @@ import { utils } from "ethers";
 import { ethers } from "hardhat";
 
 const TX_HASH =
-  "0xc45cea890d83ed2084fa9996c29bdb9efeccad14c514abb8d8553735a81e884a";
+  "0x4315324018b6e9bd8b2b0e0d04479dc934bfdbc1ae6bebc0b4e41544b6b106bf";
 
 async function getRaw() {
   const transaction = await ethers.provider.getTransaction(TX_HASH);

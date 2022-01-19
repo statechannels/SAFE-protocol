@@ -1,6 +1,7 @@
 import { ethers } from "hardhat";
-import { L2__factory } from "../contract-types/factories/L2__factory";
-import { TestToken__factory } from "../contract-types/factories/TestToken__factory";
+import { L1__factory } from "../../contract-types/factories/L1__factory";
+
+import { TestToken__factory } from "../../contract-types/factories/TestToken__factory";
 const tokenBalance = 1_000_000;
 
 async function main() {
@@ -10,13 +11,14 @@ async function main() {
 
   console.log("Account balance:", (await deployer.getBalance()).toString());
 
-  const l2Deployer = new L2__factory(deployer);
+  const l1Deployer = new L1__factory(deployer);
   const tokenDeployer = new TestToken__factory(deployer);
 
   const token = await tokenDeployer.deploy(tokenBalance);
   console.log(`Token contract deployed at ${token.address}`);
-  const l2 = await l2Deployer.deploy();
-  console.log(`Exit chain contract deployed at ${l2.address}`);
+  const l1 = await l1Deployer.deploy();
+
+  console.log(`Entry chain contract deployed at ${l1.address}`);
 }
 
 main()
