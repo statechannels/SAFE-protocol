@@ -14,6 +14,7 @@ import {
   customerPK,
   distributeEntryChainTokens,
   EntryChainTestSetup,
+  getOptimismL1Fee,
   lpPK,
   printScenarioGasUsage,
   ScenarioGasUsage,
@@ -41,10 +42,13 @@ async function runScenario(
     batchSize,
     customerMode
   );
-  const { gasUsed } = await waitForTx(
-    lpEntryChain.claimBatch(tickets, signature)
-  );
-  return { totalGasUsed: gasUsed, batchSize };
+  const transResult = await lpEntryChain.claimBatch(tickets, signature);
+  const { gasUsed } = await waitForTx(transResult);
+  return {
+    totalGasUsed: gasUsed,
+    batchSize,
+    optimismCost: getOptimismL1Fee(transResult),
+  };
 }
 
 async function generateTickets(

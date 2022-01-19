@@ -1,5 +1,5 @@
 import Table from "cli-table";
-import { BigNumber, Wallet } from "ethers";
+import { BigNumber, Transaction, utils, Wallet } from "ethers";
 import { ethers as ethersTypes } from "ethers";
 import {
   EntryChainEscrow,
@@ -15,23 +15,42 @@ import { TicketsWithNonce } from "../src/types";
 import { hashTickets, signData } from "../src/utils";
 import { ethers } from "hardhat";
 import { SAFETY_DELAY } from "../src/constants";
+import _ from "underscore";
 
 export type ScenarioGasUsage = {
   batchSize: number;
   totalGasUsed: BigNumber;
+  optimismCost: BigNumber;
 };
 
 export function printScenarioGasUsage(scenarios: ScenarioGasUsage[]) {
   console.log("EntryChain claimBatch Gas Usage");
   const table = new Table({
-    head: ["Ticket Batch Size", "Average Gas Per Ticket", "Total Gas Used"],
+    head: [
+      "Ticket Batch Size",
+      "Average Gas Per Ticket",
+      "Total Gas Used",
+      "Total Optimism L1 Fee",
+      "Average Optimism L1 Fee Per Ticket",
+    ],
     colAligns: ["right", "right", "right"],
   });
   for (const scenario of scenarios) {
     const averagePerClaim = scenario.totalGasUsed
       .div(scenario.batchSize)
       .toNumber();
-    table.push([scenario.batchSize, averagePerClaim, scenario.totalGasUsed]);
+
+    const averageOptimismCost = scenario.optimismCost
+      .div(scenario.batchSize)
+      .toNumber();
+
+    table.push([
+      scenario.batchSize,
+      averagePerClaim,
+      scenario.totalGasUsed,
+      scenario.optimismCost,
+      averageOptimismCost,
+    ]);
   }
   console.log(table.toString());
 }
@@ -46,7 +65,9 @@ export const lpPK =
 export const customer2Address = "0xAAAB35381A38C4fF4967DC29470F0f2637295983";
 
 export async function waitForTx(
-  txPromise: Promise<ethersTypes.providers.TransactionResponse>
+  txPromise:
+    | Promise<ethersTypes.providers.TransactionResponse>
+    | ethersTypes.providers.TransactionResponse
 ) {
   return (await txPromise).wait();
 }
@@ -210,4 +231,37 @@ export async function swap(
   // TODO: This ought to estimate the total user cost. The cost of the EntryChain transaction
   // is currently used as a rough estimate of the total user cost.
   return entryChainTransactionReceipt;
+}
+
+/**
+ * Gets the optimism L1 fee for a given transaction
+ * Based on https://github.com/ethereum-optimism/optimism/blob/639e5b13f2ab94b7b49e1f8114ed05a064df8a27/packages/contracts/contracts/L2/predeploys/OVM_GasPriceOracle.sol#L150
+ * @param tx
+ * @returns
+ */
+export function getOptimismL1Fee(tx: Transaction) {
+  // This is an adjustable value set in the oracle contract.
+  // It can be seen here https://optimistic.etherscan.io/address/0x420000000000000000000000000000000000000f#readContract
+  const overhead = 2100;
+
+  const data = getRawTransaction(tx);
+  let total = BigNumber.from(0);
+  for (let i = 2; i < data.length; i++) {
+    if (data.slice(i, i + 2) === "00") {
+      total = total.add(4);
+    } else {
+      total = total.add(16);
+    }
+  }
+
+  return total.add(overhead).add(68 * 16);
+}
+
+export function getRawTransaction(tx: Transaction) {
+  // These are the fields that optimism will publish to L1 as call data.
+  const raw = utils.serializeTransaction(
+    _.pick(tx, ["nonce", "data", "gasPrice", "gasLimit", "to", "value"])
+  );
+
+  return raw;
 }
