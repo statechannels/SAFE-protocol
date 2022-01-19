@@ -11,6 +11,7 @@ import { EntryChainTicketStruct } from "../contract-types/EntryChainEscrow";
 import { TicketsWithNonce } from "../src/types";
 import { hashTickets, signData } from "../src/utils";
 import {
+  approveAndDistribute,
   customerPK,
   distributeEntryChainTokens,
   EntryChainTestSetup,
@@ -20,16 +21,28 @@ import {
   ScenarioGasUsage,
   waitForTx,
 } from "./utils";
+import { TokenPairStruct } from "../contract-types/ExitChainEscrow";
+import { TestToken } from "../contract-types/TestToken";
 
 async function createCustomer(): Promise<string> {
-  const { entryChainToken } = testSetup;
-  const { address } = Wallet.createRandom({}).connect(ethers.provider);
+  const wallet = Wallet.createRandom({}).connect(ethers.provider);
+  const fundTx = { to: wallet.address, value: ethers.utils.parseEther("1") };
+  await waitForTx(testSetup.lpWallet.sendTransaction(fundTx));
   // We assume the customer currently holds, or has previously held, some of the ERC20 tokens on EntryChain.
   // To simulate this we transfer a small amount of tokens to the customer's address, triggering the initial storage write.
   // This prevents the gas cost of claimBatch including a write to zero storage cost for the first time the customer receives tokens.
-  await waitForTx(entryChainToken.transfer(address, 1));
 
-  return address;
+  for (const token of tokens) {
+    await approveAndDistribute(
+      token.contract,
+      testSetup.lpEntryChain.address,
+      wallet,
+      testSetup.tokenBalance,
+      100
+    );
+  }
+
+  return wallet.address;
 }
 async function runScenario(
   nonce: number,
@@ -61,16 +74,16 @@ async function generateTickets(
   signature: ethersTypes.Signature;
 }> {
   const tickets: EntryChainTicketStruct[] = [];
-  const { entryChainToken } = testSetup;
   let customer = await createCustomer();
   for (let i = 0; i < numTickets; i++) {
     if (customerMode === "Unique") {
       customer = await createCustomer();
     }
+    const randomToken = tokens[Math.floor(Math.random() * tokens.length)];
     tickets.push({
       entryChainRecipient: customer,
       value: amountOfTokens,
-      token: entryChainToken.address,
+      token: randomToken.contract.address,
     });
   }
   const ticketsWithNonce: TicketsWithNonce = {
@@ -85,6 +98,7 @@ async function generateTickets(
 
 let testSetup: EntryChainTestSetup;
 
+const tokens: Array<{ pair: TokenPairStruct; contract: TestToken }> = [];
 beforeEach(async () => {
   const lpWallet = new ethers.Wallet(lpPK, ethers.provider);
   const customerWallet = new ethers.Wallet(customerPK, ethers.provider);
@@ -95,8 +109,16 @@ beforeEach(async () => {
 
   const tokenBalance = 1_000_000;
   const gasLimit = 30_000_000;
-
   const entryChainToken = await tokenDeployer.deploy(tokenBalance);
+  for (let i = 0; i < 5; i++) {
+    const contract = await tokenDeployer.deploy(tokenBalance);
+    const randomAddress = Wallet.createRandom().address;
+    const pair = {
+      entryChainToken: contract.address,
+      exitChainToken: randomAddress,
+    };
+    tokens.push({ pair, contract });
+  }
 
   testSetup = {
     entryChainToken,
@@ -106,7 +128,6 @@ beforeEach(async () => {
     tokenBalance,
     gasLimit,
   };
-
   await distributeEntryChainTokens(testSetup);
 });
 
@@ -120,7 +141,7 @@ it("gas benchmarking", async () => {
   await runScenario(nonce, 1, "Unique");
   nonce++;
 
-  const benchmarkScenarios = [1, 2, 5, 20, 50, 100];
+  const benchmarkScenarios = [1, 2, 5];
 
   for (const batchSize of benchmarkScenarios) {
     benchmarkResults.push(await runScenario(nonce, batchSize, "Unique"));
