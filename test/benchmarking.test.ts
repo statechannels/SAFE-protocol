@@ -120,14 +120,7 @@ it("gas benchmarking", async () => {
   await runScenario(nonce, 1, "Unique");
   nonce++;
 
-  const benchmarkScenarios = [
-    1,
-    2,
-    5,
-    20,
-    50,
-    86, // THE GAS COST IS ... UNDER 9000!!!
-  ];
+  const benchmarkScenarios = [1, 2, 5, 20, 50, 100];
 
   for (const batchSize of benchmarkScenarios) {
     benchmarkResults.push(await runScenario(nonce, batchSize, "Unique"));
