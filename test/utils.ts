@@ -115,13 +115,14 @@ export async function approveAndDistribute(
   testToken: TestToken,
   contractAddress: string,
   customerWallet: Wallet,
-  tokenBalance: number
+  tokenBalance: number,
+  amount?: number
 ): Promise<void> {
   // Transfer 1/4 to the customer account
-  await testToken.transfer(customerWallet.address, tokenBalance / 4);
+  await testToken.transfer(customerWallet.address, amount ?? tokenBalance / 4);
 
   // Transfer 1/4 to the  contract for payouts
-  await testToken.transfer(contractAddress, tokenBalance / 4);
+  await testToken.transfer(contractAddress, amount ?? tokenBalance / 4);
 
   // Approve transfers for the contract
   await testToken.approve(contractAddress, tokenBalance);
