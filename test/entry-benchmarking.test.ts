@@ -132,7 +132,7 @@ beforeEach(async () => {
 });
 
 const benchmarkResults: ScenarioGasUsage[] = [];
-it("gas benchmarking", async () => {
+it("entry gas benchmarking", async () => {
   let nonce = 0;
 
   // The FIRST batch that is claimed on EntryChain incurs a write-to-zero-storage cost, which makes
@@ -148,6 +148,6 @@ it("gas benchmarking", async () => {
 
     nonce += batchSize;
   }
-}).timeout(360_000);
+}).timeout(1_000_000);
 
 after(() => printScenarioGasUsage(benchmarkResults));

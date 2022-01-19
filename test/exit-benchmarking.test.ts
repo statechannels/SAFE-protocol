@@ -183,7 +183,7 @@ beforeEach(async () => {
 });
 
 const benchmarkResults: ExitChainScenarioGasUsage[] = [];
-it("gas benchmarking", async () => {
+it("exit gas benchmarking", async () => {
   let nonce = 0;
   // Perform an initial scenario run to
   await runScenario(1, nonce);
@@ -194,6 +194,6 @@ it("gas benchmarking", async () => {
     benchmarkResults.push(...(await runScenario(batchSize, nonce)));
     nonce += batchSize;
   }
-}).timeout(360_000);
+}).timeout(1_000_000);
 
 after(() => printExitScenarioGasUsage(benchmarkResults));
