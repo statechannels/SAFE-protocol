@@ -2,15 +2,15 @@ import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 chai.use(chaiAsPromised);
 
-import { BigNumber } from "ethers";
+import { BigNumber, Wallet } from "ethers";
 import { ethers } from "hardhat";
 
 import { TestToken__factory } from "../contract-types/factories/TestToken__factory";
 import {
+  approveAndDistribute,
   authorizeWithdrawal,
   customerPK,
   deposit,
-  distributeExitChainTokens,
   ExitChainTestSetup,
   getOptimismL1Fee,
   lpPK,
@@ -20,6 +20,8 @@ import {
 import { ExitChainEscrow__factory } from "../contract-types/factories/ExitChainEscrow__factory";
 import { SAFETY_DELAY } from "../src/constants";
 import Table from "cli-table";
+import { TokenPairStruct } from "../contract-types/ExitChainEscrow";
+import { TestToken } from "../contract-types/TestToken";
 
 type ExitChainScenarioGasUsage = ScenarioGasUsage & {
   type: "depositOnExitChain" | "authorizeWithdrawal" | "claimExitChainFunds";
@@ -35,6 +37,24 @@ const exitChainDeployer = new ExitChainEscrow__factory(lpWallet);
 const tokenDeployer = new TestToken__factory(lpWallet);
 let testSetup: ExitChainTestSetup;
 
+async function createCustomer(): Promise<Wallet> {
+  const wallet = Wallet.createRandom({}).connect(ethers.provider);
+
+  const fundTx = { to: wallet.address, value: ethers.utils.parseEther("1") };
+  await waitForTx(lpWallet.sendTransaction(fundTx));
+
+  for (const token of tokens) {
+    await approveAndDistribute(
+      token.contract,
+      testSetup.lpExitChain.address,
+      wallet,
+      tokenBalance,
+      100
+    );
+  }
+
+  return wallet;
+}
 export function printExitScenarioGasUsage(
   scenarios: ExitChainScenarioGasUsage[]
 ) {
@@ -78,11 +98,20 @@ async function runScenario(
 
   let totalDepositGas = BigNumber.from(0);
   let totalDepositOptimismFee = BigNumber.from(0);
+  const customers = [];
+  for (let i = 0; i < batchSize; i++) {
+    customers.push(await createCustomer());
+  }
 
   for (let i = 0; i < batchSize; i++) {
+    const randomToken = tokens[Math.floor(Math.random() * tokens.length)];
     const { gasUsed, optimismL1Fee } = await deposit(
-      testSetup,
-      trustedNonce,
+      {
+        ...testSetup,
+        exitChainToken: randomToken.contract,
+        customerExitChain: testSetup.lpExitChain.connect(customers[i]),
+      },
+      trustedNonce + i,
       trustedAmount
     );
 
@@ -123,19 +152,21 @@ async function runScenario(
   return results;
 }
 
+const tokens: Array<{ pair: TokenPairStruct; contract: TestToken }> = [];
 beforeEach(async () => {
-  const exitChainToken = await tokenDeployer.deploy(tokenBalance);
-  const entryChainTokenAddress = ethers.Wallet.createRandom().address;
+  for (let i = 0; i < 5; i++) {
+    const contract = await tokenDeployer.deploy(tokenBalance);
+    const randomAddress = Wallet.createRandom().address;
+    const pair = {
+      exitChainToken: contract.address,
+      entryChainToken: randomAddress,
+    };
+    tokens.push({ pair, contract });
+  }
 
   const exitChain = await exitChainDeployer.deploy();
 
-  await exitChain.registerTokenPairs([
-    {
-      entryChainToken: entryChainTokenAddress,
-
-      exitChainToken: exitChainToken.address,
-    },
-  ]);
+  await exitChain.registerTokenPairs(tokens.map((t) => t.pair));
   const customerExitChain = exitChain.connect(customerWallet);
 
   const lpExitChain = exitChain.connect(lpWallet);
@@ -145,13 +176,10 @@ beforeEach(async () => {
     lpWallet,
     gasLimit,
     customerExitChain,
-    exitChainToken,
-
+    exitChainToken: tokens[0].contract,
     customerWallet,
     tokenBalance,
   };
-
-  await distributeExitChainTokens(testSetup);
 });
 
 const benchmarkResults: ExitChainScenarioGasUsage[] = [];
@@ -160,12 +188,12 @@ it("gas benchmarking", async () => {
   // Perform an initial scenario run to
   await runScenario(1, nonce);
   nonce++;
-  const benchmarkScenarios = [1, 2, 5, 20, 50, 100];
+  const benchmarkScenarios = [1, 2, 100];
 
   for (const batchSize of benchmarkScenarios) {
     benchmarkResults.push(...(await runScenario(batchSize, nonce)));
     nonce += batchSize;
   }
-}).timeout(60_000);
+}).timeout(120_000);
 
 after(() => printExitScenarioGasUsage(benchmarkResults));
