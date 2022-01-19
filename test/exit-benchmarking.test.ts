@@ -188,7 +188,7 @@ it("gas benchmarking", async () => {
   // Perform an initial scenario run to
   await runScenario(1, nonce);
   nonce++;
-  const benchmarkScenarios = [1, 2, 100];
+  const benchmarkScenarios = [100];
 
   for (const batchSize of benchmarkScenarios) {
     benchmarkResults.push(...(await runScenario(batchSize, nonce)));
