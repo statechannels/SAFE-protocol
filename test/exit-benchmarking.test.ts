@@ -63,7 +63,9 @@ export function printExitScenarioGasUsage(
     head: [
       "Ticket Batch Size",
       "Exit Contract Function",
+      "Total Gas",
       "Average Gas Per Call",
+      "Total Optimism L1 Fee",
       "Average Optimism L1 Fee Per Call",
     ],
     colAligns: ["right", "right", "right"],
@@ -81,7 +83,9 @@ export function printExitScenarioGasUsage(
     table.push([
       scenario.batchSize,
       scenario.type,
+      scenario.totalGasUsed.toNumber(),
       gasPerCall.toNumber(),
+      scenario.optimismCost.toNumber(),
       optimismCostPerCall.toNumber(),
     ]);
   }
