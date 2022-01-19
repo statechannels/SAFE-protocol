@@ -137,7 +137,7 @@ export async function deposit(
   trustedNonce: number,
   trustedAmount: number,
   entryChainRecipient?: string
-) {
+): Promise<{ gasUsed: BigNumber; optimismL1Fee: BigNumber }> {
   const { customerWallet, exitChainToken, customerExitChain } = setup;
   const depositAmount = 1;
   const deposit: ExitChainDepositStruct = {
@@ -147,10 +147,11 @@ export async function deposit(
     entryChainRecipient: entryChainRecipient || customerWallet.address,
     token: exitChainToken.address,
   };
-
-  await waitForTx(
-    customerExitChain.depositOnExitChain(deposit, { value: depositAmount })
-  );
+  const result = await customerExitChain.depositOnExitChain(deposit);
+  const { gasUsed } = await waitForTx(result);
+  {
+    return { gasUsed, optimismL1Fee: getOptimismL1Fee(result) };
+  }
 }
 
 export async function authorizeWithdrawal(
@@ -160,6 +161,8 @@ export async function authorizeWithdrawal(
 ): Promise<{
   tickets: EntryChainTicketStruct[];
   signature: ethersTypes.Signature;
+  gasUsed: BigNumber;
+  optimismL1Fee: BigNumber;
 }> {
   const { lpExitChain, gasLimit } = setup;
 
@@ -175,18 +178,22 @@ export async function authorizeWithdrawal(
     tickets,
   };
   const signature = signData(hashTickets(ticketsWithNonce), lpPK);
-  await waitForTx(
-    lpExitChain.authorizeWithdrawal(
-      trustedNonce,
-      trustedNonce + numTickets - 1,
-      signature,
-      {
-        // TODO: remove this after addressing https://github.com/statechannels/SAFE-protocol/issues/70
-        gasLimit,
-      }
-    )
+  const authorizeResult = await lpExitChain.authorizeWithdrawal(
+    trustedNonce,
+    trustedNonce + numTickets - 1,
+    signature,
+    {
+      // TODO: remove this after addressing https://github.com/statechannels/SAFE-protocol/issues/70
+      gasLimit,
+    }
   );
-  return { tickets, signature };
+  const { gasUsed } = await waitForTx(authorizeResult);
+  return {
+    tickets,
+    signature,
+    gasUsed,
+    optimismL1Fee: getOptimismL1Fee(authorizeResult),
+  };
 }
 
 export function ticketToEntryChainTicket(
