@@ -29,11 +29,7 @@ async function deposit() {
   const result = await l2.depositOnL2(deposit);
   console.log(result);
   console.log(getRawTransaction(result));
-  const nodeResponse = await ethers.provider.send(
-    "eth_getRawTransactionByBlockHash",
-    [result.hash]
-  );
-  console.log(nodeResponse);
+
   await result.wait();
 }
 deposit()

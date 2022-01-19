@@ -82,7 +82,7 @@ export async function distributeL2Tokens(setup: L2TestSetup) {
   );
 }
 
-async function approveAndDistribute(
+export async function approveAndDistribute(
   testToken: TestToken,
   contractAddress: string,
   customerWallet: Wallet,
