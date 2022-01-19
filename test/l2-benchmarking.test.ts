@@ -184,7 +184,7 @@ beforeEach(async () => {
 });
 
 const benchmarkResults: ExitChainScenarioGasUsage[] = [];
-it.only("gas benchmarking", async () => {
+it("gas benchmarking", async () => {
   let nonce = 0;
   // The FIRST batch that is claimed on EntryChain incurs a write-to-zero-storage cost, which makes
   // for a counter-intuitive list of results. So, we trigger an initial swap before
