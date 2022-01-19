@@ -18,6 +18,7 @@ import { SAFETY_DELAY } from "../src/constants";
 import _ from "underscore";
 
 export type ScenarioGasUsage = {
+  description?: string;
   batchSize: number;
   totalGasUsed: BigNumber;
   optimismCost: BigNumber;
@@ -110,7 +111,7 @@ export async function distributeExitChainTokens(setup: ExitChainTestSetup) {
   );
 }
 
-async function approveAndDistribute(
+export async function approveAndDistribute(
   testToken: TestToken,
   contractAddress: string,
   customerWallet: Wallet,
