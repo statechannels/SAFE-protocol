@@ -93,8 +93,9 @@ export function printExitScenarioGasUsage(
 }
 
 async function runScenario(
+  nonce: number,
   batchSize: number,
-  trustedNonce: number
+  customerMode: "Unique" | "Same"
 ): Promise<ExitChainScenarioGasUsage[]> {
   const results: ExitChainScenarioGasUsage[] = [];
 
@@ -102,9 +103,15 @@ async function runScenario(
 
   let totalDepositGas = BigNumber.from(0);
   let totalDepositOptimismFee = BigNumber.from(0);
+  const sameCustomer = await createCustomer();
   const customers = [];
+
   for (let i = 0; i < batchSize; i++) {
-    customers.push(await createCustomer());
+    if (customerMode === "Unique") {
+      customers.push(await createCustomer());
+    } else {
+      customers.push(sameCustomer);
+    }
   }
 
   for (let i = 0; i < batchSize; i++) {
@@ -115,7 +122,7 @@ async function runScenario(
         exitChainToken: randomToken.contract,
         customerExitChain: testSetup.lpExitChain.connect(customers[i]),
       },
-      trustedNonce + i,
+      nonce + i,
       trustedAmount
     );
 
@@ -133,7 +140,7 @@ async function runScenario(
   const { lpExitChain } = testSetup;
   const authorizeResults = await authorizeWithdrawal(
     testSetup,
-    trustedNonce,
+    nonce,
     batchSize
   );
 
@@ -145,7 +152,7 @@ async function runScenario(
   });
   await ethers.provider.send("evm_increaseTime", [SAFETY_DELAY + 1]);
 
-  const claimResult = await lpExitChain.claimExitChainFunds(trustedNonce);
+  const claimResult = await lpExitChain.claimExitChainFunds(nonce);
   const claimReceipt = await waitForTx(claimResult);
   results.push({
     type: "claimExitChainFunds",
@@ -190,12 +197,12 @@ const benchmarkResults: ExitChainScenarioGasUsage[] = [];
 it("exit gas benchmarking", async () => {
   let nonce = 0;
   // Perform an initial scenario run to
-  await runScenario(1, nonce);
+  await runScenario(nonce, 1, "Unique");
   nonce++;
   const benchmarkScenarios = [100];
 
   for (const batchSize of benchmarkScenarios) {
-    benchmarkResults.push(...(await runScenario(batchSize, nonce)));
+    benchmarkResults.push(...(await runScenario(nonce, batchSize, "Unique")));
     nonce += batchSize;
   }
 }).timeout(1_000_000);
