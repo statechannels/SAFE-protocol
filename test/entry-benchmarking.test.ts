@@ -11,7 +11,7 @@ import { EntryChainTicketStruct } from "../contract-types/EntryChainEscrow";
 import { TicketsWithNonce } from "../src/types";
 import { hashTickets, signData } from "../src/utils";
 import {
-  approveAndSend,
+  createCustomer,
   customerPK,
   distributeEntryChainTokens,
   EntryChainTestSetup,
@@ -24,25 +24,6 @@ import {
 import { TokenPairStruct } from "../contract-types/ExitChainEscrow";
 import { TestToken } from "../contract-types/TestToken";
 
-async function createCustomer(): Promise<string> {
-  const wallet = Wallet.createRandom({}).connect(ethers.provider);
-  const fundTx = { to: wallet.address, value: ethers.utils.parseEther("1") };
-  await waitForTx(testSetup.lpWallet.sendTransaction(fundTx));
-  // We assume the customer currently holds, or has previously held, some of the ERC20 tokens on EntryChain.
-  // To simulate this we transfer a small amount of tokens to the customer's address, triggering the initial storage write.
-  // This prevents the gas cost of claimBatch including a write to zero storage cost for the first time the customer receives tokens.
-
-  for (const token of tokens) {
-    await approveAndSend(
-      token.contract,
-      testSetup.lpEntryChain.address,
-      wallet,
-      100
-    );
-  }
-
-  return wallet.address;
-}
 async function runScenario(
   nonce: number,
   batchSize: number,
@@ -55,12 +36,12 @@ async function runScenario(
     customerMode
   );
 
-  const transResult = await lpEntryChain.claimBatch(tickets, signature);
-  const { gasUsed } = await waitForTx(transResult);
+  const claimTransaction = await lpEntryChain.claimBatch(tickets, signature);
+  const { gasUsed } = await waitForTx(claimTransaction);
   return {
     totalGasUsed: gasUsed,
     batchSize,
-    optimismCost: getOptimismL1Fee(transResult),
+    optimismCost: getOptimismL1Fee(claimTransaction),
   };
 }
 
@@ -74,14 +55,24 @@ async function generateTickets(
   signature: ethersTypes.Signature;
 }> {
   const tickets: EntryChainTicketStruct[] = [];
-  let customer = await createCustomer();
+  let customer = await createCustomer(
+    testSetup.lpWallet,
+    testSetup.lpEntryChain.address,
+    tokens
+  );
   for (let i = 0; i < numTickets; i++) {
     if (customerMode === "Unique") {
-      customer = await createCustomer();
+      customer = await createCustomer(
+        testSetup.lpWallet,
+        testSetup.lpEntryChain.address,
+        tokens
+      );
     }
+    // Pick a random token from the list of supported tokens
     const randomToken = tokens[Math.floor(Math.random() * tokens.length)];
+
     tickets.push({
-      entryChainRecipient: customer,
+      entryChainRecipient: customer.address,
       value: amountOfTokens,
       token: randomToken.contract.address,
     });
@@ -109,8 +100,11 @@ beforeEach(async () => {
 
   const tokenBalance = 1_000_000;
   const gasLimit = 30_000_000;
+  const amountOfTokenContracts = 5;
+
   const entryChainToken = await tokenDeployer.deploy(tokenBalance);
-  for (let i = 0; i < 5; i++) {
+
+  for (let i = 0; i < amountOfTokenContracts; i++) {
     const contract = await tokenDeployer.deploy(tokenBalance);
     const randomAddress = Wallet.createRandom().address;
     const pair = {

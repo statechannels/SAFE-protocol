@@ -9,6 +9,7 @@ import {
   ExitChainEscrow,
   ExitChainDepositStruct,
   TicketStruct,
+  TokenPairStruct,
 } from "../contract-types/ExitChainEscrow";
 import { TestToken } from "../contract-types/TestToken";
 import { TicketsWithNonce } from "../src/types";
@@ -271,4 +272,23 @@ export function getRawTransaction(tx: Transaction) {
   );
 
   return raw;
+}
+export type TokenInfo = { pair: TokenPairStruct; contract: TestToken };
+export async function createCustomer(
+  lpWallet: Wallet,
+  contractAddress: string,
+  tokens: TokenInfo[]
+): Promise<Wallet> {
+  const wallet = Wallet.createRandom({}).connect(ethers.provider);
+
+  // Send some ETH to the customer for gas fees
+  const fundTx = { to: wallet.address, value: ethers.utils.parseEther("1") };
+  await waitForTx(lpWallet.sendTransaction(fundTx));
+
+  // Approve the contract to spend the token for the user and send them a small amount
+  for (const token of tokens) {
+    await approveAndSend(token.contract, contractAddress, wallet, 100);
+  }
+
+  return wallet;
 }
