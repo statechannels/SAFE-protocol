@@ -141,13 +141,13 @@ it("entry gas benchmarking", async () => {
   await runScenario(nonce, 1, "Unique");
   nonce++;
 
-  const benchmarkScenarios = [100];
+  const benchmarkScenarios = [1, 5, 25, 50, 100];
 
   for (const batchSize of benchmarkScenarios) {
     benchmarkResults.push(await runScenario(nonce, batchSize, "Unique"));
 
     nonce += batchSize;
   }
-}).timeout(1_000_000);
+}).timeout(120_000);
 
 after(() => printScenarioGasUsage(benchmarkResults));
