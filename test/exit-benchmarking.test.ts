@@ -7,8 +7,8 @@ import { ethers } from "hardhat";
 
 import { TestToken__factory } from "../contract-types/factories/TestToken__factory";
 import {
-  approveAndSend,
   authorizeWithdrawal,
+  createCustomer,
   customerPK,
   deposit,
   ExitChainTestSetup,
@@ -29,6 +29,7 @@ type ExitChainScenarioGasUsage = ScenarioGasUsage & {
 
 const gasLimit = 30_000_000;
 const tokenBalance = 1_000_000;
+const amountOfTokenContracts = 5;
 
 const customerWallet = new ethers.Wallet(customerPK, ethers.provider);
 const lpWallet = new ethers.Wallet(lpPK, ethers.provider);
@@ -37,24 +38,6 @@ const exitChainDeployer = new ExitChainEscrow__factory(lpWallet);
 const tokenDeployer = new TestToken__factory(lpWallet);
 let testSetup: ExitChainTestSetup;
 
-async function createCustomer(): Promise<Wallet> {
-  const wallet = Wallet.createRandom({}).connect(ethers.provider);
-
-  const fundTx = { to: wallet.address, value: ethers.utils.parseEther("1") };
-  await waitForTx(lpWallet.sendTransaction(fundTx));
-
-  for (const token of tokens) {
-    await approveAndSend(
-      token.contract,
-      testSetup.lpExitChain.address,
-      wallet,
-
-      100
-    );
-  }
-
-  return wallet;
-}
 export function printExitScenarioGasUsage(
   scenarios: ExitChainScenarioGasUsage[]
 ) {
@@ -103,18 +86,29 @@ async function runScenario(
 
   let totalDepositGas = BigNumber.from(0);
   let totalDepositOptimismFee = BigNumber.from(0);
-  const sameCustomer = await createCustomer();
+  const sameCustomer = await createCustomer(
+    testSetup.lpWallet,
+    testSetup.lpExitChain.address,
+    tokens
+  );
   const customers = [];
 
   for (let i = 0; i < batchSize; i++) {
     if (customerMode === "Unique") {
-      customers.push(await createCustomer());
+      customers.push(
+        await createCustomer(
+          testSetup.lpWallet,
+          testSetup.lpExitChain.address,
+          tokens
+        )
+      );
     } else {
       customers.push(sameCustomer);
     }
   }
 
   for (let i = 0; i < batchSize; i++) {
+    // Pick a random token from our token list and deposit with that
     const randomToken = tokens[Math.floor(Math.random() * tokens.length)];
     const { gasUsed, optimismL1Fee } = await deposit(
       {
@@ -122,7 +116,7 @@ async function runScenario(
         exitChainToken: randomToken.contract,
         customerExitChain: testSetup.lpExitChain.connect(customers[i]),
       },
-      nonce + i,
+      nonce + i, // This means the trusted nonce is just the nonce of the previous ticket
       trustedAmount
     );
 
@@ -150,22 +144,23 @@ async function runScenario(
     totalGasUsed: authorizeResults.gasUsed,
     optimismCost: authorizeResults.optimismL1Fee,
   });
+  // Increase the time on the chain so we can claim funds
   await ethers.provider.send("evm_increaseTime", [SAFETY_DELAY + 1]);
 
-  const claimResult = await lpExitChain.claimExitChainFunds(nonce);
-  const claimReceipt = await waitForTx(claimResult);
+  const claimTransaction = await lpExitChain.claimExitChainFunds(nonce);
+  const claimReceipt = await waitForTx(claimTransaction);
   results.push({
     type: "claimExitChainFunds",
     batchSize,
     totalGasUsed: claimReceipt.gasUsed,
-    optimismCost: getOptimismL1Fee(claimResult),
+    optimismCost: getOptimismL1Fee(claimTransaction),
   });
   return results;
 }
 
 const tokens: Array<{ pair: TokenPairStruct; contract: TestToken }> = [];
 beforeEach(async () => {
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < amountOfTokenContracts; i++) {
     const contract = await tokenDeployer.deploy(tokenBalance);
     const randomAddress = Wallet.createRandom().address;
     const pair = {
