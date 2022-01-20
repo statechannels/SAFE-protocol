@@ -7,7 +7,7 @@ import { ethers } from "hardhat";
 
 import { TestToken__factory } from "../contract-types/factories/TestToken__factory";
 import {
-  approveAndDistribute,
+  approveAndSend,
   authorizeWithdrawal,
   customerPK,
   deposit,
@@ -44,11 +44,11 @@ async function createCustomer(): Promise<Wallet> {
   await waitForTx(lpWallet.sendTransaction(fundTx));
 
   for (const token of tokens) {
-    await approveAndDistribute(
+    await approveAndSend(
       token.contract,
       testSetup.lpExitChain.address,
       wallet,
-      tokenBalance,
+
       100
     );
   }

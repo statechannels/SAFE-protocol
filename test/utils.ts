@@ -1,5 +1,5 @@
 import Table from "cli-table";
-import { BigNumber, Transaction, utils, Wallet } from "ethers";
+import { BigNumber, constants, Transaction, utils, Wallet } from "ethers";
 import { ethers as ethersTypes } from "ethers";
 import {
   EntryChainEscrow,
@@ -93,44 +93,42 @@ export type TestSetup = EntryChainTestSetup & ExitChainTestSetup;
 
 export async function distributeEntryChainTokens(setup: EntryChainTestSetup) {
   const { entryChainToken, lpEntryChain, customerWallet, tokenBalance } = setup;
-
-  await approveAndDistribute(
-    entryChainToken,
-    lpEntryChain.address,
-    customerWallet,
-    tokenBalance
+  // Transfer 1/4 to the contract for payouts
+  await waitForTx(
+    entryChainToken.transfer(lpEntryChain.address, tokenBalance / 4)
   );
+  // Transfer 1/4 to the customerWallet
+  await entryChainToken.transfer(customerWallet.address, tokenBalance / 4);
 }
 export async function distributeExitChainTokens(setup: ExitChainTestSetup) {
   const { exitChainToken, lpExitChain, customerWallet, tokenBalance } = setup;
-  await approveAndDistribute(
+
+  // Transfer 1/4 to the customerWallet and approve
+  await approveAndSend(
     exitChainToken,
     lpExitChain.address,
     customerWallet,
-    tokenBalance
+    tokenBalance / 4
   );
 }
 
-export async function approveAndDistribute(
-  testToken: TestToken,
+/**
+ *  Approves the contractAddress to spend ERC20 for account and sends amount tokens to account
+ * @param tokenContract A ERC20 contract
+ * @param contractAddress The entry or exit chain contract
+ * @param wallet The wallet that should approve and receive the tokens
+ * @param amount The amount of tokens to send
+ */
+export async function approveAndSend(
+  tokenContract: TestToken,
   contractAddress: string,
-  customerWallet: Wallet,
-  tokenBalance: number,
-  amount?: number
+  wallet: Wallet,
+  amount: number
 ): Promise<void> {
-  // Transfer 1/4 to the customer account
-  await testToken.transfer(customerWallet.address, amount ?? tokenBalance / 4);
-
-  // Transfer 1/4 to the  contract for payouts
-  await testToken.transfer(contractAddress, amount ?? tokenBalance / 4);
-
-  // Approve transfers for the contract
-  await testToken.approve(contractAddress, tokenBalance);
-
-  // Approve transfers for the contract for the customer
-  await testToken
-    .connect(customerWallet)
-    .approve(contractAddress, tokenBalance);
+  await waitForTx(tokenContract.transfer(wallet.address, amount));
+  await waitForTx(
+    tokenContract.connect(wallet).approve(contractAddress, constants.MaxUint256)
+  );
 }
 
 export async function deposit(
