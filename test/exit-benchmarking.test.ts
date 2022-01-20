@@ -201,6 +201,6 @@ it("exit gas benchmarking", async () => {
     benchmarkResults.push(...(await runScenario(nonce, batchSize, "Same")));
     nonce += batchSize;
   }
-}).timeout(120_000);
+}).timeout(60_000);
 
 after(() => printExitScenarioGasUsage(benchmarkResults));
