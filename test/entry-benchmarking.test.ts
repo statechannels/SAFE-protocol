@@ -11,7 +11,7 @@ import { EntryChainTicketStruct } from "../contract-types/EntryChainEscrow";
 import { TicketsWithNonce } from "../src/types";
 import { hashTickets, signData } from "../src/utils";
 import {
-  approveAndDistribute,
+  approveAndSend,
   customerPK,
   distributeEntryChainTokens,
   EntryChainTestSetup,
@@ -33,11 +33,10 @@ async function createCustomer(): Promise<string> {
   // This prevents the gas cost of claimBatch including a write to zero storage cost for the first time the customer receives tokens.
 
   for (const token of tokens) {
-    await approveAndDistribute(
+    await approveAndSend(
       token.contract,
       testSetup.lpEntryChain.address,
       wallet,
-      testSetup.tokenBalance,
       100
     );
   }
@@ -55,6 +54,7 @@ async function runScenario(
     batchSize,
     customerMode
   );
+
   const transResult = await lpEntryChain.claimBatch(tickets, signature);
   const { gasUsed } = await waitForTx(transResult);
   return {
@@ -118,6 +118,8 @@ beforeEach(async () => {
       exitChainToken: randomAddress,
     };
     tokens.push({ pair, contract });
+
+    await contract.transfer(lpEntryChain.address, tokenBalance / 4);
   }
 
   testSetup = {
