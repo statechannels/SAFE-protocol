@@ -199,12 +199,13 @@ it("exit gas benchmarking", async () => {
   // Perform an initial scenario run to
   await runScenario(nonce, 1, "Unique");
   nonce++;
-  const benchmarkScenarios = [100];
+
+  const benchmarkScenarios = [1, 5, 25, 50, 100];
 
   for (const batchSize of benchmarkScenarios) {
     benchmarkResults.push(...(await runScenario(nonce, batchSize, "Unique")));
     nonce += batchSize;
   }
-}).timeout(1_000_000);
+}).timeout(120_000);
 
 after(() => printExitScenarioGasUsage(benchmarkResults));
