@@ -105,14 +105,16 @@ beforeEach(async () => {
   const entryChainToken = await tokenDeployer.deploy(tokenBalance);
 
   for (let i = 0; i < amountOfTokenContracts; i++) {
+    // Deploy a new token
     const contract = await tokenDeployer.deploy(tokenBalance);
+    // Use a random address for it's pair since it represents an address on a different chain
     const randomAddress = Wallet.createRandom().address;
     const pair = {
       entryChainToken: contract.address,
       exitChainToken: randomAddress,
     };
     tokens.push({ pair, contract });
-
+    // Send 1/4 of the token balance to the contract for payouts
     await contract.transfer(lpEntryChain.address, tokenBalance / 4);
   }
 

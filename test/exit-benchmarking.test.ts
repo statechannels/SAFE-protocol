@@ -161,7 +161,9 @@ async function runScenario(
 const tokens: Array<{ pair: TokenPairStruct; contract: TestToken }> = [];
 beforeEach(async () => {
   for (let i = 0; i < amountOfTokenContracts; i++) {
+    // Deploy a new token contract
     const contract = await tokenDeployer.deploy(tokenBalance);
+    // Use a random address for it's pair since it represents an address on a different chain
     const randomAddress = Wallet.createRandom().address;
     const pair = {
       exitChainToken: contract.address,
@@ -172,9 +174,10 @@ beforeEach(async () => {
 
   const exitChain = await exitChainDeployer.deploy();
 
+  // Register all the token pairs we just created
   await exitChain.registerTokenPairs(tokens.map((t) => t.pair));
-  const customerExitChain = exitChain.connect(customerWallet);
 
+  const customerExitChain = exitChain.connect(customerWallet);
   const lpExitChain = exitChain.connect(lpWallet);
 
   testSetup = {
