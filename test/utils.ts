@@ -1,6 +1,13 @@
 import Table from "cli-table";
-import { BigNumber, constants, Transaction, utils, Wallet } from "ethers";
-import { ethers as ethersTypes } from "ethers";
+import {
+  BigNumber,
+  constants,
+  Transaction,
+  utils,
+  Wallet,
+  ethers as ethersTypes,
+} from "ethers";
+
 import {
   EntryChainEscrow,
   EntryChainTicketStruct,
