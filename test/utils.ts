@@ -254,7 +254,7 @@ export function getOptimismL1Fee(tx: Transaction) {
 
   const data = getRawTransaction(tx);
   let total = BigNumber.from(0);
-  for (let i = 2; i < data.length; i++) {
+  for (let i = 2; i < data.length; i += 2) {
     if (data.slice(i, i + 2) === "00") {
       total = total.add(4);
     } else {
