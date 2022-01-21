@@ -83,10 +83,13 @@ contract ExitChainEscrow is SignatureChecker {
     {
         uint256 amountAvailable = deposit.trustedAmount;
         uint256 trustedNonce = deposit.trustedNonce;
+        address entryChainToken = exitChainTokenMap[deposit.token];
 
         uint256 amountReserved = 0;
         for (uint256 i = trustedNonce; i < tickets.length; i++) {
-            amountReserved += tickets[i].value;
+            if (tickets[i].token == entryChainToken) {
+                amountReserved += tickets[i].value;
+            }
         }
 
         // We don't allow tickets to be registered if there are not enough funds
@@ -97,7 +100,7 @@ contract ExitChainEscrow is SignatureChecker {
         );
 
         require(
-            exitChainTokenMap[deposit.token] != address(0),
+            entryChainToken != address(0),
             "There is no ExitChain token for this EntryChain token"
         );
 
@@ -112,7 +115,7 @@ contract ExitChainEscrow is SignatureChecker {
             entryChainRecipient: deposit.entryChainRecipient,
             value: deposit.depositAmount,
             createdAt: block.timestamp,
-            token: exitChainTokenMap[deposit.token]
+            token: entryChainToken
         });
 
         // ticket's nonce is now its index in `tickets`
