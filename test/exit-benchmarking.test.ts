@@ -159,54 +159,57 @@ async function runScenario(
 }
 
 const tokens: Array<{ pair: TokenPairStruct; contract: TestToken }> = [];
-beforeEach(async () => {
-  const exitChain = await exitChainDeployer.deploy();
 
-  for (let i = 0; i < amountOfTokenContracts; i++) {
-    // Deploy a new token contract
-    const contract = await tokenDeployer.deploy(tokenBalance);
-    // Use a random address for it's pair since it represents an address on a different chain
-    const randomAddress = Wallet.createRandom().address;
-    const pair = {
-      exitChainToken: contract.address,
-      entryChainToken: randomAddress,
+describe("exit benchmarking", () => {
+  beforeEach(async () => {
+    const exitChain = await exitChainDeployer.deploy();
+
+    for (let i = 0; i < amountOfTokenContracts; i++) {
+      // Deploy a new token contract
+      const contract = await tokenDeployer.deploy(tokenBalance);
+      // Use a random address for it's pair since it represents an address on a different chain
+      const randomAddress = Wallet.createRandom().address;
+      const pair = {
+        exitChainToken: contract.address,
+        entryChainToken: randomAddress,
+      };
+      tokens.push({ pair, contract });
+
+      // Transfer the token to the exit chain contract so it is "warmed" up
+      await waitForTx(contract.transfer(exitChain.address, 1));
+    }
+
+    // Register all the token pairs we just created
+    await exitChain.registerTokenPairs(tokens.map((t) => t.pair));
+
+    const customerExitChain = exitChain.connect(customerWallet);
+    const lpExitChain = exitChain.connect(lpWallet);
+
+    testSetup = {
+      lpExitChain,
+      lpWallet,
+      gasLimit,
+      customerExitChain,
+      exitChainToken: tokens[0].contract,
+      customerWallet,
+      tokenBalance,
     };
-    tokens.push({ pair, contract });
+  });
 
-    // Transfer the token to the exit chain contract so it is "warmed" up
-    await waitForTx(contract.transfer(exitChain.address, 1));
-  }
+  const benchmarkResults: ExitChainScenarioGasUsage[] = [];
+  it("exit gas benchmarking", async () => {
+    let nonce = 0;
+    // Perform an initial scenario run to
+    await runScenario(nonce, 1, "Same");
+    nonce++;
 
-  // Register all the token pairs we just created
-  await exitChain.registerTokenPairs(tokens.map((t) => t.pair));
+    const benchmarkScenarios = [1, 5, 20];
 
-  const customerExitChain = exitChain.connect(customerWallet);
-  const lpExitChain = exitChain.connect(lpWallet);
+    for (const batchSize of benchmarkScenarios) {
+      benchmarkResults.push(...(await runScenario(nonce, batchSize, "Same")));
+      nonce += batchSize;
+    }
+  }).timeout(60_000);
 
-  testSetup = {
-    lpExitChain,
-    lpWallet,
-    gasLimit,
-    customerExitChain,
-    exitChainToken: tokens[0].contract,
-    customerWallet,
-    tokenBalance,
-  };
+  after(() => printExitScenarioGasUsage(benchmarkResults));
 });
-
-const benchmarkResults: ExitChainScenarioGasUsage[] = [];
-it("exit gas benchmarking", async () => {
-  let nonce = 0;
-  // Perform an initial scenario run to
-  await runScenario(nonce, 1, "Same");
-  nonce++;
-
-  const benchmarkScenarios = [1, 5, 20];
-
-  for (const batchSize of benchmarkScenarios) {
-    benchmarkResults.push(...(await runScenario(nonce, batchSize, "Same")));
-    nonce += batchSize;
-  }
-}).timeout(60_000);
-
-after(() => printExitScenarioGasUsage(benchmarkResults));

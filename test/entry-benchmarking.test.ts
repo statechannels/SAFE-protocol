@@ -88,64 +88,66 @@ async function generateTickets(
 }
 
 let testSetup: EntryChainTestSetup;
-
 const tokens: Array<{ pair: TokenPairStruct; contract: TestToken }> = [];
-beforeEach(async () => {
-  const lpWallet = new ethers.Wallet(lpPK, ethers.provider);
-  const customerWallet = new ethers.Wallet(customerPK, ethers.provider);
-  const entryChainDeployer = new EntryChainEscrow__factory(lpWallet);
+describe("entry benchmarking", () => {
+  beforeEach(async () => {
+    const lpWallet = new ethers.Wallet(lpPK, ethers.provider);
+    const customerWallet = new ethers.Wallet(customerPK, ethers.provider);
+    const entryChainDeployer = new EntryChainEscrow__factory(lpWallet);
 
-  const tokenDeployer = new TestToken__factory(lpWallet);
-  const lpEntryChain = await entryChainDeployer.deploy();
+    const tokenDeployer = new TestToken__factory(lpWallet);
+    const lpEntryChain = await entryChainDeployer.deploy();
 
-  const tokenBalance = 1_000_000;
-  const gasLimit = 30_000_000;
-  const amountOfTokenContracts = 5;
+    const tokenBalance = 1_000_000;
+    const gasLimit = 30_000_000;
+    const amountOfTokenContracts = 5;
 
-  const entryChainToken = await tokenDeployer.deploy(tokenBalance);
+    const entryChainToken = await tokenDeployer.deploy(tokenBalance);
 
-  for (let i = 0; i < amountOfTokenContracts; i++) {
-    // Deploy a new token
-    const contract = await tokenDeployer.deploy(tokenBalance);
-    // Use a random address for it's pair since it represents an address on a different chain
-    const randomAddress = Wallet.createRandom().address;
-    const pair = {
-      entryChainToken: contract.address,
-      exitChainToken: randomAddress,
+    for (let i = 0; i < amountOfTokenContracts; i++) {
+      // Deploy a new token
+      const contract = await tokenDeployer.deploy(tokenBalance);
+      // Use a random address for it's pair since it represents an address on a different chain
+      const randomAddress = Wallet.createRandom().address;
+      const pair = {
+        entryChainToken: contract.address,
+        exitChainToken: randomAddress,
+      };
+      tokens.push({ pair, contract });
+      // Send 1/4 of the token balance to the contract for payouts
+      await contract.transfer(lpEntryChain.address, tokenBalance / 4);
+    }
+
+    testSetup = {
+      entryChainToken,
+      lpEntryChain,
+      lpWallet,
+      customerWallet,
+      tokenBalance,
+      gasLimit,
     };
-    tokens.push({ pair, contract });
-    // Send 1/4 of the token balance to the contract for payouts
-    await contract.transfer(lpEntryChain.address, tokenBalance / 4);
-  }
+    await distributeEntryChainTokens(testSetup);
+  });
 
-  testSetup = {
-    entryChainToken,
-    lpEntryChain,
-    lpWallet,
-    customerWallet,
-    tokenBalance,
-    gasLimit,
-  };
-  await distributeEntryChainTokens(testSetup);
+  const benchmarkResults: ScenarioGasUsage[] = [];
+
+  it("entry gas benchmarking", async () => {
+    let nonce = 0;
+
+    // The FIRST batch that is claimed on EntryChain incurs a write-to-zero-storage cost, which makes
+    // for a counter-intuitive list of results. So, we trigger an initial swap before
+    // starting the benchmark
+    await runScenario(nonce, 1, "Unique");
+    nonce++;
+
+    const benchmarkScenarios = [1, 5, 20];
+
+    for (const batchSize of benchmarkScenarios) {
+      benchmarkResults.push(await runScenario(nonce, batchSize, "Unique"));
+
+      nonce += batchSize;
+    }
+  }).timeout(60_000);
+
+  after(() => printScenarioGasUsage(benchmarkResults));
 });
-
-const benchmarkResults: ScenarioGasUsage[] = [];
-it("entry gas benchmarking", async () => {
-  let nonce = 0;
-
-  // The FIRST batch that is claimed on EntryChain incurs a write-to-zero-storage cost, which makes
-  // for a counter-intuitive list of results. So, we trigger an initial swap before
-  // starting the benchmark
-  await runScenario(nonce, 1, "Unique");
-  nonce++;
-
-  const benchmarkScenarios = [1, 5, 20];
-
-  for (const batchSize of benchmarkScenarios) {
-    benchmarkResults.push(await runScenario(nonce, batchSize, "Unique"));
-
-    nonce += batchSize;
-  }
-}).timeout(60_000);
-
-after(() => printScenarioGasUsage(benchmarkResults));
