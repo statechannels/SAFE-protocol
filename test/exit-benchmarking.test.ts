@@ -160,6 +160,8 @@ async function runScenario(
 
 const tokens: Array<{ pair: TokenPairStruct; contract: TestToken }> = [];
 beforeEach(async () => {
+  const exitChain = await exitChainDeployer.deploy();
+
   for (let i = 0; i < amountOfTokenContracts; i++) {
     // Deploy a new token contract
     const contract = await tokenDeployer.deploy(tokenBalance);
@@ -170,9 +172,10 @@ beforeEach(async () => {
       entryChainToken: randomAddress,
     };
     tokens.push({ pair, contract });
-  }
 
-  const exitChain = await exitChainDeployer.deploy();
+    // Transfer the token to the exit chain contract so it is "warmed" up
+    await waitForTx(contract.transfer(exitChain.address, 1));
+  }
 
   // Register all the token pairs we just created
   await exitChain.registerTokenPairs(tokens.map((t) => t.pair));
