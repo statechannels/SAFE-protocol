@@ -1,6 +1,6 @@
 # Summary
 
-We argue that SAFE is cheaper than alternative swap protocols, especially where exit chain fees are lower than entry chain fees.
+We argue that SAFE would lead to cheaper swap protocols, especially where exit chain fees are lower than entry chain fees by observing an order of magnitude reduction in fees compared with NXTP.
 
 # Setup
 
