@@ -2,7 +2,7 @@
 
 # Abstract
 
-In this paper, we introduce the Secure Asymmetric Frugal Exchange (SAFE) protocol for moving assets from one chain or rollup to another. SAFE drastically reduces cost compared to existing solutions while maintaining trustlessness and security. SAFE is particularly cost effective for withdrawing funds from a layer 2 system (such as an optimistic roll-up) to a layer 1 system (such as Ethereum mainnet). We demonstrate transfers with a marginal L1 overhead of under 1500 mainnet Ethereum gas per transfer, based on a preliminary Solidity prototype.
+In this spec, we introduce the Secure Asymmetric Frugal Exchange (SAFE) protocol for moving assets from one chain or rollup to another. SAFE drastically reduces cost compared to existing solutions while maintaining trustlessness and security. SAFE is particularly cost effective for withdrawing funds from a layer 2 system (such as an optimistic roll-up) to a layer 1 system (such as Ethereum mainnet). We demonstrate transfers with a marginal L1 overhead of under 1500 mainnet Ethereum gas per transfer, based on a preliminary Solidity prototype.
 
 # Overview
 
