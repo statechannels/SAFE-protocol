@@ -16,7 +16,7 @@ We argue that SAFE would lead to cheaper swap protocols, especially where exit c
 
 # Computation
 
-All gas is measured on L1 testnets. For SAFE, gas is measured using a local testnet. For nxtp, gas is measured on Ropsten and Gorli. L2 gas costs are then computed formulaically via [the following methodology](https://www.notion.so/statechannels/Optimism-Transaction-costs-91fbe83bd7554944aacee1ca289562b4).
+All gas is measured on L1 testnets. For SAFE, gas is measured using a local testnet. For nxtp, gas is measured on Ropsten and Gorli. L2 gas costs are then computed formulaically via [the following methodology](https://www.notion.so/statechannels/Optimism-Transaction-costs-91fbe83bd7554944aacee1ca289562b4). We found Optimism to be amenable to a formulaic computation.
 
 # Results
 
