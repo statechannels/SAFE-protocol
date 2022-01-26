@@ -1,12 +1,5 @@
 import Table from "cli-table";
-import {
-  BigNumber,
-  constants,
-  Transaction,
-  utils,
-  Wallet,
-  ethers as ethersTypes,
-} from "ethers";
+import { BigNumber, constants, Wallet, ethers as ethersTypes } from "ethers";
 
 import {
   EntryChainEscrow,
@@ -23,7 +16,7 @@ import { TicketsWithNonce } from "../src/types";
 import { hashTickets, signData } from "../src/utils";
 import { ethers } from "hardhat";
 import { SAFETY_DELAY } from "../src/constants";
-import _ from "underscore";
+import { getOptimismL1Fee } from "./gas-utils";
 
 export type ScenarioGasUsage = {
   description?: string;
@@ -248,38 +241,6 @@ export async function swap(
   return entryChainTransactionReceipt;
 }
 
-/**
- * Gets the optimism L1 fee for a given transaction
- * Based on https://github.com/ethereum-optimism/optimism/blob/639e5b13f2ab94b7b49e1f8114ed05a064df8a27/packages/contracts/contracts/L2/predeploys/OVM_GasPriceOracle.sol#L150
- * @param tx
- * @returns
- */
-export function getOptimismL1Fee(tx: Transaction) {
-  // This is an adjustable value set in the oracle contract.
-  // It can be seen here https://optimistic.etherscan.io/address/0x420000000000000000000000000000000000000f#readContract
-  const overhead = 2100;
-
-  const data = getRawTransaction(tx);
-  let total = BigNumber.from(0);
-  for (let i = 2; i < data.length; i += 2) {
-    if (data.slice(i, i + 2) === "00") {
-      total = total.add(4);
-    } else {
-      total = total.add(16);
-    }
-  }
-
-  return total.add(overhead).add(68 * 16);
-}
-
-export function getRawTransaction(tx: Transaction) {
-  // These are the fields that optimism will publish to L1 as call data.
-  const raw = utils.serializeTransaction(
-    _.pick(tx, ["nonce", "data", "gasPrice", "gasLimit", "to", "value"])
-  );
-
-  return raw;
-}
 export type TokenInfo = { pair: TokenPairStruct; contract: TestToken };
 export async function createCustomer(
   lpWallet: Wallet,
