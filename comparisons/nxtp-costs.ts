@@ -32,9 +32,7 @@ async function optimismFee(txLabel: string, txHash: string, network: string) {
 }
 
 async function main() {
-  for (const tx of txs) {
-    await optimismFee(tx[0], tx[1], tx[2]);
-  }
+  txs.map((tx) => optimismFee(tx[0], tx[1], tx[2]));
 }
 
 main();
