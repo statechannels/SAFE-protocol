@@ -2,8 +2,8 @@ import { BigNumber, Transaction, utils } from "ethers";
 import _ from "underscore";
 
 function getRawTransaction(tx: Transaction) {
-  const requiredFields = ["nonce", "data", "gasPrice", "to", "value"];
-  const optionalFields = ["gasLimit"];
+  const requiredFields = ["nonce", "data", "to", "value"];
+  const optionalFields = ["gasLimit", "gasPrice"];
   requiredFields.map((field) => {
     if (!(tx as any)[field])
       throw new Error(`Transaction is missing field ${field}`);
