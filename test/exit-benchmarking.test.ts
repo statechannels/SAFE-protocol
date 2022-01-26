@@ -12,7 +12,6 @@ import {
   customerPK,
   deposit,
   ExitChainTestSetup,
-  getOptimismL1Fee,
   lpPK,
   ScenarioGasUsage,
   waitForTx,
@@ -22,6 +21,7 @@ import { SAFETY_DELAY } from "../src/constants";
 import Table from "cli-table";
 import { TokenPairStruct } from "../contract-types/ExitChainEscrow";
 import { TestToken } from "../contract-types/TestToken";
+import { getOptimismL1Fee } from "./gas-utils";
 
 type ExitChainScenarioGasUsage = ScenarioGasUsage & {
   type: "depositOnExitChain" | "authorizeWithdrawal" | "claimExitChainFunds";

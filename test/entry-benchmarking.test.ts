@@ -15,7 +15,6 @@ import {
   customerPK,
   distributeEntryChainTokens,
   EntryChainTestSetup,
-  getOptimismL1Fee,
   lpPK,
   printScenarioGasUsage,
   ScenarioGasUsage,
@@ -23,6 +22,7 @@ import {
 } from "./utils";
 import { TokenPairStruct } from "../contract-types/ExitChainEscrow";
 import { TestToken } from "../contract-types/TestToken";
+import { getOptimismL1Fee } from "./gas-utils";
 
 async function runScenario(
   nonce: number,
