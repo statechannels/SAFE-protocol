@@ -1,5 +1,5 @@
 import axios from "axios";
-import { getOptimismL1Fee } from "./gas-utils";
+import { getOptimismL1Fee } from "../test/gas-utils";
 import { Transaction } from "ethers";
 
 const ropstenPrepare =

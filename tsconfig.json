@@ -1,5 +1,5 @@
 {
-  "include": ["src", "test"],
+  "include": ["src", "test", "comparisons"],
   "files": ["./hardhat.config.ts"],
   "exclude": [],
   "compilerOptions": {

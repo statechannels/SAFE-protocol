@@ -38,6 +38,6 @@
     "lint:write": "yarn run eslint . --ext .js,.ts --fix",
     "prettier:check": "prettier --check .",
     "prettier:write": "prettier --write .",
-    "nxtpcost": "ts-node  ./test/estimator.ts"
+    "nxtpcost": "ts-node  ./comparisons/nxtp-costs.ts"
   }
 }
