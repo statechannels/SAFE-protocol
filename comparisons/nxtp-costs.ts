@@ -22,6 +22,9 @@ async function optimismFee(txLabel: string, txHash: string, network: string) {
   const response = await axios.get(
     `https://api-${network}.etherscan.io/api?module=proxy&action=eth_getTransactionByHash&txhash=${txHash}&apikey=I9ZCY7RANFT7I44TSVDUI8Z8VUDPP5M32Q`
   );
+
+  // Note that Etherscan API does NOT return an object that is exactly like ethers.Transaction
+  // Specifically, Etherscan object contains an "input" field that corresponds to ethers.Transaction "data" field
   const tx: Transaction = {
     ...response.data.result,
     data: response.data.result.input,
