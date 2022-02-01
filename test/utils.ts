@@ -2,15 +2,15 @@ import Table from "cli-table";
 import { BigNumber, constants, Wallet, ethers as ethersTypes } from "ethers";
 
 import {
-  EntryChainEscrow,
-  EntryChainTicketStruct,
-} from "../contract-types/EntryChainEscrow";
+  ToChainEscrow,
+  ToChainTicketStruct,
+} from "../contract-types/ToChainEscrow";
 import {
-  ExitChainEscrow,
-  ExitChainDepositStruct,
+  FromChainEscrow,
+  FromChainDepositStruct,
   TicketStruct,
   TokenPairStruct,
-} from "../contract-types/ExitChainEscrow";
+} from "../contract-types/FromChainEscrow";
 import { TestToken } from "../contract-types/TestToken";
 import { TicketsWithNonce } from "../src/types";
 import { hashTickets, signData } from "../src/utils";
@@ -26,7 +26,7 @@ export type ScenarioGasUsage = {
 };
 
 export function printScenarioGasUsage(scenarios: ScenarioGasUsage[]) {
-  console.log("EntryChain claimBatch Gas Usage");
+  console.log("ToChain claimBatch Gas Usage");
   const table = new Table({
     head: [
       "Ticket Batch Size",
@@ -79,35 +79,33 @@ export type CommonTestSetup = {
   tokenBalance: number;
   gasLimit: number;
 };
-export type EntryChainTestSetup = {
-  entryChainToken: TestToken;
-  lpEntryChain: EntryChainEscrow;
+export type ToChainTestSetup = {
+  toChainToken: TestToken;
+  lpToChain: ToChainEscrow;
 } & CommonTestSetup;
 
-export type ExitChainTestSetup = {
-  exitChainToken: TestToken;
-  lpExitChain: ExitChainEscrow;
-  customerExitChain: ExitChainEscrow;
+export type FromChainTestSetup = {
+  fromChainToken: TestToken;
+  lpFromChain: FromChainEscrow;
+  customerFromChain: FromChainEscrow;
 } & CommonTestSetup;
 
-export type TestSetup = EntryChainTestSetup & ExitChainTestSetup;
+export type TestSetup = ToChainTestSetup & FromChainTestSetup;
 
-export async function distributeEntryChainTokens(setup: EntryChainTestSetup) {
-  const { entryChainToken, lpEntryChain, customerWallet, tokenBalance } = setup;
+export async function distributeToChainTokens(setup: ToChainTestSetup) {
+  const { toChainToken, lpToChain, customerWallet, tokenBalance } = setup;
   // Transfer 1/4 to the contract for payouts
-  await waitForTx(
-    entryChainToken.transfer(lpEntryChain.address, tokenBalance / 4)
-  );
+  await waitForTx(toChainToken.transfer(lpToChain.address, tokenBalance / 4));
   // Transfer 1/4 to the customerWallet
-  await entryChainToken.transfer(customerWallet.address, tokenBalance / 4);
+  await toChainToken.transfer(customerWallet.address, tokenBalance / 4);
 }
-export async function distributeExitChainTokens(setup: ExitChainTestSetup) {
-  const { exitChainToken, lpExitChain, customerWallet, tokenBalance } = setup;
+export async function distributeFromChainTokens(setup: FromChainTestSetup) {
+  const { fromChainToken, lpFromChain, customerWallet, tokenBalance } = setup;
 
   // Transfer 1/4 to the customerWallet and approve
   await approveAndSend(
-    exitChainToken,
-    lpExitChain.address,
+    fromChainToken,
+    lpFromChain.address,
     customerWallet,
     tokenBalance / 4
   );
@@ -116,7 +114,7 @@ export async function distributeExitChainTokens(setup: ExitChainTestSetup) {
 /**
  *  Approves the contractAddress to spend ERC20 for account and sends amount tokens to account
  * @param tokenContract A ERC20 contract
- * @param contractAddress The entry or exit chain contract
+ * @param contractAddress The to or from chain contract
  * @param wallet The wallet that should approve and receive the tokens
  * @param amount The amount of tokens to send
  */
@@ -133,21 +131,21 @@ export async function approveAndSend(
 }
 
 export async function deposit(
-  setup: ExitChainTestSetup,
+  setup: FromChainTestSetup,
   trustedNonce: number,
   trustedAmount: number,
-  entryChainRecipient?: string
+  toChainRecipient?: string
 ): Promise<{ gasUsed: BigNumber; optimismL1Fee: BigNumber }> {
-  const { customerWallet, exitChainToken, customerExitChain } = setup;
+  const { customerWallet, fromChainToken, customerFromChain } = setup;
   const depositAmount = 1;
-  const deposit: ExitChainDepositStruct = {
+  const deposit: FromChainDepositStruct = {
     trustedNonce,
     trustedAmount,
     depositAmount,
-    entryChainRecipient: entryChainRecipient || customerWallet.address,
-    token: exitChainToken.address,
+    toChainRecipient: toChainRecipient || customerWallet.address,
+    token: fromChainToken.address,
   };
-  const result = await customerExitChain.depositOnExitChain(deposit);
+  const result = await customerFromChain.depositOnFromChain(deposit);
   const { gasUsed } = await waitForTx(result);
   {
     return { gasUsed, optimismL1Fee: getOptimismL1Fee(result) };
@@ -155,21 +153,21 @@ export async function deposit(
 }
 
 export async function authorizeWithdrawal(
-  setup: ExitChainTestSetup,
+  setup: FromChainTestSetup,
   trustedNonce: number,
   numTickets = 2
 ): Promise<{
-  tickets: EntryChainTicketStruct[];
+  tickets: ToChainTicketStruct[];
   signature: ethersTypes.Signature;
   gasUsed: BigNumber;
   optimismL1Fee: BigNumber;
 }> {
-  const { lpExitChain, gasLimit } = setup;
+  const { lpFromChain, gasLimit } = setup;
 
-  const tickets: EntryChainTicketStruct[] = [];
+  const tickets: ToChainTicketStruct[] = [];
   for (let i = 0; i < numTickets; i++) {
     tickets.push(
-      ticketToEntryChainTicket(await lpExitChain.tickets(trustedNonce + i))
+      ticketToToChainTicket(await lpFromChain.tickets(trustedNonce + i))
     );
   }
 
@@ -178,7 +176,7 @@ export async function authorizeWithdrawal(
     tickets,
   };
   const signature = signData(hashTickets(ticketsWithNonce), lpPK);
-  const authorizeResult = await lpExitChain.authorizeWithdrawal(
+  const authorizeResult = await lpFromChain.authorizeWithdrawal(
     trustedNonce,
     trustedNonce + numTickets - 1,
     signature,
@@ -196,12 +194,12 @@ export async function authorizeWithdrawal(
   };
 }
 
-export function ticketToEntryChainTicket(
+export function ticketToToChainTicket(
   ticket: TicketStruct
-): EntryChainTicketStruct {
+): ToChainTicketStruct {
   return {
     value: ticket.value,
-    entryChainRecipient: ticket.entryChainRecipient,
+    toChainRecipient: ticket.toChainRecipient,
     token: ticket.token,
   };
 }
@@ -209,9 +207,9 @@ export function ticketToEntryChainTicket(
  *
  * @param testSetup A TestSetup object that contains various contracts and wallets
  * @param trustedNonce The sum of all tickets starting with trustedNonce + new deposit must be <= trustedAmount
- * @param trustedAmount amount expected to be held on EntryChain contract
+ * @param trustedAmount amount expected to be held on ToChain contract
  * @param numTickets number of tickets to include in the swap's batch
- * @returns receipt of the EntryChain claimBatch transaction
+ * @returns receipt of the ToChain claimBatch transaction
  */
 export async function swap(
   setup: TestSetup,
@@ -228,17 +226,17 @@ export async function swap(
     trustedNonce,
     numTickets
   );
-  const { lpEntryChain, gasLimit, lpExitChain } = setup;
-  const entryChainTransactionReceipt = await waitForTx(
-    lpEntryChain.claimBatch(tickets, signature, { gasLimit })
+  const { lpToChain, gasLimit, lpFromChain } = setup;
+  const toChainTransactionReceipt = await waitForTx(
+    lpToChain.claimBatch(tickets, signature, { gasLimit })
   );
 
   await ethers.provider.send("evm_increaseTime", [SAFETY_DELAY + 1]);
-  await waitForTx(lpExitChain.claimExitChainFunds(trustedNonce));
+  await waitForTx(lpFromChain.claimFromChainFunds(trustedNonce));
 
-  // TODO: This ought to estimate the total user cost. The cost of the EntryChain transaction
+  // TODO: This ought to estimate the total user cost. The cost of the ToChain transaction
   // is currently used as a rough estimate of the total user cost.
-  return entryChainTransactionReceipt;
+  return toChainTransactionReceipt;
 }
 
 export type TokenInfo = { pair: TokenPairStruct; contract: TestToken };

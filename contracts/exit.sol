@@ -3,16 +3,16 @@ pragma solidity ^0.8.10;
 
 import "./common.sol";
 
-struct ExitChainDeposit {
-    // the nonce of the most recent "EntryChainAmountAssertion" that Alice trusts
+struct FromChainDeposit {
+    // the nonce of the most recent "ToChainAmountAssertion" that Alice trusts
     uint256 trustedNonce;
-    // the amount that Alice believes to be available on EntryChain for tickets with
+    // the amount that Alice believes to be available on ToChain for tickets with
     // nonce *greater than trustedNonce*
     uint256 trustedAmount;
-    // the amount Alice wishes to claim on EntryChain
+    // the amount Alice wishes to claim on ToChain
     uint256 depositAmount;
-    // Alice's address on EntryChain
-    address entryChainRecipient;
+    // Alice's address on ToChain
+    address toChainRecipient;
     /// The address of the ERC20 token.
     address token;
 }
@@ -32,24 +32,24 @@ struct Batch {
 }
 
 struct TokenPair {
-    address entryChainToken;
-    address exitChainToken;
+    address toChainToken;
+    address fromChainToken;
 }
 
 // TODO: update these values after prototype phase
 uint256 constant maxAuthDelay = 600;
 uint256 constant safetyDelay = 600;
 
-contract ExitChainEscrow is SignatureChecker {
+contract FromChainEscrow is SignatureChecker {
     Ticket[] public tickets;
     // `batches` is used to record the fact that tickets with nonce between startingNonce and startingNonce + numTickets-1 are authorized or withdrawn.
     // Indexed by nonce
     mapping(uint256 => Batch) batches;
 
-    /// Maps a EntryChain token address to the ExitChain token address.
-    mapping(address => address) public entryChainTokenMap;
-    /// Maps a ExitChain token address to the EntryChain token address.
-    mapping(address => address) public exitChainTokenMap;
+    /// Maps a ToChain token address to the FromChain token address.
+    mapping(address => address) public toChainTokenMap;
+    /// Maps a FromChain token address to the ToChain token address.
+    mapping(address => address) public fromChainTokenMap;
     uint256 nextBatchStart = 0;
 
     // TODO: Eventually this should probably use a well-tested ownership library.
@@ -63,45 +63,43 @@ contract ExitChainEscrow is SignatureChecker {
         require(msg.sender == owner, "Only the owner can add token pairs");
         for (uint256 i = 0; i < pairs.length; i++) {
             require(
-                exitChainTokenMap[pairs[i].exitChainToken] == address(0),
-                "A mapping exists for the ExitChain token"
+                fromChainTokenMap[pairs[i].fromChainToken] == address(0),
+                "A mapping exists for the FromChain token"
             );
             require(
-                entryChainTokenMap[pairs[i].entryChainToken] == address(0),
-                "A mapping exists for the EntryChain token"
+                toChainTokenMap[pairs[i].toChainToken] == address(0),
+                "A mapping exists for the ToChain token"
             );
-            exitChainTokenMap[pairs[i].exitChainToken] = pairs[i]
-                .entryChainToken;
-            entryChainTokenMap[pairs[i].entryChainToken] = pairs[i]
-                .exitChainToken;
+            fromChainTokenMap[pairs[i].fromChainToken] = pairs[i].toChainToken;
+            toChainTokenMap[pairs[i].toChainToken] = pairs[i].fromChainToken;
         }
     }
 
-    function depositOnExitChain(ExitChainDeposit calldata deposit)
+    function depositOnFromChain(FromChainDeposit calldata deposit)
         public
         payable
     {
         uint256 amountAvailable = deposit.trustedAmount;
         uint256 trustedNonce = deposit.trustedNonce;
-        address entryChainToken = exitChainTokenMap[deposit.token];
+        address toChainToken = fromChainTokenMap[deposit.token];
 
         uint256 amountReserved = 0;
         for (uint256 i = trustedNonce; i < tickets.length; i++) {
-            if (tickets[i].token == entryChainToken) {
+            if (tickets[i].token == toChainToken) {
                 amountReserved += tickets[i].value;
             }
         }
 
         // We don't allow tickets to be registered if there are not enough funds
-        // remaining on EntryChain after accounting for already registered tickets.
+        // remaining on ToChain after accounting for already registered tickets.
         require(
             amountAvailable >= amountReserved + deposit.depositAmount,
             "Must have enough funds for ticket"
         );
 
         require(
-            entryChainToken != address(0),
-            "There is no ExitChain token for this EntryChain token"
+            toChainToken != address(0),
+            "There is no FromChain token for this ToChain token"
         );
 
         IERC20 tokenContract = IERC20(deposit.token);
@@ -112,10 +110,10 @@ contract ExitChainEscrow is SignatureChecker {
         );
 
         Ticket memory ticket = Ticket({
-            entryChainRecipient: deposit.entryChainRecipient,
+            toChainRecipient: deposit.toChainRecipient,
             value: deposit.depositAmount,
             createdAt: block.timestamp,
-            token: entryChainToken
+            token: toChainToken
         });
 
         // ticket's nonce is now its index in `tickets`
@@ -123,7 +121,7 @@ contract ExitChainEscrow is SignatureChecker {
     }
 
     // TODO: This public function is added to force hardhat to generate
-    // the TicketStruct type in its exitChain.ts output
+    // the TicketStruct type in its fromChain.ts output
     function compareWithFirstTicket(Ticket calldata t)
         public
         view
@@ -164,14 +162,14 @@ contract ExitChainEscrow is SignatureChecker {
         view
         returns (Batch memory, TicketsWithNonce memory)
     {
-        EntryChainTicket[] memory ticketsToAuthorize = new EntryChainTicket[](
+        ToChainTicket[] memory ticketsToAuthorize = new ToChainTicket[](
             last - first + 1
         );
         uint256 total = 0;
         for (uint256 i = first; i <= last; i++) {
             Ticket memory t = tickets[i];
-            ticketsToAuthorize[i - first] = EntryChainTicket(
-                t.entryChainRecipient,
+            ticketsToAuthorize[i - first] = ToChainTicket(
+                t.toChainRecipient,
                 t.value,
                 t.token
             );
@@ -188,7 +186,7 @@ contract ExitChainEscrow is SignatureChecker {
         );
     }
 
-    function claimExitChainFunds(uint256 first) public {
+    function claimFromChainFunds(uint256 first) public {
         Batch memory batch = batches[first];
         require(
             batch.status == BatchStatus.Authorized,
@@ -204,8 +202,8 @@ contract ExitChainEscrow is SignatureChecker {
 
         for (uint256 i = first; i < first + batch.numTickets; i++) {
             Ticket memory ticket = tickets[i];
-            // Since the ticket token is validated when it is registered, we can be sure that entryChainTokenMap[ticket.token])!= address(0)
-            IERC20 tokenContract = IERC20(entryChainTokenMap[ticket.token]);
+            // Since the ticket token is validated when it is registered, we can be sure that toChainTokenMap[ticket.token])!= address(0)
+            IERC20 tokenContract = IERC20(toChainTokenMap[ticket.token]);
             tokenContract.transfer(owner, ticket.value);
         }
     }
@@ -224,7 +222,7 @@ contract ExitChainEscrow is SignatureChecker {
         uint256 honestDelta,
         uint256 fraudStartNonce,
         uint256 fraudDelta,
-        EntryChainTicket[] calldata fraudTickets,
+        ToChainTicket[] calldata fraudTickets,
         Signature calldata fraudSignature
     ) public {
         bytes32 message = keccak256(
@@ -240,12 +238,12 @@ contract ExitChainEscrow is SignatureChecker {
         );
 
         Ticket memory t = tickets[honestStartNonce + honestDelta];
-        EntryChainTicket memory correctTicket = EntryChainTicket(
-            t.entryChainRecipient,
+        ToChainTicket memory correctTicket = ToChainTicket(
+            t.toChainRecipient,
             t.value,
             t.token
         );
-        EntryChainTicket memory fraudTicket = fraudTickets[fraudDelta];
+        ToChainTicket memory fraudTicket = fraudTickets[fraudDelta];
         require(
             !ticketsEqual(correctTicket, fraudTicket),
             "Honest and fraud tickets must differ"
@@ -258,10 +256,10 @@ contract ExitChainEscrow is SignatureChecker {
         );
 
         for (uint256 i = honestStartNonce; i < honestBatch.numTickets; i++) {
-            // Since the ticket token is validated when it is registered, we can be sure that entryChainTokenMap[ticket.token])!= address(0)
-            IERC20 tokenContract = IERC20(entryChainTokenMap[tickets[i].token]);
+            // Since the ticket token is validated when it is registered, we can be sure that toChainTokenMap[ticket.token])!= address(0)
+            IERC20 tokenContract = IERC20(toChainTokenMap[tickets[i].token]);
             tokenContract.transfer(
-                tickets[i].entryChainRecipient,
+                tickets[i].toChainRecipient,
                 tickets[i].value
             );
         }
@@ -287,12 +285,12 @@ contract ExitChainEscrow is SignatureChecker {
         batches[nextBatchStart] = batch;
         batch.status = BatchStatus.Withdrawn;
         nextBatchStart = lastNonce + 1;
-        // Since the ticket token is validated when it is registered, we can be sure that entryChainTokenMap[ticket.token])!= address(0)
+        // Since the ticket token is validated when it is registered, we can be sure that toChainTokenMap[ticket.token])!= address(0)
         IERC20 tokenContract = IERC20(
-            entryChainTokenMap[tickets[lastNonce].token]
+            toChainTokenMap[tickets[lastNonce].token]
         );
         tokenContract.transfer(
-            tickets[lastNonce].entryChainRecipient,
+            tickets[lastNonce].toChainRecipient,
             tickets[lastNonce].value
         );
     }

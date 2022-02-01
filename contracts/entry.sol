@@ -3,7 +3,7 @@ pragma solidity ^0.8.10;
 
 import "./common.sol";
 
-contract EntryChainEscrow is SignatureChecker {
+contract ToChainEscrow is SignatureChecker {
     uint256 nextNonce = 0;
     // TODO: Eventually this should probably use a well-tested ownership library.
     address owner;
@@ -15,7 +15,7 @@ contract EntryChainEscrow is SignatureChecker {
     }
 
     function claimBatch(
-        EntryChainTicket[] calldata tickets,
+        ToChainTicket[] calldata tickets,
         Signature calldata signature
     ) public {
         bytes32 message = keccak256(
@@ -30,7 +30,7 @@ contract EntryChainEscrow is SignatureChecker {
         for (uint256 i = 0; i < tickets.length; i++) {
             IERC20 tokenContract = IERC20(tickets[i].token);
             tokenContract.transfer(
-                tickets[i].entryChainRecipient,
+                tickets[i].toChainRecipient,
                 tickets[i].value
             );
         }
