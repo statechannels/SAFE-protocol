@@ -12,7 +12,7 @@ We argue that SAFE would lead to cheaper swap protocols, especially where exit c
 - The benchmarks avoid “cold” stores (modifying a zero storage value to non-zero). So the contracts and swap addresses are primed to hold tokens.
 - We assume a gas cost of 150 gwei for mainnet as this was approximately the average gas cost on **January 17th**
 - We assume a cost of 0.001 gwei for Optimism's L2 gas cost.
-- The dominant cost for an Optimism transaction is the cost of rollup data posted to L1. This cost depends on L1 gas cost. 
+- The dominant cost for an Optimism transaction is the cost of rollup data posted to L1. This cost depends on L1 gas cost.
 - For SAFE each swap has a different exit chain recipient
 
 # Computation
@@ -23,11 +23,11 @@ All gas is measured on L1 testnets. For SAFE, gas is measured using a local test
 
 ## Optimism to Mainnet Summary
 
-|               | NXTP                                                                                    | SAFE                                                                                 |
-| ------------- | --------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
-| L1 cost(gwei) | 21798000 L1 gas \* 150 gwei = 3,269,700,000 gwei                                              | 1,150,678 L1 gas \* 150 gwei = 172,601,700 gwei                                           |
+|               | NXTP                                                                                         | SAFE                                                                                      |
+| ------------- | -------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| L1 cost(gwei) | 21798000 L1 gas \* 150 gwei = 3,269,700,000 gwei                                             | 1,150,678 L1 gas \* 150 gwei = 172,601,700 gwei                                           |
 | L2 cost(gwei) | (2,756,000 L1 gas \* 150 gwei + 18,545,900 L2 gas \* 0.001 gwei) \* 1.24 ~= 512,638,996 gwei | (502,376 L1 gas \* 150 gwei + 16,830,846 L2 gas \* 0.001 gwei) \* 1.24 ~= 93,462,806 gwei |
-| Total         | 3.782 ETH                                                                       | 0.266 ETH                                                                   |
+| Total         | 3.782 ETH                                                                                    | 0.266 ETH                                                                                 |
 
 ## Calculations
 
