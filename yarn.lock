@@ -5137,40 +5137,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"fast-exit@workspace:.":
-  version: 0.0.0-use.local
-  resolution: "fast-exit@workspace:."
-  dependencies:
-    "@nomiclabs/hardhat-ethers": ^2.0.2
-    "@nomiclabs/hardhat-waffle": ^2.0.1
-    "@openzeppelin/contracts": ^4.3.3
-    "@typechain/ethers-v5": ^8.0.3
-    "@typechain/hardhat": ^3.0.0
-    "@types/chai-as-promised": ^7.1.4
-    "@types/cli-table": ^0.3.0
-    "@types/mocha": ^9.0.0
-    "@typescript-eslint/eslint-plugin": ^5.9.0
-    "@typescript-eslint/parser": ^5.9.0
-    axios: ^0.25.0
-    chai: ^4.3.4
-    chai-as-promised: ^7.1.1
-    cli-table: ^0.3.11
-    eslint: ^8.6.0
-    eslint-config-prettier: ^8.3.0
-    eth-gas-reporter: ^0.2.22
-    ethereum-waffle: ^3.4.0
-    ethers: ^5.0.0
-    hardhat: ^2.6.7
-    hardhat-gas-reporter: ^1.0.4
-    lodash: ^4.17.21
-    mocha: ^9.1.2
-    prettier: ^2.5.1
-    ts-node: ^10.4.0
-    typechain: ^6.0.3
-    typescript: ^4.5.4
-  languageName: unknown
-  linkType: soft
-
 "fast-glob@npm:^3.1.1":
   version: 3.2.7
   resolution: "fast-glob@npm:3.2.7"
@@ -9922,6 +9888,40 @@ __metadata:
   checksum: 9a8bba57c87a841f7997b3b951e8e403b1128c1a4fd1182f40cc1a20e2d490593d7c2a21030fadfea320c8e859219019e136f678c6689ed5960b391b822f01d5
   languageName: node
   linkType: hard
+
+"safe@workspace:.":
+  version: 0.0.0-use.local
+  resolution: "safe@workspace:."
+  dependencies:
+    "@nomiclabs/hardhat-ethers": ^2.0.2
+    "@nomiclabs/hardhat-waffle": ^2.0.1
+    "@openzeppelin/contracts": ^4.3.3
+    "@typechain/ethers-v5": ^8.0.3
+    "@typechain/hardhat": ^3.0.0
+    "@types/chai-as-promised": ^7.1.4
+    "@types/cli-table": ^0.3.0
+    "@types/mocha": ^9.0.0
+    "@typescript-eslint/eslint-plugin": ^5.9.0
+    "@typescript-eslint/parser": ^5.9.0
+    axios: ^0.25.0
+    chai: ^4.3.4
+    chai-as-promised: ^7.1.1
+    cli-table: ^0.3.11
+    eslint: ^8.6.0
+    eslint-config-prettier: ^8.3.0
+    eth-gas-reporter: ^0.2.22
+    ethereum-waffle: ^3.4.0
+    ethers: ^5.0.0
+    hardhat: ^2.6.7
+    hardhat-gas-reporter: ^1.0.4
+    lodash: ^4.17.21
+    mocha: ^9.1.2
+    prettier: ^2.5.1
+    ts-node: ^10.4.0
+    typechain: ^6.0.3
+    typescript: ^4.5.4
+  languageName: unknown
+  linkType: soft
 
 "safer-buffer@npm:>= 2.1.2 < 3, safer-buffer@npm:>= 2.1.2 < 3.0.0, safer-buffer@npm:^2.0.2, safer-buffer@npm:^2.1.0, safer-buffer@npm:~2.1.0":
   version: 2.1.2
