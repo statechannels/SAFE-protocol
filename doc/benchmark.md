@@ -11,7 +11,8 @@ We argue that SAFE would lead to cheaper swap protocols, especially where exit c
   - For nxtp, each swap is independent (there is no batching), so 1 token type is used.
 - The benchmarks avoid “cold” stores (modifying a zero storage value to non-zero). So the contracts and swap addresses are primed to hold tokens.
 - We assume a gas cost of 150 gwei for mainnet as this was approximately the average gas cost on **January 17th**
-- We assume a cost of 0.001 gwei for Optimism's L2gas cost, and also include the dominant L1gas cost for Optimism rollup data to be posted on L1. 
+- We assume a cost of 0.001 gwei for Optimism's L2 gas cost.
+- The dominant cost for an Optimism transaction is the cost of rollup data posted to L1. This cost depends on L1 gas cost. 
 - For SAFE each swap has a different exit chain recipient
 
 # Computation
