@@ -16,7 +16,7 @@ Thus, Alice's swap is serviced with `1 + 2/n` transactions on `ExitChain` and `1
 _**Note:** The protocol is inspired by optimizing for a specific use case, where `EntryChain` is mainnet Ethereum ("Layer 1", or L1), and `ExitChain` is an optimistic roll-up (ORU) Layer 2, or L2. Users who want to withdraw funds from an ORU L2 must wait an extended period of time before accessing their funds on L1._
 
 1. Alice deposits `x` tokens on `ExitChain`, and is given a ticket `t`. The ticket is initially in the `pending` state and records that "`x` tokens should be sent to Alice on `EntryChain`."
-2. Bob then authorizes `t` by including it in a signed batch `b`. The ticket is now in the `authorized` state.
+2. Bob then authorizes `t` on the `ExitChain` by including it in a signed batch `b` and calling `authorizeExitChainBatch(b)`. The ticket is now in the `authorized` state.
 3. During normal operation, Bob will submit `b` to `EntryChain`. If Bob fails to do so, Alice _has the ability_ to submit `b`. Submission of `b` sends `x` tokens to Alice on `EntryChain`.
 4. To receive Alice's `x` tokens on `ExitChain`, Bob calls `claimExitChainBatch(b)`. Bob can only do this after `BatchAuthorizationTime + SafetyWindow` time. `t` is now in the the `claimed` state.
 
