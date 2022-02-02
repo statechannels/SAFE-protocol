@@ -89,7 +89,7 @@ async function generateTickets(
 
 let testSetup: ToChainTestSetup;
 const tokens: Array<{ pair: TokenPairStruct; contract: TestToken }> = [];
-describe("to benchmarking", () => {
+describe("To Chain Benchmark", () => {
   beforeEach(async () => {
     const lpWallet = new ethers.Wallet(lpPK, ethers.provider);
     const customerWallet = new ethers.Wallet(customerPK, ethers.provider);

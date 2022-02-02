@@ -26,7 +26,7 @@ export type ScenarioGasUsage = {
 };
 
 export function printScenarioGasUsage(scenarios: ScenarioGasUsage[]) {
-  console.log("ToChain claimBatch Gas Usage");
+  console.log("To Chain claimBatch Gas Usage");
   const table = new Table({
     head: [
       "Ticket Batch Size",
@@ -48,10 +48,10 @@ export function printScenarioGasUsage(scenarios: ScenarioGasUsage[]) {
 
     table.push([
       scenario.batchSize,
-      averagePerClaim,
-      scenario.totalGasUsed,
-      scenario.optimismCost,
-      averageOptimismCost,
+      averagePerClaim.toLocaleString(),
+      scenario.totalGasUsed.toNumber().toLocaleString(),
+      scenario.optimismCost.toNumber().toLocaleString(),
+      averageOptimismCost.toLocaleString(),
     ]);
   }
   console.log(table.toString());

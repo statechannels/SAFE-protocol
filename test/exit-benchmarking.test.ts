@@ -47,29 +47,23 @@ export function printFromScenarioGasUsage(
       "Ticket Batch Size",
       "From Contract Function",
       "Total Gas",
-      "Average Gas Per Call",
+      "Average Gas Per Ticket",
       "Total Optimism L1 Fee",
-      "Average Optimism L1 Fee Per Call",
+      "Average Optimism L1 Fee Per Ticket",
     ],
     colAligns: ["right", "right", "right"],
   });
 
   for (const scenario of scenarios) {
-    const gasPerCall =
-      scenario.type === "depositOnFromChain"
-        ? scenario.totalGasUsed.div(scenario.batchSize)
-        : scenario.totalGasUsed;
-    const optimismCostPerCall =
-      scenario.type === "depositOnFromChain"
-        ? scenario.optimismCost.div(scenario.batchSize)
-        : scenario.optimismCost;
+    const gasPerCall = scenario.totalGasUsed.div(scenario.batchSize);
+    const optimismCostPerCall = scenario.optimismCost.div(scenario.batchSize);
     table.push([
       scenario.batchSize,
       scenario.type,
-      scenario.totalGasUsed.toNumber(),
-      gasPerCall.toNumber(),
-      scenario.optimismCost.toNumber(),
-      optimismCostPerCall.toNumber(),
+      scenario.totalGasUsed.toNumber().toLocaleString(),
+      gasPerCall.toNumber().toLocaleString(),
+      scenario.optimismCost.toNumber().toLocaleString(),
+      optimismCostPerCall.toNumber().toLocaleString(),
     ]);
   }
   console.log(table.toString());
@@ -160,7 +154,7 @@ async function runScenario(
 
 const tokens: Array<{ pair: TokenPairStruct; contract: TestToken }> = [];
 
-describe("from benchmarking", () => {
+describe("From Chain Benchmark", () => {
   beforeEach(async () => {
     const fromChain = await fromChainDeployer.deploy();
 
