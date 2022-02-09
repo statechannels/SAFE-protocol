@@ -15,6 +15,10 @@ We argue that SAFE would lead to cheaper swap protocols, especially where from c
 - The dominant cost for an Optimism transaction is the cost of rollup data posted to L1. This cost depends on L1 gas cost.
 - For SAFE each swap has a different from chain recipient
 
+# Colab Notebook
+
+SAFE benchmarks are loaded and displayed in a [Colab Notebook](https://colab.research.google.com/drive/1JmwinCqUII6j1xV84Z-Dj1SZjSra1iZ9). If you are interested in slicing and dicing the results, you can use the notebook as a starer.
+
 # Computation
 
 All gas is measured on L1 testnets. For SAFE, gas is measured using a local testnet. For nxtp, gas is measured on Ropsten and Gorli. L2 gas costs are then computed formulaically via [the following methodology](https://www.notion.so/statechannels/Optimism-Transaction-costs-91fbe83bd7554944aacee1ca289562b4). We found Optimism to be amenable to a formulaic computation.
